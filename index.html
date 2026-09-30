@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#ffe4ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>CWSN Therapeutic Services Monitoring System</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;font-size:15px;margin:0;background:#fff;color:#000}
+h2{font-size:20px;margin:10px 0}
+h3{font-size:17px;margin:18px 0 6px;border-bottom:2px solid #ff8000;padding-bottom:3px}
+#hdr{background:#ffe4ec;border-bottom:3px solid #ff8000;padding:8px 12px}
+.hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.logoimg{height:60px;width:auto;max-width:190px;background:#fff;border:1px solid #ff8000}
+.logo{width:46px;height:46px;background:#ff8000;color:#fff;font-weight:bold;font-size:20px;text-align:center;line-height:46px;border:2px solid #b34700}
+.ht{flex:1;min-width:200px;font-size:16px}
+.sub{font-size:13px}
+.hu{font-size:13px;text-align:right}
+#tabs{padding:6px 8px 0 8px;border-bottom:1px solid #ff8000}
+.tab{font-family:Arial;font-size:14px;background:#fff;color:#000;border:1px solid #ff8000;padding:8px 12px;margin:0 2px 0 0;cursor:pointer;border-radius:0}
+.tab.on{background:#ffe4ec;font-weight:bold;border-bottom:3px solid #ff8000}
+#main{padding:10px 12px;max-width:1300px;margin:0 auto}
+#foot:empty{display:none}
+#foot{border-top:3px solid #ff8000;background:#ffe4ec;padding:8px 12px;font-size:12px;margin-top:20px}
+.btn{font-family:Arial;font-size:15px;padding:9px 16px;border:1px solid #000;color:#000;background:#ff9933;cursor:pointer;border-radius:0;margin:2px}
+.btn.g{background:#008000;color:#fff}
+.btn.o{background:#ffc2d4;color:#000}
+.btn.sm{padding:3px 8px;font-size:13px}
+.btn.big{font-size:18px;padding:12px 24px}
+input[type=text],input[type=tel],input[type=number],input[type=date],input[type=password],input[type=url],textarea,select{width:100%;max-width:520px;padding:8px;font-size:16px;font-family:Arial;border:1px solid #666;background:#fff;border-radius:0;color:#000}
+input[type=text],input[type=tel],input[type=number],input[type=date],input[type=password],input[type=url],textarea{-webkit-appearance:none;appearance:none}
+input[type=radio],input[type=checkbox]{width:20px;height:20px;vertical-align:middle;margin:0 4px 0 0}
+.fld{margin:12px 0}
+.fld .t{display:block;font-weight:bold;margin-bottom:4px}
+.opt{display:inline-block;margin:2px 8px 2px 0;padding:6px 10px;border:1px solid #999;background:#fff;cursor:pointer}
+.hint{font-size:12px;color:#333}
+.err{border:2px solid #cc0000;background:#ffe0e0;padding:8px;margin:8px 0}
+.okmsg{border:2px solid #008000;background:#e0ffe0;padding:8px;margin:8px 0}
+.warn{border:2px solid #ff8000;background:#fff0d9;padding:8px;margin:8px 0}
+.info{border:1px solid #ff8000;background:#fff5f8;padding:8px;margin:8px 0}
+.note{color:#333;font-size:13px}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.stat{border:1px solid #ff8000;background:#fff;padding:8px;min-width:140px;flex:1}
+.stat .n{font-size:24px;font-weight:bold;color:#e65c00}
+.stat .lb{font-size:13px}
+.stat .nt{font-size:11px;color:#333}
+.stat.bad .n{color:#cc0000}
+.filters{border:1px solid #ff8000;background:#fff5f8;padding:8px;margin:8px 0}
+.fgrid{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.fgrid>div{flex:1;min-width:130px}
+.fgrid label{font-size:12px;font-weight:bold;display:block}
+.fgrid select,.fgrid input{max-width:none}
+.chip{display:inline-block;border:1px solid #ff8000;padding:5px 11px;margin:3px 3px 0 0;background:#fff;cursor:pointer;font-size:13px}
+.chip.on{background:#ff9933;color:#000;font-weight:bold}
+.scroll{overflow-x:auto}
+table.tbl{border-collapse:collapse;width:100%;font-size:13px}
+.tbl th,.tbl td{border:1px solid #000;padding:4px 6px;text-align:left;vertical-align:top;background:#fff}
+.tbl th{background:#ffe4ec}
+.tbl tr:nth-child(even) td{background:#fff5f8}
+.tbl tr.flag td{background:#ffc9c0}
+.tbl tr.tot td{background:#ffe4ec;font-weight:bold}
+.cards{display:none}
+.card{border:1px solid #000;padding:6px 8px;margin:6px 0;background:#fff;font-size:14px}
+.card:nth-child(even){background:#fff5f8}
+.card.flag{background:#ffc9c0}
+.ok{color:#008000;font-weight:bold}
+.bad{color:#cc0000;font-weight:bold}
+.bar{background:#ffe4ec;height:14px;border:1px solid #ff8000;min-width:80px}
+.bar i{display:block;height:100%;background:#ff9933}
+.count{font-size:13px;margin:6px 0}
+.thumbs img{width:90px;height:90px;object-fit:cover;border:1px solid #000;margin:3px}
+.thumbs .th{display:inline-block;position:relative}
+.thumbs .th button{position:absolute;top:3px;right:3px;background:#ffc2d4;border:1px solid #000;font-size:12px;padding:0 5px;border-radius:0}
+#ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;overflow:auto;padding:10px;z-index:9}
+#ov img{max-width:100%;border:1px solid #000;margin:6px 0;display:block}
+.printonly{display:none}
+@media (max-width:760px){
+ .tbl-wrap{display:none}
+ .cards{display:block}
+ .hu{text-align:left}
+ .stat{min-width:45%}
+ .tab{padding:8px 9px;font-size:13px;margin-bottom:2px}
+}
+@media print{
+ #hdr,#tabs,#banner,.filters,.noprint,#foot,.cards,.act,#msg{display:none!important}
+ .printonly{display:block!important}
+ .tbl-wrap{display:block!important}
+ body{font-size:11px}
+ .tbl{font-size:10px}
+ .tbl tr:nth-child(even) td{background:#fff}
+}
+</style>
+</head>
+<body>
+<div id="hdr"></div>
+<div id="tabs"></div>
+<div id="banner"></div>
+<div id="main"></div>
+<div id="ov"></div>
+<div id="foot"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// ===== SET THIS ONCE by the District Office before sharing the link =====
+// Paste the Google Apps Script Web App URL between the quotes. Leave empty for local (single-device) mode.
+var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbzf6iw6IZQdbHsUDqJUch0c7EUBK-1jST3gq2NGO2y97Z0a0NhTQmAfgNzAXUGaCUE8kg/exec';
+var LOGO_DATA = 'data:image/jpeg;base64,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';
+// ========================================================================
+var DOMAINS=['Physiotherapy / Occupational / Sensory','Speech & Communication','Mobility & ADL','Counseling & Remedial'];
+var MODES=['Block Resource Room (BRR)','Day Care Centre','Home-Based Education (HBE)'];
+var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat'];
+var OFFICERS=['RP-IE','ARP-IE','AARP-IE','Special Educator'];
+var CAP_DAY=1500,CAP_CONT=500,MIN_DAYS=3,MIN_CWSN=10,MAX_CONT_MONTHS=10;
+var KEYS=['timestamp','id','weekEnding','block','mode','centre','centreCode','operatingDays','daysFunctioned','present','personName','phone','registerOk','iepOk','cwsn','dailyMinMet','preAssessment','domains','therapist','specialization','therapistDays','dailyHonorarium','totalHonorarium','contingency','sessions','photoLinks','submittedBy','status','verifiedBy','verifiedAt','remark','flags'];
+var DEF_BLOCKS=['Central','East','Jorhat','North West','Titabor'];
+
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function pad(n){return n<10?'0'+n:''+n}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function today(){return iso(new Date())}
+function monthStart(){var d=new Date();return iso(new Date(d.getFullYear(),d.getMonth(),1))}
+function daysAgo(n){var d=new Date();d.setDate(d.getDate()-n);return iso(d)}
+function num(v){var n=parseFloat(v);return isNaN(n)?0:n}
+function inr(n){return 'Rs. '+Number(n||0).toLocaleString('en-IN')}
+function uid(){return 'R'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function hash(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return ''+h}
+function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){alert('Phone storage is full. Please upload pending entries and clear old data.')}}
+function isDC(m){return String(m).indexOf('Day Care')===0}
+function modeShort(m){m=String(m);return m.indexOf('BRR')>-1?'BRR':(m.indexOf('Day Care')===0?'Day Care':'HBE')}
+function roleName(r){return r==='field'?'IE Official':(r==='block'?'BEEO':'District Authority')}
+function canVerify(){return S.role!=='field'}
+function isAdmin(){return S.role==='district'}
+
+var S=load('cwsn_s',{url:'',role:'',name:'',block:'',pin:''});
+if(S.role==='other')S.role='';
+if(!S.url&&DEFAULT_URL)S.url=DEFAULT_URL;
+var CFG=load('cwsn_cfg',{district:'Jorhat',blocks:DEF_BLOCKS,centres:[],budget:0,logo:''});
+if(CFG.blocks&&(CFG.blocks.indexOf('Central Jorhat')>-1||CFG.blocks.indexOf('Jorhat East')>-1)&&CFG.blocks.length<=4){CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
+if(CFG.district==='Golaghat'){CFG.district='Jorhat';if(CFG.blocks.indexOf('Dergaon')>-1)CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
+var REC=load('cwsn_rec',[]);
+var OUT=load('cwsn_out',[]);
+var F={q:'',block:'',mode:'',from:monthStart(),to:today(),status:'',chip:'all',sample:null};
+var TAB='',RESFN=null,PH=[],SYNCING=false;
+function saveS(){save('cwsn_s',S)}
+function saveCfg(){save('cwsn_cfg',CFG)}
+function saveRec(){save('cwsn_rec',REC.map(function(r){var o={};for(var k in r){if(k.charAt(0)!=='_')o[k]=r[k]}o._pending=!!r._pending;return o}))}
+function saveOut(){save('cwsn_out',OUT)}
+
+// ---------- photo store (IndexedDB) ----------
+function idb(){return new Promise(function(res,rej){if(!window.indexedDB)return rej(new Error('no idb'));var r=indexedDB.open('cwsn',1);r.onupgradeneeded=function(){r.result.createObjectStore('photos')};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})}
+function idbSet(k,v){return idb().then(function(db){return new Promise(function(res,rej){var t=db.transaction('photos','readwrite');t.objectStore('photos').put(v,k);t.oncomplete=res;t.onerror=function(){rej(t.error)}})})}
+var MEMPH={};
+function idbGet(k){return idb().then(function(db){return new Promise(function(res,rej){var q=db.transaction('photos').objectStore('photos').get(k);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})}).catch(function(){return null}).then(function(v){return v||MEMPH[k]||null})}
+function idbDel(k){return idb().then(function(db){return new Promise(function(res){var t=db.transaction('photos','readwrite');t.objectStore('photos').delete(k);t.oncomplete=res;t.onerror=res})}).catch(function(){})}
+
+// ---------- server ----------
+function api(action,payload){
+  if(!S.url)return Promise.reject(new Error('No server'));
+  var ctrl=window.AbortController?new AbortController():null;
+  var t=setTimeout(function(){if(ctrl)ctrl.abort()},90000);
+  return fetch(S.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,role:S.role,name:S.name,block:S.block,payload:payload||{}}),signal:ctrl?ctrl.signal:undefined})
+  .then(function(r){clearTimeout(t);return r.json()})
+  .then(function(j){if(!j.ok){var e=new Error(j.error||'Server error');e.server=true;throw e}return j});
+}
+function norm(r){
+  var o={};KEYS.forEach(function(k){o[k]=r[k]==null?'':r[k]});
+  ['operatingDays','present','domains','photoLinks'].forEach(function(k){var v=r[k];o[k]=Array.isArray(v)?v:(v?String(v).split(' | '):[])});
+  ['daysFunctioned','cwsn','therapistDays','dailyHonorarium','totalHonorarium','contingency','sessions'].forEach(function(k){o[k]=num(r[k])});
+  o.weekEnding=String(o.weekEnding).slice(0,10);o.phone=String(o.phone||'');o.status=o.status||'Pending';
+  o.photoCount=o.photoLinks.length||num(r.photoCount);o.localPhotos=!!r.localPhotos;o._pending=!!r._pending;
+  return o;
+}
+function refreshData(){
+  if(!S.url)return Promise.resolve();
+  return api('list').then(function(j){
+    var pend=REC.filter(function(r){return r._pending});
+    REC=j.rows.map(norm).concat(pend);saveRec();
+  });
+}
+function syncOutbox(){
+  if(!S.url||!OUT.length||SYNCING)return Promise.resolve();
+  SYNCING=true;var sent=0,failMsg='';
+  return OUT.slice().reduce(function(p,id){return p.then(function(){
+    var r=REC.filter(function(x){return x.id===id})[0];
+    if(!r){OUT=OUT.filter(function(i){return i!==id});return}
+    return idbGet(id).then(function(ph){
+      var rec={};KEYS.forEach(function(k){rec[k]=r[k]});
+      return api('submit',{record:rec,photos:(ph||[]).map(function(p,i){return {name:(r.weekEnding+'_'+r.centre+'_'+(i+1)).replace(/[^A-Za-z0-9_-]+/g,'_')+'.jpg',mime:'image/jpeg',data:p.data.split(',')[1]}})});
+    }).then(function(j){
+      var n=norm(j.record);REC=REC.map(function(x){return x.id===id?n:x});
+      OUT=OUT.filter(function(i){return i!==id});idbDel(id);sent++;
+    });
+  })},Promise.resolve()).catch(function(e){failMsg=e.message||'network'}).then(function(){
+    SYNCING=false;saveRec();saveOut();banner();
+    if(sent)flash('Uploaded '+sent+' entr'+(sent>1?'ies':'y')+' to the district server.');
+    if(failMsg&&!/Failed to fetch|NetworkError|Load failed|abort/i.test(failMsg))flash('Upload problem: '+failMsg,'err');
+    if(sent&&RESFN)drawRes();
+  });
+}
+window.addEventListener('online',function(){syncOutbox()});
+
+// ---------- login / session ----------
+function showLogin(){
+  $('tabs').innerHTML='';RESFN=null;drawHdr();banner();
+  var h='<h2>Login</h2><div id="msg"></div><div class="fld">'+
+  ['field','block','district'].map(function(r){return '<label class="opt"><input type="radio" name="l_role" value="'+r+'" onchange="loginRole()" '+(S.role===r?'checked':'')+'> '+roleName(r)+'</label>'}).join('')+'</div>'+
+  '<div id="l_nm" class="fld"><label class="t">Your name</label><input type="text" id="l_name" value="'+esc(S.name)+'" placeholder="e.g. Rina Devi"></div>'+
+  '<div id="l_bl" class="fld"><label class="t">Your block</label><select id="l_block">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select></div>'+
+  '<button class="btn big" onclick="doLogin()">Login</button>'+
+  '<details style="margin-top:20px"><summary>Server connection (District Office only)</summary><div class="fld"><label class="t">Web App URL</label><input type="url" id="l_url" value="'+esc(S.url)+'" placeholder="https://script.google.com/macros/s/.../exec"><div class="hint">Leave empty to use Local mode (data stays on this device only, for testing).</div></div></details>';
+  $('main').innerHTML=h;loginRole();
+}
+function loginRole(){var r=rv('l_role');if($('l_nm'))$('l_nm').style.display=(r==='district')?'none':'block';if($('l_bl'))$('l_bl').style.display=(r==='district')?'none':'block'}
+function doLogin(){
+  var role=rv('l_role'),name=$('l_name').value.trim(),block=$('l_block').value,url=$('l_url').value.trim();
+  var er=[];if(!role)er.push('Choose who you are.');if(role!=='district'&&role){if(!name)er.push('Enter your name.');if(!block)er.push('Select your block.')}
+  if(er.length)return flash(er.join(' '),'err');
+  S={url:url||DEFAULT_URL,role:role,name:role==='district'?'District Office':name,block:role==='district'?'':block};
+  if(S.url){
+    flash('Logging in...','info');
+    api('login').then(function(j){
+      var c=j.config||{};CFG.district=c.district||CFG.district;if(c.blocks&&c.blocks.length)CFG.blocks=c.blocks;CFG.centres=c.centres||[];CFG.budget=c.budget||0;saveCfg();
+      try{localStorage.setItem('cwsn_ok','1')}catch(e){}
+      saveS();return refreshData();
+    }).then(start).catch(function(e){
+      if(e.server){S.role='';flash(e.message,'err');return}
+      if(localStorage.getItem('cwsn_ok')==='1'){saveS();start();flash('No internet. Working offline - entries will upload later.','warn')}
+      else{S.role='';flash('Cannot reach the server. Check internet. (First login needs internet.)','err')}
+    });
+  }else{
+    saveS();start();
+  }
+}
+function logout(){S.role='';saveS();showLogin()}
+function start(){
+  if(!S.role)return showLogin();
+  F.block=S.block||'';F.chip='all';F.q='';F.status='';F.sample=null;
+  drawHdr();showTab(tabsFor()[0][0]);banner();syncOutbox();
+}
+function refreshBtn(){
+  if(!S.url){flash('Local mode: nothing to refresh.','info');return}
+  flash('Refreshing...','info');
+  syncOutbox().then(refreshData).then(function(){flash('Data refreshed.');if(RESFN)drawRes();else showTab(TAB)}).catch(function(e){flash('Could not refresh: '+(e.message||'no internet'),'err')});
+}
+function tabsFor(){
+  var v=[['dash','Dashboard'],['grid','Centre Activity'],['alerts','Compliance Alerts'],['photos','Photo Verification'],['report','Higher Authority Report']],h=[['help','Help']];
+  if(S.role==='field')return [['entry','New Entry'],['mine','My Entries']].concat(v,h);
+  if(S.role==='block')return [['review','Block Review'],['entry','New Entry'],['mine','My Entries']].concat(v,h);
+  return v.concat([['entry','New Entry'],['setup','Centres & Settings']],h);
+}
+var VIEWS={entry:function(){return viewEntry()},mine:function(){return viewMine()},review:function(){return viewList('review')},dash:function(){return viewDash()},grid:function(){return viewList('grid')},alerts:function(){return viewList('alerts')},photos:function(){return viewPhotos()},report:function(){return viewReport()},setup:function(){return viewSetup()},help:function(){return viewHelp()}};
+var NEWTAB=false;
+function showTab(t){
+  NEWTAB=(TAB!==t);TAB=t;RESFN=null;if(NEWTAB){if(t!=='photos')F.sample=null;F.q='';F.status='';F.chip=(t==='alerts')?'flagged':'all'}
+  $('tabs').innerHTML=tabsFor().map(function(x){return '<button class="tab'+(x[0]===t?' on':'')+'" onclick="showTab(\''+x[0]+'\')">'+x[1]+'</button>'}).join('');
+  $('main').innerHTML='<div id="msg"></div>'+VIEWS[t]();
+  if(t==='entry')refreshCentres();
+  if(RESFN)drawRes();
+  window.scrollTo(0,0);
+}
+function drawHdr(){
+  var logo=CFG.logo||LOGO_DATA;
+  $('hdr').innerHTML='<div class="hrow"><img class="logoimg" alt="Samagra Shiksha" src="'+esc(logo)+'" onerror="logoFail(this)"><div class="ht"><b>CWSN Therapeutic Services Monitoring System</b><br><span class="sub">Office of the District Mission Coordinator, Samagra Shiksha - '+esc(CFG.district)+'</span></div><div class="hu">'+
+  (S.role?esc(roleName(S.role))+(S.role!=='district'?': '+esc(S.name)+' ('+esc(S.block||'All blocks')+')':'')+'<br><button class="btn sm" onclick="refreshBtn()">Refresh data</button> <button class="btn o sm" onclick="logout()">Logout</button>':'')+'</div></div>';
+  $('foot').innerHTML='';
+}
+function logoFail(el){var d=document.createElement('div');d.className='logo';d.textContent='SS';el.parentNode.replaceChild(d,el)}
+function banner(){
+  var h='';
+  if(OUT.length)h+='<div class="warn" style="margin:0"><b>'+OUT.length+' entr'+(OUT.length>1?'ies are':'y is')+' saved on this device and waiting to upload.</b> <button class="btn g sm" onclick="syncOutbox()">Send now</button></div>';
+  else if(!S.url&&S.role)h+='<div class="info" style="margin:0">Local mode: data is kept only on this device. To share data across phones and the district office, connect the server (see Help).</div>';
+  $('banner').innerHTML=h;
+}
+function flash(m,type){var e=$('msg');if(!e)return;e.innerHTML='<div class="'+(type==='err'?'err':type==='warn'?'warn':type==='info'?'info':'okmsg')+'">'+esc(m)+'</div>';if(type!=='info')window.scrollTo(0,0)}
+
+// ---------- form helpers ----------
+function opts(list,sel,first){return (first!=null?'<option value="">'+esc(first)+'</option>':'')+list.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(v)+'</option>'}).join('')}
+function radios(name,list,checked,extra){return list.map(function(v){return '<label class="opt"><input type="radio" name="'+name+'" value="'+esc(v)+'" '+(v===checked?'checked ':'')+(extra||'')+'> '+esc(v)+'</label>'}).join('')}
+function checks(name,list,extra){return list.map(function(v){return '<label class="opt"><input type="checkbox" name="'+name+'" value="'+esc(v)+'" '+(extra||'')+'> '+esc(v)+'</label>'}).join('')}
+function rv(name){var e=document.querySelector('input[name="'+name+'"]:checked');return e?e.value:''}
+function cv(name){return [].slice.call(document.querySelectorAll('input[name="'+name+'"]:checked')).map(function(e){return e.value})}
+function fld(label,inner,hint){return '<div class="fld"><label class="t">'+label+'</label>'+inner+(hint?'<div class="hint">'+hint+'</div>':'')+'</div>'}
+// ---------- NEW ENTRY ----------
+function viewEntry(){
+  RESFN=null;PH=[];
+  var h='<h2>New Weekly Entry</h2><div id="errs"></div>';
+  h+=fld('Reporting week ending date *','<input type="date" id="e_we" max="'+today()+'" value="'+today()+'">');
+  h+=fld('Block *','<select id="e_blk" onchange="refreshCentres()">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select>');
+  h+=fld('Service delivery mode *',radios('e_mode',MODES,'','onchange="modeChg()"'));
+  h+=fld('Centre / School *','<select id="e_ctr" onchange="ctrChg()"></select><div id="e_new" style="display:none;margin-top:6px"><input type="text" id="e_cname" placeholder="Centre / School name"><br><input type="text" id="e_ccode" placeholder="Centre code (optional)" style="margin-top:6px"></div>');
+  h+=fld('Designated operating days of the centre *',checks('e_opd',DAYS));
+  h+=fld('Days functioned this week *','<input type="number" id="e_days" min="1" max="6" step="1" inputmode="numeric">','Day Care Centres must function at least 3 days a week.');
+  h+=fld('Officials present / monitoring *',checks('e_off',OFFICERS));
+  h+=fld('Name of officer / special educator present *','<input type="text" id="e_pn">');
+  h+=fld('Contact number *','<input type="tel" id="e_ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number">');
+  h+=fld('Attendance register maintained and verified on site? *',radios('e_reg',['Yes','No'],''));
+  h+=fld('IEP updated / verified for all attendees? *',radios('e_iep',['Yes','No'],''));
+  h+=fld('Total distinct CWSN attended this week *','<input type="number" id="e_cw" min="0" step="1" inputmode="numeric">');
+  h+='<div id="e_dc" style="display:none">'+fld('Did every operating day have at least 10 CWSN? *',radios('e_dm',['Yes','No'],''))+
+      fld('Day Care contingency used this week (Rs.)','<input type="number" id="e_ct" min="0" max="'+CAP_CONT+'" step="1" inputmode="numeric" value="0">','Maximum Rs. 500 per month, for up to 10 months.')+'</div>';
+  h+=fld('Formal assessment completed BEFORE therapy started? *',radios('e_pre',['Yes','No'],''),'Therapy cannot be recorded without a prior formal assessment.');
+  h+=fld('Therapy domains delivered this week *',checks('e_dom',DOMAINS));
+  h+=fld('Number of therapy sessions conducted this week *','<input type="number" id="e_ses" min="0" step="1" inputmode="numeric">');
+  h+=fld('Name of assigned therapist / specialist','<input type="text" id="e_th">');
+  h+=fld('Specialization','<select id="e_sp">'+opts(DOMAINS.concat(['Other']),'','-- Select --')+'</select>');
+  h+=fld('Working days engaged this week','<input type="number" id="e_td" min="0" max="6" step="1" inputmode="numeric" value="0" oninput="calcTot()">');
+  h+=fld('Daily honorarium claimed (Rs.)','<input type="number" id="e_hr" min="0" max="'+CAP_DAY+'" step="1" inputmode="numeric" value="0" oninput="calcTot()">','Maximum Rs. 1,500 per day.');
+  h+='<div class="fld"><b>Total honorarium: <span id="e_tot">Rs. 0</span></b></div>';
+  h+=fld('Therapy session photographs * (1 to 5)','<input type="file" id="e_ph_in" accept="image/*" multiple onchange="addPhotos(this)"><div class="hint">Tap and choose Camera. Each photo gets a date-time stamp. Up to 10 MB each.</div><div id="e_thumbs" class="thumbs"></div>');
+  h+='<div class="fld"><button class="btn g big" id="e_go" onclick="submitEntry()">Submit Entry</button> <button class="btn o" onclick="showTab(\'entry\')">Clear form</button></div>';
+  return h;
+}
+function modeChg(){refreshCentres();var d=$('e_dc');if(d)d.style.display=isDC(rv('e_mode'))?'block':'none'}
+function refreshCentres(){
+  var b=$('e_blk').value,m=rv('e_mode'),sel=$('e_ctr');
+  if(!b||!m){sel.innerHTML='<option value="">-- Select block and mode first --</option>';$('e_new').style.display='none';return}
+  var list=CFG.centres.filter(function(c){return c.block===b&&c.mode===m});
+  sel.innerHTML='<option value="">-- Select centre --</option>'+list.map(function(c){return '<option value="'+esc(c.name)+'" data-code="'+esc(c.code||'')+'">'+esc(c.name)+(c.code?' ('+esc(c.code)+')':'')+'</option>'}).join('')+'<option value="__new">Not in list - type name</option>';
+  if(!list.length)sel.value='__new';
+  ctrChg();
+}
+function ctrChg(){$('e_new').style.display=$('e_ctr').value==='__new'?'block':'none'}
+function calcTot(){$('e_tot').textContent=inr(num($('e_td').value)*num($('e_hr').value))}
+function addPhotos(inp){
+  var files=[].slice.call(inp.files);inp.value='';
+  var room=5-PH.length;if(files.length>room){alert('Maximum 5 photos per entry.');files=files.slice(0,Math.max(room,0))}
+  files.reduce(function(p,f){return p.then(function(){
+    if(f.size>10*1024*1024){alert(f.name+' is larger than 10 MB and was skipped.');return}
+    return shrink(f).then(function(d){PH.push({name:f.name,data:d})}).catch(function(){alert('Could not read '+f.name)});
+  })},Promise.resolve()).then(drawPh);
+}
+function shrink(f){return new Promise(function(res,rej){
+  var img=new Image(),u=URL.createObjectURL(f);
+  img.onload=function(){
+    var m=1280,s=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement('canvas');
+    c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+    var x=c.getContext('2d');x.drawImage(img,0,0,c.width,c.height);
+    var t=new Date(),fs=Math.max(14,Math.round(c.width/40));
+    x.fillStyle='rgba(255,255,255,0.85)';x.fillRect(0,c.height-fs-10,c.width,fs+10);
+    x.fillStyle='#000';x.font='bold '+fs+'px Arial';x.fillText(t.toLocaleDateString('en-GB')+' '+t.toLocaleTimeString('en-GB'),8,c.height-7);
+    URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',0.7));
+  };
+  img.onerror=function(){rej(new Error('bad image'))};img.src=u;
+})}
+function drawPh(){var e=$('e_thumbs');if(e)e.innerHTML=PH.map(function(p,i){return '<span class="th"><img src="'+p.data+'"><button onclick="PH.splice('+i+',1);drawPh()">X</button></span>'}).join('')}
+function submitEntry(){
+  var er=[],we=$('e_we').value,blk=$('e_blk').value,mode=rv('e_mode'),ctr=$('e_ctr').value,cname='',ccode='';
+  if(ctr==='__new'){cname=$('e_cname').value.trim();ccode=$('e_ccode').value.trim()}
+  else if(ctr){cname=ctr;var o=$('e_ctr').options[$('e_ctr').selectedIndex];ccode=o?o.getAttribute('data-code')||'':''}
+  var days=parseInt($('e_days').value,10),opd=cv('e_opd'),off=cv('e_off'),pn=$('e_pn').value.trim(),ph=$('e_ph').value.trim();
+  var reg=rv('e_reg'),iep=rv('e_iep'),cw=$('e_cw').value,dm=rv('e_dm'),pre=rv('e_pre'),dom=cv('e_dom'),ses=$('e_ses').value;
+  var th=$('e_th').value.trim(),sp=$('e_sp').value,td=num($('e_td').value),hr=num($('e_hr').value),ct=num($('e_ct')?$('e_ct').value:0),dc=isDC(mode);
+  if(!we)er.push('Select the week ending date.');else if(we>today())er.push('Week ending date cannot be in the future.');
+  if(!blk)er.push('Select the block.');if(!mode)er.push('Select the service delivery mode.');if(!cname)er.push('Select or type the centre name.');
+  if(!opd.length)er.push('Tick the designated operating days.');
+  if(isNaN(days)||days<1||days>6)er.push('Days functioned must be from 1 to 6.');
+  if(!off.length)er.push('Tick the officials present.');if(!pn)er.push('Enter the name of the officer / special educator.');
+  if(!/^[6-9][0-9]{9}$/.test(ph))er.push('Enter a valid 10-digit mobile number.');
+  if(!reg)er.push('Answer: attendance register maintained?');if(!iep)er.push('Answer: IEP updated?');
+  if(cw===''||isNaN(parseInt(cw,10))||parseInt(cw,10)<0)er.push('Enter the total CWSN attended.');
+  if(dc&&!dm)er.push('Answer: at least 10 CWSN every operating day?');
+  if(!pre)er.push('Answer: formal assessment completed before therapy?');
+  else if(pre==='No')er.push('Therapy cannot be recorded without a prior formal assessment. Complete the assessment first.');
+  if(!dom.length)er.push('Tick at least one therapy domain.');
+  if(ses===''||isNaN(parseInt(ses,10)))er.push('Enter the number of therapy sessions.');
+  if((td>0||hr>0)&&!th)er.push('Enter the therapist name (honorarium is being claimed).');
+  if(td<0||td>6)er.push('Therapist working days must be from 0 to 6.');
+  if(hr>CAP_DAY)er.push('Amount cannot exceed Rs. 1,500 per guidelines.');
+  if(ct>CAP_CONT)er.push('Contingency cannot exceed Rs. 500 per month.');
+  if(!PH.length)er.push('Add at least one therapy session photograph.');
+  if(er.length){$('errs').innerHTML='<div class="err"><b>Please correct:</b><br>- '+er.map(esc).join('<br>- ')+'</div>';window.scrollTo(0,0);return}
+  var rec={timestamp:new Date().toISOString(),id:uid(),weekEnding:we,block:blk,mode:mode,centre:cname,centreCode:ccode,operatingDays:opd,daysFunctioned:days,present:off,personName:pn,phone:ph,registerOk:reg,iepOk:iep,cwsn:parseInt(cw,10),dailyMinMet:dc?dm:'NA',preAssessment:'Yes',domains:dom,therapist:th,specialization:sp,therapistDays:td,dailyHonorarium:hr,totalHonorarium:td*hr,contingency:dc?ct:0,sessions:parseInt(ses,10),photoLinks:[],submittedBy:S.name,status:'Pending',verifiedBy:'',verifiedAt:'',remark:'',flags:'',photoCount:PH.length,localPhotos:!S.url};
+  var n=norm(rec),c=buildCtx(scope().concat([n])),fl=flagsOf(n,c);
+  if(fl.length&&!confirm('This entry will be marked with these audit flags:\n\n- '+fl.join('\n- ')+'\n\nSubmit anyway?'))return;
+  $('e_go').disabled=true;
+  MEMPH[rec.id]=PH.slice();
+  idbSet(rec.id,PH.slice()).catch(function(){}).then(function(){
+    if(!S.url){REC.push(n);saveRec();showTab('entry');flash('Entry saved on this device (local mode).');return}
+    n._pending=true;REC.push(n);OUT.push(rec.id);saveRec();saveOut();banner();showTab('entry');
+    flash('Entry saved. Uploading to the district server...');syncOutbox();
+  });
+}
+function viewMine(){
+  RESFN=function(){
+    var rows=prep().filter(function(r){return r.submittedBy===S.name}).sort(byDate);
+    return '<button class="btn sm" onclick="refreshBtn()">Refresh</button>'+grid(COLS(['we','mode','ctr','days','cw','aud','st','up']),rows);
+  };
+  return '<h2>My Entries</h2><div id="res"></div>';
+}
+
+// ---------- COMPLIANCE ----------
+function buildCtx(all){
+  var c={cm:{},cmon:{},dup:{}};
+  all.forEach(function(r){
+    var ck=r.block+'|'+r.centre,m=r.weekEnding.slice(0,7);
+    c.cm[ck+'|'+m]=(c.cm[ck+'|'+m]||0)+r.contingency;
+    if(r.contingency>0){c.cmon[ck]=c.cmon[ck]||{};c.cmon[ck][m]=1}
+    c.dup[ck+'|'+r.weekEnding]=(c.dup[ck+'|'+r.weekEnding]||0)+1;
+  });
+  return c;
+}
+function flagsOf(r,c){
+  var f=[],dc=isDC(r.mode),ck=r.block+'|'+r.centre,m=r.weekEnding.slice(0,7);
+  if(dc&&r.daysFunctioned<MIN_DAYS)f.push('Under 3 days/week');
+  if(dc&&(r.cwsn<MIN_CWSN||r.dailyMinMet==='No'))f.push('Under 10 CWSN/day');
+  if(r.dailyHonorarium>CAP_DAY)f.push('Honorarium above Rs. 1,500/day');
+  if(r.iepOk==='No')f.push('IEP not updated');
+  if(r.registerOk==='No')f.push('Attendance register not maintained');
+  if(r.preAssessment!=='Yes')f.push('No prior assessment');
+  if(!(r.photoCount>0))f.push('No photo uploaded');
+  if(r.contingency>0&&c.cm[ck+'|'+m]>CAP_CONT)f.push('Contingency above Rs. 500 this month');
+  if(r.contingency>0&&c.cmon[ck]&&Object.keys(c.cmon[ck]).length>MAX_CONT_MONTHS)f.push('Contingency beyond 10 months');
+  if(c.dup[ck+'|'+r.weekEnding]>1)f.push('Duplicate entry (same centre and week)');
+  return f;
+}
+function scope(){return S.block?REC.filter(function(r){return r.block===S.block}):REC}
+function prep(){var all=scope(),c=buildCtx(all);all.forEach(function(r){r._f=flagsOf(r,c)});return all}
+function byDate(a,b){return a.weekEnding<b.weekEnding?1:a.weekEnding>b.weekEnding?-1:(a.timestamp<b.timestamp?1:-1)}
+function filt(all,base){
+  var q=F.q.toLowerCase();
+  return all.filter(function(r){
+    if(F.block&&r.block!==F.block)return false;
+    if(F.mode&&modeShort(r.mode)!==F.mode)return false;
+    if(F.from&&r.weekEnding<F.from)return false;
+    if(F.to&&r.weekEnding>F.to)return false;
+    if(base)return true;
+    if(F.status&&r.status!==F.status)return false;
+    if(F.sample&&F.sample.indexOf(r.id)<0)return false;
+    var ch=F.chip;
+    if(ch==='flagged'&&!r._f.length)return false;
+    if(ch==='ok'&&r._f.length)return false;
+    if((ch==='Day Care'||ch==='BRR'||ch==='HBE')&&modeShort(r.mode)!==ch)return false;
+    if(ch==='Pending'&&r.status!=='Pending')return false;
+    if(ch==='Returned'&&r.status!=='Returned')return false;
+    if(q&&(r.centre+' '+r.block+' '+r.therapist+' '+r.personName+' '+r.centreCode+' '+r.submittedBy).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  });
+}
+function zeroCentres(base){
+  var seen={};base.forEach(function(r){seen[r.block+'|'+r.centre]=1});
+  return CFG.centres.filter(function(c){return (!F.block||c.block===F.block)&&(!F.mode||modeShort(c.mode)===F.mode)&&!seen[c.block+'|'+c.name]});
+}
+
+// ---------- FILTER BAR + GRID ----------
+function fsel(label,key,list,first){return '<div><label>'+label+'</label><select onchange="F.'+key+'=this.value;drawRes()">'+opts(list,F[key],first)+'</select></div>'}
+function bar(o){
+  o=o||{};
+  var h='<div class="filters noprint"><input type="text" id="f_q" style="max-width:none" placeholder="Search centre, block, therapist, person..." value="'+esc(F.q)+'" oninput="F.q=this.value;drawRes()"><div class="fgrid">';
+  if(!S.block)h+=fsel('Block','block',CFG.blocks,'All blocks');
+  h+=fsel('Mode','mode',['BRR','Day Care','HBE'],'All modes');
+  h+='<div><label>From (week ending)</label><input type="date" id="f_from" value="'+F.from+'" onchange="F.from=this.value;drawRes()"></div><div><label>To</label><input type="date" id="f_to" value="'+F.to+'" onchange="F.to=this.value;drawRes()"></div>';
+  if(!o.nostatus)h+=fsel('Status','status',['Pending','Verified','Returned'],'Any status');
+  h+='</div><div style="margin-top:6px"><button class="btn sm" onclick="setRange(\'7\')">Last 7 days</button><button class="btn sm" onclick="setRange(\'m\')">This month</button><button class="btn sm" onclick="setRange(\'30\')">Last 30 days</button><button class="btn sm" onclick="setRange(\'all\')">All time</button></div>';
+  if(!o.nochips){h+='<div>';[['all','All'],['flagged','Flagged'],['ok','Compliant'],['Day Care','Day Care'],['BRR','BRR'],['HBE','HBE'],['Pending','Pending'],['Returned','Returned']].forEach(function(c){h+='<span class="chip'+(F.chip===c[0]?' on':'')+'" onclick="F.chip=\''+c[0]+'\';showTab(TAB)">'+c[1]+'</span>'});h+='</div>'}
+  return h+'</div>';
+}
+function setRange(k){
+  if(k==='7'){F.from=daysAgo(6);F.to=today()}else if(k==='30'){F.from=daysAgo(29);F.to=today()}else if(k==='m'){F.from=monthStart();F.to=today()}else{F.from='';F.to=''}
+  $('f_from').value=F.from;$('f_to').value=F.to;drawRes();
+}
+function drawRes(){if(RESFN&&$('res'))$('res').innerHTML=RESFN()}
+function flagHtml(r){return r._f.length?'<span class="bad">FLAG</span><br>'+r._f.map(esc).join('<br>'):'<span class="ok">COMPLIANT</span>'}
+function photoCell(r){
+  if(r.photoLinks.length)return r.photoLinks.map(function(u,i){return '<a href="'+esc(u)+'" target="_blank" rel="noopener">Photo '+(i+1)+'</a>'}).join(' ');
+  if(r.localPhotos)return '<a href="#" onclick="showPh(\''+r.id+'\');return false">View ('+r.photoCount+')</a>';
+  return r.photoCount?'('+r.photoCount+' photos)':'-';
+}
+function showPh(id){
+  idbGet(id).then(function(l){
+    var o=$('ov');o.style.display='block';
+    o.innerHTML='<button class="btn o" onclick="$(\'ov\').style.display=\'none\'">Close</button>'+((l&&l.length)?l.map(function(p){return '<img src="'+p.data+'">'}).join(''):'<p>No photo images stored for this entry.</p>');
+  });
+}
+function actBtns(r){
+  var h='';
+  if(!canVerify()&&!isAdmin())return '';
+  if(r._pending)return '<span class="note">Not uploaded yet</span>';
+  if(r.status!=='Verified')h+='<button class="btn g sm" onclick="setSt(\''+r.id+'\',\'Verified\')">Verify</button> ';
+  if(r.status!=='Returned')h+='<button class="btn o sm" onclick="setSt(\''+r.id+'\',\'Returned\')">Return</button> ';
+  if(isAdmin())h+='<button class="btn o sm" onclick="delRec(\''+r.id+'\')">Delete</button>';
+  return h;
+}
+function COLS(keys){
+  var A={
+    we:{h:'Week ending',f:function(r){return esc(r.weekEnding)}},
+    blk:{h:'Block',f:function(r){return esc(r.block)}},
+    mode:{h:'Mode',f:function(r){return modeShort(r.mode)}},
+    ctr:{h:'Centre',f:function(r){return esc(r.centre)+(r.centreCode?' ('+esc(r.centreCode)+')':'')}},
+    days:{h:'Days',f:function(r){return r.daysFunctioned}},
+    cw:{h:'CWSN',f:function(r){return r.cwsn}},
+    ther:{h:'Therapist',f:function(r){return r.therapist?esc(r.therapist)+(r.specialization?'<br><span class="note">'+esc(r.specialization)+'</span>':''):'-'}},
+    sup:{h:'Present / officer',f:function(r){return esc(r.present.join(', '))+'<br>'+esc(r.personName)+' '+esc(r.phone)}},
+    ses:{h:'Sessions',f:function(r){return r.sessions}},
+    amt:{h:'Amount',f:function(r){return inr(r.totalHonorarium+r.contingency)}},
+    aud:{h:'Audit status',f:flagHtml},
+    st:{h:'Status',f:function(r){return esc(r.status)+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
+    ph:{h:'Photos',f:photoCell},
+    up:{h:'Upload',f:function(r){return r._pending?'<span class="bad">Waiting</span>':'Done'}},
+    act:{h:'Action',a:1,f:actBtns}
+  };
+  return keys.map(function(k){return A[k]});
+}
+function grid(cs,rows){
+  if(!rows.length)return '<p class="note">No entries found.</p>';
+  var cap=300,shown=rows.slice(0,cap);
+  var t='<div class="tbl-wrap scroll"><table class="tbl"><tr>'+cs.map(function(c){return '<th'+(c.a?' class="act"':'')+'>'+c.h+'</th>'}).join('')+'</tr>';
+  shown.forEach(function(r){t+='<tr'+(r._f&&r._f.length?' class="flag"':'')+'>'+cs.map(function(c){return '<td'+(c.a?' class="act"':'')+'>'+c.f(r)+'</td>'}).join('')+'</tr>'});
+  t+='</table></div><div class="cards">';
+  shown.forEach(function(r){t+='<div class="card'+(r._f&&r._f.length?' flag':'')+'">'+cs.map(function(c){return '<div><b>'+c.h+':</b> '+c.f(r)+'</div>'}).join('')+'</div>'});
+  return '<div class="count">'+rows.length+' entries'+(rows.length>cap?' (showing first '+cap+'; narrow the filters or export Excel)':'')+'</div>'+t+'</div>';
+}
+function viewList(kind){
+  var keys={grid:['we','blk','mode','ctr','days','cw','ther','sup','ses','amt','aud','st','ph','act'],alerts:['we','blk','mode','ctr','aud','sup','st','ph','act'],review:['we','mode','ctr','days','cw','ther','sup','aud','st','ph','act']}[kind].filter(function(k){return k!=='act'||canVerify()});
+  RESFN=function(){
+    var all=prep(),rows=filt(all).sort(byDate),h='';
+    if(kind==='alerts'){var z=zeroCentres(filt(all,true));h+='<h3>Zero-activity centres (no entry in the selected period): '+z.length+'</h3>'+(z.length?'<p>'+z.map(function(c){return esc(c.name)+' <span class="note">('+esc(c.block)+', '+modeShort(c.mode)+')</span>'}).join('; ')+'</p>':'<p class="ok">All registered centres have reported.</p>')+'<h3>Flagged entries</h3>'}
+    return h+grid(COLS(keys),rows);
+  };
+  var title={grid:'Centre Activity - all entries',alerts:'Compliance Alerts',review:'Block Review - '+esc(S.block)}[kind];
+  var intro=kind==='review'?'<p class="note">Check each entry against the photos and the attendance register. Tap <b>Verify</b> or <b>Return</b> (with a reason). Review every Thursday.</p>':'';
+  return '<h2>'+title+'</h2>'+intro+bar()+'<div id="res"></div>';
+}
+function setSt(id,st){
+  var r=REC.filter(function(x){return x.id===id})[0];if(!r)return;
+  var remark='';if(st==='Returned'){remark=prompt('Reason for returning (the IE Official will see this):','');if(remark===null)return;if(!remark.trim()){alert('Please give a reason.');return}}
+  var done=function(){r.status=st;r.remark=remark;r.verifiedBy=S.name||roleName(S.role);r.verifiedAt=new Date().toISOString();saveRec();drawRes()};
+  if(S.url)api('setStatus',{id:id,status:st,remark:remark}).then(done).catch(function(e){flash('Could not update: '+e.message,'err')});else done();
+}
+function delRec(id){
+  if(!confirm('Delete this entry permanently?'))return;
+  var done=function(){REC=REC.filter(function(x){return x.id!==id});saveRec();idbDel(id);drawRes()};
+  if(S.url)api('delete',{id:id}).then(done).catch(function(e){flash('Could not delete: '+e.message,'err')});else done();
+}
+// ---------- DASHBOARD ----------
+function sumBy(rows,keyFn){
+  var m={};
+  rows.forEach(function(r){var k=keyFn(r);var b=m[k]=m[k]||{key:k,cs:{},entries:0,cwsn:0,ses:0,hon:0,cont:0,fl:0};b.cs[r.block+'|'+r.centre]=1;b.entries++;b.cwsn+=r.cwsn;b.ses+=r.sessions;b.hon+=r.totalHonorarium;b.cont+=r.contingency;if(r._f.length)b.fl++});
+  return Object.keys(m).sort().map(function(k){var b=m[k];b.centres=Object.keys(b.cs).length;b.total=b.hon+b.cont;return b});
+}
+function totals(rows){var t={centres:0,entries:0,cwsn:0,ses:0,hon:0,cont:0,total:0,fl:0},cs={};rows.forEach(function(r){cs[r.block+'|'+r.centre]=1;t.entries++;t.cwsn+=r.cwsn;t.ses+=r.sessions;t.hon+=r.totalHonorarium;t.cont+=r.contingency;if(r._f.length)t.fl++});t.centres=Object.keys(cs).length;t.total=t.hon+t.cont;return t}
+function stat(l,n,nt,bad){return '<div class="stat'+(bad?' bad':'')+'"><div class="n">'+n+'</div><div class="lb">'+l+'</div>'+(nt?'<div class="nt">'+nt+'</div>':'')+'</div>'}
+function flagCounts(rows){var m={};rows.forEach(function(r){r._f.forEach(function(f){m[f]=(m[f]||0)+1})});return Object.keys(m).map(function(k){return [k,m[k]]}).sort(function(a,b){return b[1]-a[1]})}
+function tbl(head,body,rc){return '<div class="scroll"><table class="tbl"><tr>'+head.map(function(h,i){return '<th'+(rc&&rc.indexOf(i)>-1?' class="r"':'')+'>'+h+'</th>'}).join('')+'</tr>'+body.join('')+'</table></div>'}
+function viewDash(){
+  RESFN=function(){
+    var all=prep(),base=filt(all,true),rows=filt(all).sort(byDate),t=totals(rows),z=zeroCentres(base);
+    var reg=CFG.centres.filter(function(c){return (!F.block||c.block===F.block)&&(!F.mode||modeShort(c.mode)===F.mode)}).length;
+    var spentAll=totals(all).total,bud=CFG.budget||0;
+    var h='<div class="stats">'+
+      stat('Active centres (reported)',t.centres,reg?'of '+reg+' registered':'')+
+      stat('Zero-activity centres',z.length,'no entry in period',z.length>0)+
+      stat('Entries',t.entries,rows.filter(function(r){return r.status==='Pending'}).length+' pending verification')+
+      stat('CWSN attended',t.cwsn,'sum of weekly counts')+
+      stat('Therapy sessions',t.ses)+
+      stat('Honorarium',inr(t.hon))+
+      stat('Contingency',inr(t.cont))+
+      stat('Total expenditure',inr(t.total),bud?'Overall '+inr(spentAll)+' of '+inr(bud)+' sanctioned ('+Math.round(spentAll*100/bud)+'%)':'Set sanctioned budget in Centres & Settings')+
+      stat('Entries with violations',t.fl,'of '+t.entries,t.fl>0)+'</div>';
+    var fc=flagCounts(rows);
+    h+='<h3>Compliance radar</h3>'+(fc.length?tbl(['Violation','Entries'],fc.map(function(x){return '<tr><td>'+esc(x[0])+'</td><td>'+x[1]+'</td></tr>'}),[1]):'<p class="ok">No violations in the selected period.</p>');
+    var dc=DOMAINS.map(function(d){return rows.filter(function(r){return r.domains.indexOf(d)>-1}).length}),mx=Math.max.apply(null,dc.concat([1]));
+    h+='<h3>Therapy domains delivered (number of entries)</h3>'+tbl(['Domain','Entries','Chart'],DOMAINS.map(function(d,i){return '<tr><td>'+esc(d)+'</td><td>'+dc[i]+'</td><td><div class="bar"><i style="width:'+Math.round(dc[i]*100/mx)+'%"></i></div></td></tr>'}),[1]);
+    var bl=F.block?[F.block]:CFG.blocks;
+    h+='<h3>Domain coverage by block <span class="note">(red cell = domain not delivered in this period)</span></h3>'+tbl(['Block'].concat(DOMAINS),bl.map(function(b){var br=rows.filter(function(r){return r.block===b});return '<tr><td>'+esc(b)+'</td>'+DOMAINS.map(function(d){var n=br.filter(function(r){return r.domains.indexOf(d)>-1}).length;return '<td'+(n===0?' style="background:#ffc9c0"':'')+'>'+n+'</td>'}).join('')+'</tr>'}));
+    var bs=sumBy(rows,function(r){return r.block});
+    h+='<h3>Block-wise summary</h3>'+(bs.length?tbl(['Block','Centres','Entries','CWSN','Sessions','Total Rs.','Flagged'],bs.map(function(b){return '<tr><td>'+esc(b.key)+'</td><td>'+b.centres+'</td><td>'+b.entries+'</td><td>'+b.cwsn+'</td><td>'+b.ses+'</td><td>'+b.total+'</td><td>'+b.fl+'</td></tr>'}),[1,2,3,4,5,6]):'<p class="note">No data.</p>');
+    if(z.length)h+='<h3>Zero-activity centres</h3><p>'+z.map(function(c){return esc(c.name)+' <span class="note">('+esc(c.block)+', '+modeShort(c.mode)+')</span>'}).join('; ')+'</p>';
+    return h;
+  };
+  return '<h2>District Dashboard</h2>'+bar({nostatus:1,nochips:1})+'<div id="res"></div>';
+}
+
+// ---------- PHOTO VERIFICATION ----------
+function viewPhotos(){
+  RESFN=function(){
+    var all=prep(),rows=filt(all).filter(function(r){return r.photoLinks.length||r.photoCount}).sort(byDate);
+    var h='<p>'+(F.sample?'<b>Random audit sample ('+F.sample.length+' entries).</b> Compare the photos with the CWSN count and the register. ':'')+
+      '<button class="btn sm" onclick="pickSample()">Pick 5 random entries to audit</button>'+(F.sample?'<button class="btn o sm" onclick="F.sample=null;drawRes()">Show all</button>':'')+'</p>';
+    if(!rows.length)return h+'<p class="note">No entries with photos.</p>';
+    rows.slice(0,100).forEach(function(r){
+      h+='<div class="card'+(r._f.length?' flag':'')+'"><b>'+esc(r.centre)+'</b> ('+esc(r.block)+', '+modeShort(r.mode)+') - week ending '+esc(r.weekEnding)+'<br>Therapist: '+esc(r.therapist||'-')+' &middot; CWSN reported: <b>'+r.cwsn+'</b> &middot; Status: '+esc(r.status)+'<br>Photos: '+photoCell(r)+'<div class="thumbs">'+r.photoLinks.map(function(u){var m=/\/d\/([^\/]+)/.exec(u);return m?'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="photo" src="https://drive.google.com/thumbnail?id='+m[1]+'&sz=w200" onerror="this.style.display=\'none\'"></a>':''}).join('')+'</div><div class="noprint">'+actBtns(r)+'</div></div>';
+    });
+    return h+(rows.length>100?'<p class="note">Showing first 100.</p>':'');
+  };
+  return '<h2>Photo Verification</h2><p class="note">Photo links open the session photographs saved in Google Drive (sign in with the district Google account). Sample data or local-mode entries show images via "View".</p>'+bar({nochips:1})+'<div id="res"></div>';
+}
+function pickSample(){
+  var rows=filt(prep(),true).filter(function(r){return r.photoLinks.length||r.photoCount});
+  for(var i=rows.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=rows[i];rows[i]=rows[j];rows[j]=t}
+  F.sample=rows.slice(0,5).map(function(r){return r.id});
+  if(!F.sample.length){F.sample=null;flash('No entries with photos in this period.','warn')}
+  drawRes();
+}
+
+// ---------- HIGHER AUTHORITY REPORT ----------
+function reportData(){
+  var all=prep(),base=filt(all,true),rows=filt(all,true).sort(byDate);
+  return {rows:rows,t:totals(rows),blocks:sumBy(rows,function(r){return r.block}),modes:sumBy(rows,function(r){return modeShort(r.mode)}),z:zeroCentres(base),fc:flagCounts(rows),all:all};
+}
+function periodText(){return (F.from||'start')+' to '+(F.to||'today')}
+function viewReport(){
+  RESFN=function(){
+    var d=reportData(),t=d.t,bud=CFG.budget||0;
+    var row=function(b){return '<tr><td>'+esc(b.key)+'</td><td>'+b.centres+'</td><td>'+b.entries+'</td><td>'+b.cwsn+'</td><td>'+b.ses+'</td><td>'+b.hon+'</td><td>'+b.cont+'</td><td>'+b.total+'</td><td>'+b.fl+'</td></tr>'};
+    var tot='<tr class="tot"><td>TOTAL</td><td>'+t.centres+'</td><td>'+t.entries+'</td><td>'+t.cwsn+'</td><td>'+t.ses+'</td><td>'+t.hon+'</td><td>'+t.cont+'</td><td>'+t.total+'</td><td>'+t.fl+'</td></tr>';
+    var head=['Block','Centres reported','Entries','CWSN','Sessions','Honorarium Rs.','Contingency Rs.','Total Rs.','Flagged'];
+    var h='<div class="printonly"><img src="'+esc(CFG.logo||LOGO_DATA)+'" style="height:60px"><h2 style="text-align:center">Therapeutic Services for Children with Special Needs<br>District Progress Report - '+esc(CFG.district)+' District</h2><p>Period (week ending): '+esc(periodText())+' &nbsp; | &nbsp; Generated: '+today()+(F.block?' &nbsp; | &nbsp; Block: '+esc(F.block):'')+'</p></div>';
+    h+='<div class="noprint"><button class="btn g" onclick="exportXlsx()">Download Excel</button><button class="btn" onclick="window.print()">Print / Save as PDF</button><button class="btn o" onclick="copySummary()">Copy summary text</button></div>';
+    h+='<h3>A. Block-wise summary</h3>'+tbl(head,d.blocks.map(row).concat([tot]),[1,2,3,4,5,6,7,8]);
+    h+='<h3>B. Service mode summary</h3>'+tbl(['Mode'].concat(head.slice(1)),d.modes.map(row),[1,2,3,4,5,6,7,8]);
+    h+='<h3>C. Budget</h3><p>Expenditure in this period: <b>'+inr(t.total)+'</b>'+(bud?'. Overall expenditure to date: <b>'+inr(totals(d.all).total)+'</b> of sanctioned <b>'+inr(bud)+'</b>.':'.')+'</p>';
+    h+='<h3>D. Compliance exceptions</h3>'+(d.fc.length?tbl(['Exception','Entries'],d.fc.map(function(x){return '<tr><td>'+esc(x[0])+'</td><td>'+x[1]+'</td></tr>'}),[1]):'<p>No exceptions.</p>');
+    h+='<h3>E. Zero-activity centres: '+d.z.length+'</h3>'+(d.z.length?'<p>'+d.z.map(function(c){return esc(c.name)+' ('+esc(c.block)+')'}).join('; ')+'</p>':'');
+    var ver=d.rows.filter(function(r){return r.status==='Verified'}).length;
+    h+='<h3>F. Verification</h3><p>Entries verified: '+ver+' of '+d.rows.length+'.</p>';
+    h+='<div class="printonly"><br><br><p>Prepared by: ____________________ &nbsp;&nbsp;&nbsp;&nbsp; District Mission Coordinator, Samagra Shiksha, '+esc(CFG.district)+'</p></div>';
+    return h;
+  };
+  return '<h2>Higher Authority Report</h2><p class="note">Choose the period and block, then download or print. Includes all statuses; verify entries first for a clean report.</p>'+bar({nostatus:1,nochips:1})+'<div id="res"></div>';
+}
+function copySummary(){
+  var d=reportData(),t=d.t,s='CWSN Therapeutic Services - '+CFG.district+' District\nPeriod (week ending): '+periodText()+'\nCentres reported: '+t.centres+' | Entries: '+t.entries+'\nCWSN attended: '+t.cwsn+' | Sessions: '+t.ses+'\nHonorarium: '+inr(t.hon)+' | Contingency: '+inr(t.cont)+' | Total: '+inr(t.total)+'\nEntries with violations: '+t.fl+' | Zero-activity centres: '+d.z.length+'\n\nBlock-wise (centres / CWSN / sessions / Rs.):\n'+d.blocks.map(function(b){return b.key+': '+b.centres+' / '+b.cwsn+' / '+b.ses+' / '+b.total}).join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(function(){flash('Summary copied. Paste it into WhatsApp or the reporting form.')},function(){prompt('Copy this text:',s)});else prompt('Copy this text:',s);
+}
+function exportXlsx(){
+  if(typeof XLSX==='undefined'){alert('The Excel library could not load. Connect to the internet and reload this page.');return}
+  var d=reportData(),t=d.t,wb=XLSX.utils.book_new();
+  var head=['Block','Centres reported','Entries','CWSN','Sessions','Honorarium Rs.','Contingency Rs.','Total Rs.','Flagged entries'];
+  var line=function(b){return [b.key,b.centres,b.entries,b.cwsn,b.ses,b.hon,b.cont,b.total,b.fl]};
+  var top=[['Therapeutic Services for CWSN - '+CFG.district+' District'],['Period (week ending): '+periodText()],[]];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(top.concat([head],d.blocks.map(line),[['TOTAL',t.centres,t.entries,t.cwsn,t.ses,t.hon,t.cont,t.total,t.fl]])),'Summary_By_Block');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Mode'].concat(head.slice(1))].concat(d.modes.map(line))),'By_Mode');
+  var eh=['Week ending','Block','Mode','Centre','Code','Operating days','Days functioned','Officials present','Person name','Phone','Register','IEP','CWSN','10+ CWSN daily','Pre-assessment','Domains','Therapist','Specialization','Therapist days','Daily Rs.','Total honorarium Rs.','Contingency Rs.','Sessions','Photo links','Submitted by','Status','Remark','Audit flags'];
+  var er=function(r){return [r.weekEnding,r.block,r.mode,r.centre,r.centreCode,r.operatingDays.join(', '),r.daysFunctioned,r.present.join(', '),r.personName,r.phone,r.registerOk,r.iepOk,r.cwsn,r.dailyMinMet,r.preAssessment,r.domains.join(', '),r.therapist,r.specialization,r.therapistDays,r.dailyHonorarium,r.totalHonorarium,r.contingency,r.sessions,r.photoLinks.join(' '),r.submittedBy,r.status,r.remark,r._f.join('; ')]};
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([eh].concat(d.rows.map(er))),'Entries');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([eh].concat(d.rows.filter(function(r){return r._f.length}).map(er))),'Alerts');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Block','Mode','Centre','Code']].concat(d.z.map(function(c){return [c.block,modeShort(c.mode),c.name,c.code||'']}))),'Zero_Activity');
+  XLSX.writeFile(wb,'CWSN_Report_'+(F.from||'start')+'_to_'+(F.to||today())+'.xlsx');
+}
+
+// ---------- SETTINGS ----------
+function normMode(s){s=String(s||'').toLowerCase();return s.indexOf('day')>-1?MODES[1]:(s.indexOf('home')>-1||s.indexOf('hbe')>-1)?MODES[2]:MODES[0]}
+function viewSetup(){
+  RESFN=null;
+  var h='<h2>Centres & Settings</h2>';
+  h+='<h3>District</h3>'+fld('District name','<input type="text" id="s_dist" value="'+esc(CFG.district)+'">')+fld('Sanctioned budget for therapeutic services (Rs.)','<input type="number" id="s_bud" min="0" value="'+(CFG.budget||0)+'">')+
+     fld('Blocks (one per line)','<textarea id="s_blk" rows="7">'+esc(CFG.blocks.join('\n'))+'</textarea>','Starter list only - please correct it to match the district.')+'<button class="btn g" onclick="saveSetup()">Save district settings</button>'+fld('Logo (Samagra Shiksha)','<input type="file" accept="image/*" onchange="setLogo(this)"> <button class="btn o sm" onclick="CFG.logo=\'\';saveCfg();drawHdr();showTab(\'setup\')">Remove logo</button>','The Samagra Shiksha logo is built in. Upload here only to replace it (this device only).');
+  h+='<h3>Centres ('+CFG.centres.length+')</h3><div class="info">Register every BRR, Day Care Centre and HBE cluster here. IE Officials pick from this list, and centres with no entry appear as zero-activity.</div>';
+  h+='<div class="fgrid noprint"><div><label>Block</label><select id="c_b">'+opts(CFG.blocks,'','-- Block --')+'</select></div><div><label>Mode</label><select id="c_m">'+opts(MODES,'','-- Mode --')+'</select></div><div><label>Centre name</label><input type="text" id="c_n"></div><div><label>Code</label><input type="text" id="c_c"></div></div><button class="btn" onclick="addCentre()">Add centre</button>';
+  h+='<div class="fld"><label class="t">Or import from Excel / CSV (columns: Block, Mode, Centre, Code)</label><input type="file" accept=".xlsx,.xls,.csv" onchange="importCentres(this)"></div>';
+  h+=CFG.centres.length?tbl(['Block','Mode','Centre','Code',''],CFG.centres.map(function(c,i){return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.code||'')+'</td><td><button class="btn o sm" onclick="delCentre('+i+')">Remove</button></td></tr>'})):'';
+  h+='<h3>Server connection</h3>'+fld('Web App URL','<input type="url" id="s_url" value="'+esc(S.url)+'" placeholder="https://script.google.com/macros/s/.../exec">','Leave empty for Local mode. Changes here apply to this device; to give the same URL to everyone, paste it into DEFAULT_URL in the HTML file.')+'<button class="btn" onclick="saveUrl()">Save URL</button>';
+  if(!S.url){
+    h+='<h3>Local mode tools</h3>'+'<button class="btn" onclick="loadSample()">Load sample data (for testing)</button><button class="btn o" onclick="clearLocal()">Delete all local data</button>';
+  }
+  return h;
+}
+function setLogo(inp){
+  var f=inp.files[0];if(!f)return;var img=new Image(),u=URL.createObjectURL(f);
+  img.onload=function(){var s=Math.min(1,300/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);var x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);CFG.logo=c.toDataURL('image/png');saveCfg();drawHdr();flash('Logo updated.')};
+  img.onerror=function(){alert('Could not read this image.')};img.src=u;
+}
+function pushCfg(msg){
+  if(!S.url){flash(msg||'Saved.');return Promise.resolve()}
+  return api('saveConfig',{district:CFG.district,blocks:CFG.blocks,centres:CFG.centres,budget:CFG.budget}).then(function(){flash((msg||'Saved')+' (server updated).')}).catch(function(e){flash('Saved on this device only. Server: '+e.message,'err')});
+}
+function saveSetup(){
+  CFG.district=$('s_dist').value.trim()||CFG.district;CFG.budget=num($('s_bud').value);
+  var b=$('s_blk').value.split('\n').map(function(x){return x.trim()}).filter(function(x){return x});if(b.length)CFG.blocks=b;
+  saveCfg();drawHdr();pushCfg('Settings saved.').then(function(){showTab('setup')});
+}
+function addCentre(){
+  var b=$('c_b').value,m=$('c_m').value,n=$('c_n').value.trim(),c=$('c_c').value.trim();
+  if(!b||!m||!n)return flash('Select block, mode and enter the centre name.','err');
+  if(CFG.centres.some(function(x){return x.block===b&&x.name.toLowerCase()===n.toLowerCase()}))return flash('This centre is already registered.','err');
+  CFG.centres.push({block:b,mode:m,name:n,code:c});saveCfg();pushCfg('Centre added.').then(function(){showTab('setup')});
+}
+function delCentre(i){if(!confirm('Remove this centre from the list? Past entries are kept.'))return;CFG.centres.splice(i,1);saveCfg();pushCfg('Centre removed.').then(function(){showTab('setup')})}
+function importCentres(inp){
+  var f=inp.files[0];if(!f)return;
+  if(typeof XLSX==='undefined')return alert('Excel library could not load. Connect to the internet and reload.');
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var wb=XLSX.read(rd.result,{type:'array'}),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}),n=0;
+      rows.forEach(function(r){
+        var g=function(k){for(var x in r){if(x.trim().toLowerCase()===k)return String(r[x]).trim()}return ''};
+        var b=g('block'),nm=g('centre')||g('center')||g('centre name')||g('name');if(!b||!nm)return;
+        if(CFG.blocks.indexOf(b)<0)CFG.blocks.push(b);
+        if(CFG.centres.some(function(x){return x.block===b&&x.name.toLowerCase()===nm.toLowerCase()}))return;
+        CFG.centres.push({block:b,mode:normMode(g('mode')),name:nm,code:g('code')});n++;
+      });
+      saveCfg();pushCfg(n+' centres imported.').then(function(){showTab('setup')});
+    }catch(e){alert('Could not read the file.')}
+  };
+  rd.readAsArrayBuffer(f);
+}
+function saveUrl(){S.url=$('s_url').value.trim();saveS();drawHdr();banner();showTab('setup');flash(S.url?'URL saved. Log out and log in again to load server data.':'Local mode selected.')}
+function clearLocal(){if(!confirm('Delete ALL local entries and centres on this device?'))return;REC=[];OUT=[];CFG.centres=[];saveRec();saveOut();saveCfg();showTab('setup');flash('Local data deleted.')}
+function loadSample(){
+  if(!confirm('Add sample centres and entries for testing?'))return;
+  var bl=CFG.blocks.slice(0,4),nm={0:'BRR',1:'Day Care Centre',2:'HBE Cluster'},rnd=function(a,b){return a+Math.floor(Math.random()*(b-a+1))};
+  bl.forEach(function(b,bi){MODES.forEach(function(m,mi){for(var k=1;k<=2;k++)CFG.centres.push({block:b,mode:m,name:b+' '+nm[mi]+' '+k,code:'G'+(bi+1)+(mi+1)+k})})});
+  var t=new Date();
+  for(var w=0;w<4;w++){CFG.centres.forEach(function(c){
+    if(Math.random()<0.12)return;
+    var dc=isDC(c.mode),days=dc?rnd(2,6):rnd(3,6),cw=dc?rnd(6,22):rnd(2,14),hr=rnd(6,15)*100,td=rnd(1,days),we=daysAgo(w*7+t.getDay()%7);
+    var doms=DOMAINS.filter(function(){return Math.random()<0.6});if(!doms.length)doms=[DOMAINS[rnd(0,3)]];
+    REC.push(norm({timestamp:new Date().toISOString(),id:uid(),weekEnding:we,block:c.block,mode:c.mode,centre:c.name,centreCode:c.code,operatingDays:DAYS.slice(0,days),daysFunctioned:days,present:[OFFICERS[rnd(0,3)]],personName:'Sample Person',phone:'9876543210',registerOk:Math.random()<0.9?'Yes':'No',iepOk:Math.random()<0.85?'Yes':'No',cwsn:cw,dailyMinMet:dc?(cw>=10?'Yes':'No'):'NA',preAssessment:'Yes',domains:doms,therapist:'Therapist '+rnd(1,9),specialization:doms[0],therapistDays:td,dailyHonorarium:hr,totalHonorarium:td*hr,contingency:dc?rnd(0,3)*100:0,sessions:rnd(4,25),photoLinks:[],photoCount:2,submittedBy:'Sample',status:Math.random()<0.5?'Verified':'Pending'}));
+  })}
+  saveCfg();saveRec();showTab('setup');flash('Sample data added. Open the Dashboard to see it.');
+}
+
+// ---------- HELP ----------
+function viewHelp(){
+  var h='<h2>Help</h2>';
+  h+='<h3>Who can do what</h3><ul><li><b>All officials</b> (IE Official, BEEO, District Authority) can add entries and view the dashboard, centre activity, alerts, photos and reports for their block. The District Authority sees all blocks.</li><li><b>BEEO and District Authority</b> can Verify or Return entries.</li><li><b>District Authority only</b> can delete entries and change centres and settings.</li></ul>';
+  h+='<h3>How to send your weekly entry</h3><ol><li>Open <b>New Entry</b>.</li><li>Choose the week ending date, block, mode and centre.</li><li>Tap the days, officials and therapy domains that apply.</li><li>Type only the numbers and names asked for.</li><li>Add 1 to 5 photos using the camera.</li><li>Tap <b>Submit Entry</b>.</li></ol><p>No internet? The entry is saved on your phone and uploads automatically when the internet returns. You can also tap <b>Send now</b> in the orange bar.</p><p>If the BEEO or district office returns your entry, open <b>My Entries</b>, read the reason, and submit a corrected entry.</p>';
+  h+='<h3>Rules the app checks</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>Day Care Centres must run at least 3 days a week and have at least 10 CWSN per day (entry is saved but flagged in red).</li><li>Missing IEP, missing attendance register, missing photos and duplicate entries are flagged.</li></ul>';
+  if(S.role==='district')h+='<h3>Setting up for everyone (District Office)</h3><ol><li>Create the Google Sheet and add the Apps Script backend (file Code.gs) as described at its top.</li><li>Deploy it as a Web App and copy the URL.</li><li>Paste the URL into <b>DEFAULT_URL</b> near the top of this HTML file (or into Centres & Settings), then host the file (for example on GitHub Pages) and share the link on the WhatsApp groups.</li><li>On a phone: open the link, then use the browser menu and choose <b>Add to Home screen</b>.</li><li>Register blocks and centres under Centres & Settings.</li><li>Every Friday: open Higher Authority Report, choose the period, then download Excel or print as PDF.</li></ol>';
+  return h;
+}
+
+// ---------- INIT ----------
+if(S.role&&(S.role==='district'||S.block))start();else showLogin();
+if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){/* single-file app: no service worker */}
+</script>
+</body>
+</html>
