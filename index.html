@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffe4ec">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>IE Monitoring System</title>
@@ -21,6 +21,12 @@ h3{font-size:17px;margin:18px 0 6px;border-bottom:2px solid #ff8000;padding-bott
 #tabs{padding:6px 8px 0 8px;border-bottom:1px solid #ff8000}
 .tab{font-family:Arial;font-size:14px;background:#fff;color:#000;border:1px solid #ff8000;padding:8px 12px;margin:0 2px 0 0;cursor:pointer;border-radius:0}
 .tab.on{background:#ffe4ec;font-weight:bold;border-bottom:3px solid #ff8000}
+#tabs:empty,#subtabs:empty{display:none}
+#subtabs{padding:6px 8px 0 8px;border-bottom:1px solid #ff8000;background:#fff}
+.secbtn{font-size:16px;font-weight:bold;padding:10px 18px;background:#fff}
+.secbtn.on{background:#ff9933;border-bottom:3px solid #b34700}
+.subbtn{font-size:14px;padding:9px 14px}
+.tiles .opt{display:block;max-width:520px;margin:6px 0;padding:14px;font-size:16px}
 #main{padding:10px 12px;max-width:1300px;margin:0 auto}
 #foot:empty{display:none}
 #foot{border-top:3px solid #ff8000;background:#ffe4ec;padding:8px 12px;font-size:12px;margin-top:20px}
@@ -87,10 +93,28 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
  .cards{display:block}
  .hu{text-align:left}
  .stat{min-width:45%}
- .tab{padding:8px 9px;font-size:13px;margin-bottom:2px}
+ body{padding-bottom:72px}
+ #main{padding:8px 10px}
+ #hdr{padding:6px 10px}
+ .logoimg{height:42px}
+ .ht{min-width:0;font-size:15px}
+ .ht .sub{display:none}
+ .hu{width:100%}
+ #tabs{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;padding:0;background:#ffe4ec;border-top:3px solid #ff8000;border-bottom:0}
+ .secbtn{flex:1;margin:0;padding:14px 2px;padding-bottom:calc(14px + env(safe-area-inset-bottom));font-size:15px;text-align:center}
+ #subtabs{display:flex;overflow-x:auto;white-space:nowrap;padding:6px}
+ .subbtn{flex:none;padding:12px 14px;font-size:15px;margin:0 4px 4px 0}
+ .btn{padding:12px 16px;font-size:16px}
+ .btn.sm{padding:9px 12px;font-size:14px}
+ .btn.big{width:100%;font-size:18px;padding:14px 10px}
+ input[type=text],input[type=tel],input[type=number],input[type=date],input[type=month],input[type=password],textarea,select{padding:12px;max-width:none}
+ input[type=radio],input[type=checkbox]{width:24px;height:24px}
+ .opt{display:block;margin:6px 8px 6px 0;padding:12px}
+ h2{font-size:19px}
+ .fgrid>div{min-width:45%}
 }
 @media print{
- #hdr,#tabs,#banner,.filters,.noprint,#foot,.cards,.act,#msg{display:none!important}
+ #hdr,#tabs,#subtabs,#banner,.filters,.noprint,#foot,.cards,.act,#msg{display:none!important}
  .printonly{display:block!important}
  .tbl-wrap{display:block!important}
  body{font-size:11px}
@@ -102,6 +126,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 <body>
 <div id="hdr"></div>
 <div id="tabs"></div>
+<div id="subtabs"></div>
 <div id="banner"></div>
 <div id="main"></div>
 <div id="ov"></div>
@@ -110,7 +135,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 <script>
 // ===== SET THIS ONCE by the District Office before sharing the link =====
 // Paste the Google Apps Script Web App URL between the quotes. Leave empty for local (single-device) mode.
-var DEFAULT_URL = '';
+var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbzf6iw6IZQdbHsUDqJUch0c7EUBK-1jST3gq2NGO2y97Z0a0NhTQmAfgNzAXUGaCUE8kg/exec';
 var LOGO_DATA = 'data:image/jpeg;base64,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';
 // ========================================================================
 var DOMAINS=['Physiotherapy / Occupational / Sensory','Speech & Communication','Mobility & ADL','Counseling & Remedial'];
@@ -217,7 +242,7 @@ function syncWeekly(){
   })},Promise.resolve()).then(function(){
     SYNCING=false;saveRec();saveOut();banner();
     if(sent)flash('Uploaded '+sent+' entr'+(sent>1?'ies':'y')+' to the district server.');
-    if(rej)flash(rej+' entr'+(rej>1?'ies were':'y was')+' REJECTED by the server. Open My Entries to see the reason.','err');
+    if(rej)flash(rej+' entr'+(rej>1?'ies were':'y was')+' REJECTED by the server. Open Therapeutic Services, then My Entries, to see the reason.','err');
     if((sent||rej)&&RESFN)drawRes();
   });
 }
@@ -225,7 +250,7 @@ window.addEventListener('online',function(){syncOutbox()});
 
 // ---------- login / session ----------
 function showLogin(){
-  $('tabs').innerHTML='';RESFN=null;stopGeo();drawHdr();banner();
+  clearNav();RESFN=null;stopGeo();drawHdr();banner();
   var h='<h2>Login</h2><div id="msg"></div>';
   if(S.url){
     h+='<div class="fld"><label class="t">Mobile number (your User ID)</label><input type="tel" id="l_id" inputmode="numeric" autocomplete="username" placeholder="10-digit mobile number" value="'+esc(S.id||'')+'"></div>'+
@@ -261,7 +286,7 @@ function doLogin(){
 function endSession(msg){S.token='';S.role='';saveS();stopGeo();showLogin();if(msg)flash(msg,'err')}
 function logout(){if(S.url&&S.token){api('logout').catch(function(){})}S.token='';S.role='';saveS();stopGeo();showLogin()}
 function showChangePin(forced){
-  RESFN=null;if(forced)$('tabs').innerHTML='';drawHdr();
+  RESFN=null;if(forced)clearNav();drawHdr();
   $('main').innerHTML='<div id="msg"></div><h2>'+(forced?'Set your own PIN':'Change PIN')+'</h2>'+(forced?'<div class="warn">For security, replace the PIN given by the District Office with your own before you continue.</div>':'')+
    fld('Current PIN','<input type="password" id="cp_o" inputmode="numeric" maxlength="6">')+fld('New PIN (6 digits)','<input type="password" id="cp_n" inputmode="numeric" maxlength="6">','Avoid simple PINs like 123456 or 111111.')+fld('Confirm new PIN','<input type="password" id="cp_c" inputmode="numeric" maxlength="6">')+
    '<button class="btn g big" onclick="doChangePin('+(forced?'true':'false')+')">Save PIN</button>'+(forced?'':' <button class="btn o" onclick="showTab(TAB)">Cancel</button>');
@@ -275,25 +300,41 @@ function doChangePin(forced){
 function start(){
   if(!S.role)return showLogin();
   F.block=S.block||'';F.chip='all';F.q='';F.status='';F.sample=null;
-  drawHdr();showTab(tabsFor()[0][0]);banner();syncOutbox();
+  NAVLAST={};drawHdr();showTab(tabsFor()[0][0]);banner();syncOutbox();
 }
 function refreshBtn(){
   if(!S.url){flash('Demo mode: nothing to refresh.','info');return}
   flash('Refreshing...','info');
   syncOutbox().then(refreshData).then(function(){flash('Data refreshed.');if(RESFN)drawRes();else showTab(TAB)}).catch(function(e){flash('Could not refresh: '+(e.message||'no internet'),'err')});
 }
-function tabsFor(){
-  var v=[['dash','Dashboard'],['grid','Centre Activity'],['alerts','Compliance Alerts'],['photos','Photo Verification'],['report','Higher Authority Report']],h=[['help','Help']];
-  if(S.role==='field')return [['daily','Daily Activity'],['dlog','My Activity Log'],['monthly','Monthly Report'],['entry','Weekly Entry'],['mine','My Entries']].concat(v,h);
-  if(S.role==='block')return [['review','Block Review'],['dreview','Activity Review'],['monthly','Monthly Reports'],['entry','Weekly Entry'],['mine','My Entries']].concat(v,secure()?[['locs','Centre Locations']]:[],h);
-  if(secure())return v.concat([['dall','Daily Activity Log'],['monthly','Monthly Reports'],['locs','Centre Locations'],['security','Security & Audit'],['setup','Centres & Settings']],h);
-  return v.concat([['dall','Daily Activity Log'],['monthly','Monthly Reports'],['entry','New Entry'],['setup','Centres & Settings']],h);
+var NAVLAST={};
+function navFor(){
+  var help={id:'help',label:'Help',tabs:[['help','Help']]};
+  var ie=function(t){return {id:'ie',label:'Daily Activity',tabs:t}},ts=function(t){return {id:'ts',label:'Therapeutic Services',tabs:t}};
+  var locs=secure()?[['locs','Centre Locations']]:[];
+  if(S.role==='field')return [ie([['daily','New Activity'],['dlog','My Log'],['monthly','Monthly Report']]),ts([['entry','New Entry'],['mine','My Entries']]),help];
+  if(S.role==='block')return [ie([['dreview','Activity Review'],['monthly','Monthly Reports']]),ts([['review','Block Review'],['entry','New Entry'],['mine','My Entries'],['grid','Centre Activity'],['alerts','Compliance Alerts'],['photos','Photo Verification'],['report','Higher Authority Report']].concat(locs)),help];
+  var d=[{id:'dash',label:'Dashboard',tabs:[['dash','Dashboard']]},ie([['dall','Activity Log'],['monthly','Monthly Reports']]),
+    ts((secure()?[]:[['entry','New Entry']]).concat([['grid','Centre Activity'],['alerts','Compliance Alerts'],['photos','Photo Verification'],['report','Higher Authority Report']],locs))];
+  if(secure())d.push({id:'sec',label:'Security & Audit',tabs:[['security','Security & Audit']]});
+  d.push({id:'set',label:'Centres & Settings',tabs:[['setup','Centres & Settings']]},help);
+  return d;
 }
+function tabsFor(){var a=[];navFor().forEach(function(s){a=a.concat(s.tabs)});return a}
+function clearNav(){$('tabs').innerHTML='';$('subtabs').innerHTML=''}
+function drawNav(t){
+  var nav=navFor(),cur=null;
+  nav.forEach(function(s){s.tabs.forEach(function(x){if(x[0]===t)cur=s})});
+  if(cur)NAVLAST[cur.id]=t;
+  $('tabs').innerHTML=nav.map(function(s){return '<button class="tab secbtn'+(cur&&s.id===cur.id?' on':'')+'" onclick="goSec(\''+s.id+'\')">'+esc(s.label)+'</button>'}).join('');
+  $('subtabs').innerHTML=cur&&cur.tabs.length>1?cur.tabs.map(function(x){return '<button class="tab subbtn'+(x[0]===t?' on':'')+'" onclick="showTab(\''+x[0]+'\')">'+esc(x[1])+'</button>'}).join(''):'';
+}
+function goSec(id){var s=navFor().filter(function(x){return x.id===id})[0];if(!s)return;var l=NAVLAST[id],ok=s.tabs.some(function(x){return x[0]===l});showTab(ok?l:s.tabs[0][0])}
 var VIEWS={entry:function(){return viewEntry()},mine:function(){return viewMine()},review:function(){return viewList('review')},dash:function(){return viewDash()},grid:function(){return viewList('grid')},alerts:function(){return viewList('alerts')},photos:function(){return viewPhotos()},report:function(){return viewReport()},setup:function(){return viewSetup()},help:function(){return viewHelp()},locs:function(){return viewLocs()},security:function(){return viewSecurity()},daily:function(){return viewDaily()},dlog:function(){return viewDlog('dlog')},dreview:function(){return viewDlog('dreview')},dall:function(){return viewDlog('dall')},monthly:function(){return viewMonthly()}};
 var NEWTAB=false;
 function showTab(t){
   NEWTAB=(TAB!==t);TAB=t;RESFN=null;if(NEWTAB){if(t!=='photos')F.sample=null;F.q='';F.status='';F.chip=(t==='alerts')?'flagged':'all'}
-  $('tabs').innerHTML=tabsFor().map(function(x){return '<button class="tab'+(x[0]===t?' on':'')+'" onclick="showTab(\''+x[0]+'\')">'+x[1]+'</button>'}).join('');
+  drawNav(t);
   $('main').innerHTML='<div id="msg"></div>'+VIEWS[t]();
   if(secure()&&(t==='entry'||t==='locs'||t==='daily'))startGeo();else stopGeo();
   if(t==='entry')refreshCentres();
@@ -328,7 +369,7 @@ function fld(label,inner,hint){return '<div class="fld"><label class="t">'+label
 // ---------- NEW ENTRY ----------
 function viewEntry(){
   RESFN=null;PH=[];
-  var h='<h2>New Weekly Entry</h2><div id="errs"></div>';
+  var h='<h2>Therapeutic Services - New Entry</h2><div id="errs"></div>';
   if(secure())h+='<div id="geo_box" class="geo"></div>';
   h+=fld('Reporting week ending date *','<input type="date" id="e_we" max="'+today()+'" value="'+today()+'">');
   h+=fld('Block *','<select id="e_blk" onchange="refreshCentres()">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select>');
@@ -462,7 +503,7 @@ function viewMine(){
     rows.forEach(function(r){r._f=r.status==='Rejected'?[]:flagsOf(r,c);r._s=[]});
     return '<button class="btn sm" onclick="refreshBtn()">Refresh</button>'+grid(COLS(['we','mode','ctr','days','cw','aud','st','up','mact']),rows);
   };
-  return '<h2>My Entries</h2><div id="res"></div>';
+  return '<h2>Therapeutic Services - My Entries</h2><div id="res"></div>';
 }
 function discard(id){if(!confirm('Remove this rejected entry from your phone? You can enter it again correctly.'))return;REC=REC.filter(function(x){return x.id!==id});OUT=OUT.filter(function(x){return x!==id});idbDel(id);saveRec();saveOut();banner();drawRes()}
 
@@ -652,7 +693,7 @@ function viewDash(){
     if(z.length)h+='<h3>Zero-activity centres</h3><p>'+z.map(function(c){return esc(c.name)+' <span class="note">('+esc(c.block)+', '+modeShort(c.mode)+')</span>'}).join('; ')+'</p>';
     return h;
   };
-  return '<h2>District Dashboard</h2>'+bar({nostatus:1,nochips:1})+'<div id="res"></div>';
+  return '<h2>District Dashboard</h2><div id="ie_dash">'+dashIE()+'</div><h2>Therapeutic Services</h2>'+bar({nostatus:1,nochips:1})+'<div id="res"></div>';
 }
 
 // ---------- PHOTO VERIFICATION ----------
@@ -805,13 +846,14 @@ function loadSample(){
 // ---------- HELP ----------
 function viewHelp(){
   var h='<h2>Help</h2>';
-  h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> adds entries for the centres assigned to them and views their block.</li><li><b>BEEO:</b> views their block, verifies or returns entries, and sets centre locations.</li><li><b>District Authority:</b> views all blocks, verifies, manages users and phones, sets centre locations and settings, and reads the security and access log.</li></ul>';
-  if(S.role==='field')h+='<h3>Daily activity and the monthly report</h3><ol><li>Open <b>Daily Activity</b> every day you work. Choose School Visit, Home Visit (HBE), Centre Attendance or Other Official Work.</li><li>For a school visit, pick the school and take the photos <b>at the school</b>: photos taken away from it are rejected. Centre attendance works the same way.</li><li>Check your entries in <b>My Activity Log</b>. The BEEO verifies them.</li><li>At the end of the month (from the 25th) open <b>Monthly Report</b>, check the totals, add a short summary and submit it. After that the month is locked unless the BEEO returns it.</li></ol>';
-  if(S.role==='block')h+='<h3>Reviewing activity</h3><p><b>Activity Review</b> lists the daily activities of your IE Officials with photo distance and security checks. <b>Monthly Reports</b> shows who has consolidated the month, and lets you verify or return each report.</p>';
-  if(S.role!=='district')h+='<h3>How to send your weekly entry</h3><ol><li>Open <b>New Entry</b> and allow Location and Camera when the phone asks.</li><li>Stand at the centre. Wait until the green location box shows you are inside the allowed distance.</li><li>Choose the week ending date, block, mode and centre.</li><li>Fill in the numbers and tick the boxes.</li><li>Tap <b>Take live photo</b> and photograph the session (1 to 5 photos).</li><li>Tap <b>Submit Entry</b>.</li></ol><p>No internet? The entry is saved on your phone with its place and time, and uploads when the internet returns. If the server rejects an entry, open <b>My Entries</b> to see the reason.</p>';
-  h+='<h3>Security you should know about</h3><ul><li>Your login is personal: your mobile number and your own 6-digit PIN. Never share the PIN.</li><li>Five wrong PINs lock the account for 15 minutes.</li><li>Your account works on your registered phone only. A new phone needs District Office approval.</li><li>Entries for BRR and Day Care centres are accepted only from the centre, and photos must be taken live in the app.</li><li>Every login, upload and rejected attempt is recorded for the District Authority.</li></ul>';
-  h+='<h3>Rules the app checks</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>Day Care Centres must run at least 3 days a week and have at least 10 CWSN per day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
-  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres & Settings: add blocks and centres. Security & Audit, Users: add IE Officials and BEEOs, then give each person their PIN privately.</li><li>Centres & Settings: upload the master workbook (it creates the IE Official logins) and the schools master with latitude and longitude.</li><li>Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
+  h+='<p>This system has <b>two parts</b>:</p><ul><li><b>Daily Activity</b> - the IE Official records each day: school visits, home visits (Home Based Education), Day Care / BRR attendance and other official work. At month end the IE Official sends the Monthly Report.</li><li><b>Therapeutic Services</b> - the weekly report of each Day Care Centre, BRR and Home-Based centre.</li></ul>';
+  if(S.role==='field')h+='<h3>Every day: Daily Activity</h3><ol><li>Tap <b>Daily Activity</b>, then <b>New Activity</b>.</li><li>Allow Location and Camera when the phone asks.</li><li>Choose what you did and fill in the few boxes.</li><li>For a school visit or centre, take the photos <b>at that school or centre</b>. A photo taken elsewhere is not accepted.</li><li>Tap <b>Save Activity</b>. See your day under <b>Today</b>, and all days in <b>My Log</b>.</li></ol><h3>End of month: Monthly Report</h3><ol><li>From the 25th, open <b>Daily Activity</b>, then <b>Monthly Report</b>.</li><li>Check the totals, write a short summary and tap <b>Submit monthly report</b>.</li><li>After submitting, the month is locked unless the BEEO returns it to you.</li></ol><h3>Every week: Therapeutic Services</h3><ol><li>Tap <b>Therapeutic Services</b>, then <b>New Entry</b>.</li><li>Stand at the centre. Wait for the green location box.</li><li>Choose the week ending date, block, mode and centre. Your name and mobile are filled in.</li><li>Choose the therapist, fill in the numbers and tick the boxes.</li><li>Tap <b>Take live photo</b> (1 to 5 photos), then <b>Submit Entry</b>.</li></ol><h3>On your phone</h3><ul><li>Open the link in Chrome (Android) or Safari (iPhone). Use the browser menu and choose <b>Add to Home screen</b> to get an app icon.</li><li>No internet? What you save stays on your phone and uploads by itself when the internet returns. If something is rejected, it is shown in red under <b>My Log</b> or <b>My Entries</b> with the reason.</li></ul>';
+  if(S.role==='block')h+='<h3>For the BEEO</h3><ul><li><b>Daily Activity &gt; Activity Review</b>: check the daily activities of your IE Officials (photos, place). Use <b>Verify</b>, or <b>Return</b> with a reason. <b>Verify all clean</b> verifies every entry that has no warning.</li><li><b>Daily Activity &gt; Monthly Reports</b>: see who has sent the month, then verify or return each report.</li><li><b>Therapeutic Services</b>: Block Review, New Entry, My Entries, Centre Activity, Compliance Alerts, Photo Verification, Higher Authority Report and Centre Locations.</li></ul>';
+  if(S.role==='district')h+='<h3>For the District Office</h3><ul><li><b>Dashboard</b>: the IE Officials\' daily activity and monthly reports, then the Therapeutic Services summary.</li><li><b>Daily Activity</b>: Activity Log (all blocks) and Monthly Reports (district consolidation, Excel and print).</li><li><b>Therapeutic Services</b>: Centre Activity, Compliance Alerts, Photo Verification, Higher Authority Report, Centre Locations.</li><li><b>Security &amp; Audit</b>: users, phones, warnings and the full access log.</li></ul>';
+  h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> records daily activity, the monthly report and the weekly Therapeutic Services entry for the centres assigned to them.</li><li><b>BEEO:</b> reviews their block, verifies or returns, and sets centre locations.</li><li><b>District Authority:</b> sees all blocks, manages users and phones, settings and the security log.</li></ul>';
+  h+='<h3>Security you should know about</h3><ul><li>Your login is personal: your mobile number and your own 6-digit PIN. Never share the PIN.</li><li>Five wrong PINs lock the account for 15 minutes.</li><li>Your account works on your registered phone only. A new phone needs District Office approval.</li><li>Photos must be taken live in the app, at the school or centre.</li><li>Every login, upload and rejected attempt is recorded for the District Authority.</li></ul>';
+  if(S.role!=='district')h+='<h3>Rules the app checks (Therapeutic Services)</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>Day Care Centres must run at least 3 days a week and have at least 10 CWSN per day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
+  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it creates the IE Official logins) and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
   return h;
 }
 // ---------- GEO (live location) ----------
@@ -1044,10 +1086,10 @@ function refreshExtra(light){
 
 // when a person opens an activity / monthly / alerts tab, pull the latest data in the background
 function softRefresh(t){
-  if(!S.url||!NEWTAB||['dlog','dreview','dall','monthly','security'].indexOf(t)<0)return;
+  if(!S.url||!NEWTAB||['dlog','dreview','dall','monthly','security','dash'].indexOf(t)<0)return;
   refreshExtra(true).then(function(){
     if(TAB!==t)return;
-    if(RESFN&&$('res')){drawRes();return}
+    if(RESFN&&$('res')){drawRes();if($('ie_dash'))$('ie_dash').innerHTML=dashIE();return}
     if(t==='security'){if(SEC.tab==='alerts')drawRes();return}
     if(t==='monthly'){var s=$('m_sum'),c=$('m_chal');if((s&&s.value)||(c&&c.value))return;$('main').innerHTML='<div id="msg"></div>'+VIEWS.monthly()}
   }).catch(function(){});
@@ -1084,10 +1126,15 @@ function viewDaily(){
   var h='<h2>Daily Activity</h2><div class="info">Record each school visit, home visit (Home Based Education), Day Care / BRR attendance and other official work. At the end of the month you consolidate everything in <b>Monthly Report</b> for the district.</div><div id="errs"></div>';
   if(secure())h+='<div id="geo_box" class="geo"></div>';
   h+=fld('Date of activity *','<input type="date" id="d_date" min="'+daysAgo(7)+'" max="'+today()+'" value="'+today()+'">','Activities up to 7 days old can be added.');
-  h+=fld('What did you do? *',radios('d_type',ACTS,'','onchange="dTypeChg()"'));
+  h+=fld('What did you do? *','<div class="tiles">'+radios('d_type',ACTS,'','onchange="dTypeChg()"')+'</div>');
   h+='<div id="d_body"></div>';
   h+='<div class="fld"><button class="btn g big" id="d_go" onclick="submitDaily()">Save Activity</button> <button class="btn o" onclick="showTab(\'daily\')">Clear form</button></div>';
-  return h;
+  return h+dToday();
+}
+function dToday(){
+  var a=DREC.filter(function(r){return dMine(r)&&r.date===today()});
+  if(!a.length)return '<h3>Today</h3><p class="note">Nothing saved yet today.</p>';
+  return '<h3>Today ('+a.length+')</h3>'+a.map(function(r){var st=r._pending?'<span class="note">Uploading...</span>':(r.status==='Rejected'?'<span class="bad">REJECTED: '+esc(r.remark)+'</span>':'<span class="ok">Saved</span>');return '<div class="card"><b>'+esc(ACTSHORT[r.type]||r.type)+'</b> - '+dWhat(r)+'<br>'+st+'</div>'}).join('');
 }
 function dMyCentres(){return CFG.centres.filter(function(c){if(c.block!==S.block||c.mode.indexOf('Home')>-1)return false;if(secure()&&c.assigned&&c.assigned.length&&c.assigned.indexOf(S.id)<0)return false;return true})}
 function dTypeChg(){
@@ -1365,12 +1412,12 @@ function submitMonthly(){
   if(S.url)api('msubmit',{month:M.month,summary:s,challenges:c}).then(function(j){done(j.record)}).catch(function(e){flash(e.message,'err')});
   else{var t=mTotals(S.id,M.month);done({id:M.month+'|'+S.id,month:M.month,block:S.block,userId:S.id,officialName:S.name,designation:S.designation||'',submittedAt:new Date().toISOString(),activeDays:t.activeDays,schoolVisits:t.schoolVisits,uniqueSchools:t.uniqueSchools,homeVisits:t.homeVisits,uniqueChildren:t.uniqueChildren,centreDays:t.centreDays,otherActivities:t.otherActivities,totalHours:t.totalHours,cwsnCovered:t.cwsnCovered,photos:t.photos,flaggedLogs:t.flaggedLogs,summary:s,challenges:c,status:'Submitted',verifiedBy:'',verifiedAt:'',remark:''})}
 }
-function mPeople(){
+function mPeople(all){
   var p={};
   STAFF.forEach(function(s){p[s.id]={id:s.id,name:s.name,block:s.block,designation:s.designation}});
   DREC.forEach(function(r){if(r.status!=='Rejected'&&!p[r.userId])p[r.userId]={id:r.userId,name:r.officialName,block:r.block,designation:r.designation}});
   MREC.forEach(function(r){if(!p[r.userId])p[r.userId]={id:r.userId,name:r.officialName,block:r.block,designation:r.designation}});
-  return Object.keys(p).map(function(k){return p[k]}).filter(function(x){return (!S.block||x.block===S.block)&&(!D.block||x.block===D.block)}).sort(function(a,b){return a.block<b.block?-1:a.block>b.block?1:(a.name<b.name?-1:1)});
+  return Object.keys(p).map(function(k){return p[k]}).filter(function(x){return all||((!S.block||x.block===S.block)&&(!D.block||x.block===D.block))}).sort(function(a,b){return a.block<b.block?-1:a.block>b.block?1:(a.name<b.name?-1:1)});
 }
 function mRows(){
   return mPeople().map(function(p){
@@ -1523,6 +1570,28 @@ function schoolTemplate(){
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Blk code','Blk Name','UDISE Code','School Name','Village / Cluster','Latitude','Longitude','CWSN Count'],[181701,'Central','18170100101','Sample LP School','Sample Village',26.7509,94.2037,3]]),'School');
   XLSX.writeFile(wb,'School_Master_Template.xlsx');
+}
+
+// ---------- DISTRICT DASHBOARD: IE Officials' daily activity and monthly reports ----------
+function dashIE(){
+  var tdy=today(),cm=curMonth(),rm=defMonth(),ppl=mPeople(true);
+  var act=DREC.filter(function(r){return r.status!=='Rejected'&&r.status!=='Returned'});
+  var td=act.filter(function(r){return r.date===tdy}),tdU={};td.forEach(function(r){tdU[r.userId]=1});
+  var mo=act.filter(function(r){return r.date.slice(0,7)===cm}),cnt=function(a,t){return a.filter(function(r){return r.type===t}).length};
+  var cdays=function(a){var o={};a.forEach(function(r){if(r.type===A_CTR)o[r.userId+'|'+r.date]=1});return Object.keys(o).length};
+  var subs=MREC.filter(function(r){return r.month===rm&&r.status!=='Returned'}),ver=subs.filter(function(r){return r.status==='Verified'}).length;
+  var fl=mo.filter(function(r){return r.secFlags}).length,nl=ppl.filter(function(p){return tdU[p.id]}).length;
+  var h='<h3>IE Officials - Daily Activity and Monthly Report</h3><div class="stats">'+stat('IE Officials',ppl.length)+stat('Logged activity today',nl,'of '+ppl.length+' IE Officials')+stat('Activities today',td.length)+
+    stat('School visits',cnt(mo,A_SCH),monthName(cm))+stat('Home visits (HBE)',cnt(mo,A_HOME),monthName(cm))+stat('Centre attendance days',cdays(mo),monthName(cm))+stat('Other official work',cnt(mo,A_OTH),monthName(cm))+
+    stat('Monthly reports ('+monthName(rm)+')',subs.length,'of '+ppl.length+' submitted, '+ver+' verified',ppl.length>0&&subs.length<ppl.length)+stat('Activities with warnings',fl,monthName(cm)+' - see Security & Audit',fl>0)+'</div>';
+  var blocks=CFG.blocks.filter(function(b){return ppl.some(function(p){return p.block===b})||mo.some(function(r){return r.block===b})});
+  if(blocks.length)h+=tbl(['Block','IE Officials','Logged today','Activities ('+monthName(cm)+')','School visits','Home visits','Centre days','Reports ('+monthName(rm)+')'],blocks.map(function(b){
+    var pb=ppl.filter(function(p){return p.block===b}),mb=mo.filter(function(r){return r.block===b});
+    return '<tr><td>'+esc(b)+'</td><td class="r">'+pb.length+'</td><td class="r">'+pb.filter(function(p){return tdU[p.id]}).length+'</td><td class="r">'+mb.length+'</td><td class="r">'+cnt(mb,A_SCH)+'</td><td class="r">'+cnt(mb,A_HOME)+'</td><td class="r">'+cdays(mb)+'</td><td class="r">'+subs.filter(function(s){return s.block===b}).length+'</td></tr>'}),[1,2,3,4,5,6,7]);
+  else h+='<p class="note">No IE Official activity yet. Create the IE Official logins in Centres &amp; Settings (master workbook upload).</p>';
+  var nolog=ppl.filter(function(p){return !tdU[p.id]});
+  if(ppl.length&&nolog.length)h+='<p class="note"><b>No activity logged today:</b> '+nolog.slice(0,40).map(function(p){return esc(p.name)+' ('+esc(p.block)+')'}).join('; ')+(nolog.length>40?' ...':'')+'</p>';
+  return h+'<p class="noprint"><button class="btn sm" onclick="showTab(\'dall\')">Open Activity Log</button> <button class="btn sm" onclick="showTab(\'monthly\')">Open Monthly Reports</button></p>';
 }
 // ---------- INIT ----------
 (function(){
