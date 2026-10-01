@@ -88,6 +88,13 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 .pinbox .pin{font-family:Courier New,monospace;font-size:20px;font-weight:bold}
 #ov video{width:100%;max-width:640px;border:1px solid #000;background:#eee}
 .printonly{display:none}
+#busy{display:none;position:fixed;top:0;left:0;right:0;z-index:30;pointer-events:none}
+#busy .bb{margin:0 auto;max-width:560px;background:#fff0d9;border:2px solid #ff8000;border-top:0;padding:10px 12px;font-size:16px;font-weight:bold;text-align:center;color:#000}
+#busy.blk{bottom:0;pointer-events:auto;background:rgba(255,255,255,.7)}
+#busy.blk .bb{margin-top:28vh;border:2px solid #ff8000;padding:18px 14px}
+#busy .sm{display:block;font-size:13px;font-weight:normal;margin-top:4px}
+.glass{display:inline-block;font-size:22px;vertical-align:middle;animation:glassturn 1.6s steps(2,end) infinite}
+@keyframes glassturn{0%{transform:rotate(0deg)}100%{transform:rotate(180deg)}}
 @media (max-width:760px){
  .tbl-wrap{display:none}
  .cards{display:block}
@@ -114,7 +121,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
  .fgrid>div{min-width:45%}
 }
 @media print{
- #hdr,#tabs,#subtabs,#banner,.filters,.noprint,#foot,.cards,.act,#msg{display:none!important}
+ #hdr,#tabs,#subtabs,#busy,#banner,.filters,.noprint,#foot,.cards,.act,#msg{display:none!important}
  .printonly{display:block!important}
  .tbl-wrap{display:block!important}
  body{font-size:11px}
@@ -131,6 +138,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 <div id="main"></div>
 <div id="ov"></div>
 <div id="foot"></div>
+<div id="busy"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ===== SET THIS ONCE by the District Office before sharing the link =====
@@ -195,13 +203,40 @@ function idbDel(k){return idb().then(function(db){return new Promise(function(re
 
 // ---------- server ----------
 function ctx(){var c={now:Date.now()};if(GEO.fix&&Date.now()-GEO.fix.ts<=120000){c.lat=GEO.fix.lat;c.lng=GEO.fix.lng;c.acc=GEO.fix.acc;c.ts=GEO.fix.ts}return c}
-function api(action,payload){
+var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
+var BUSYREAD={session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
+var BUSYQ=[],BUSYID=0,BUSYTMR=null;
+function busyStart(msg,blk){var id=++BUSYID;BUSYQ.push({id:id,msg:msg,blk:blk,t:Date.now()});if(blk)busyDraw();else setTimeout(busyDraw,450);if(!BUSYTMR)BUSYTMR=setInterval(busyDraw,1000);return id}
+function busyEnd(id){BUSYQ=BUSYQ.filter(function(b){return b.id!==id});busyDraw();if(!BUSYQ.length&&BUSYTMR){clearInterval(BUSYTMR);BUSYTMR=null}}
+function busyDraw(){
+  var el=$('busy');if(!el)return;
+  var now=Date.now(),vis=BUSYQ.filter(function(b){return b.blk||now-b.t>=400});
+  if(!vis.length){el.style.display='none';el.className='';el.innerHTML='';return}
+  var b=vis[vis.length-1],blk=vis.some(function(x){return x.blk}),sec=Math.round((now-b.t)/1000);
+  var sub=sec>=15?'The server is slow today. Still working - please do not close this page.':(sec>=4?'Please wait ('+sec+' s). Do not close this page.':'');
+  el.className=blk?'blk':'';el.style.display='block';
+  el.innerHTML='<div class="bb"><span class="glass">&#8987;</span> '+esc(b.msg)+(sub?'<span class="sm">'+esc(sub)+'</span>':'')+'</div>';
+}
+function htmlSnippet(tx){return String(tx).replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().slice(0,150)}
+function api(action,payload,tryNo){
+  tryNo=tryNo||0;
   if(!S.url)return Promise.reject(new Error('No server'));
   var ctrl=window.AbortController?new AbortController():null;
   var t=setTimeout(function(){if(ctrl)ctrl.abort()},90000);
+  var bid=busyStart(BUSYMSG[action]||'Working...',!BUSYREAD[action]);
+  var status=0;
   return fetch(S.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,token:S.token||'',dev:DEV,ctx:ctx(),payload:payload||{}}),signal:ctrl?ctrl.signal:undefined})
-  .then(function(r){clearTimeout(t);return r.json()})
-  .then(function(j){if(!j.ok){var e=new Error(j.error||'Server error');e.server=true;e.auth=!!j.auth;if(e.auth&&action!=='login')endSession(e.message);throw e}return j});
+  .then(function(r){clearTimeout(t);status=r.status;return r.text()})
+  .then(function(tx){
+    var j;try{j=JSON.parse(tx)}catch(x){var e=new Error('The server did not answer properly (code '+status+'). '+(htmlSnippet(tx)?'Message from Google: '+htmlSnippet(tx)+'. ':'')+'Please try again. If it keeps happening, tell the District Office.');e.html=true;throw e}
+    if(!j.ok){var e2=new Error(j.error||'Server error');e2.server=true;e2.auth=!!j.auth;if(e2.auth&&action!=='login')endSession(e2.message);throw e2}
+    return j;
+  })
+  .then(function(j){busyEnd(bid);return j},function(e){
+    busyEnd(bid);clearTimeout(t);
+    if(e&&e.html&&tryNo<2&&BUSYREAD[action]&&action!=='logout')return new Promise(function(res){setTimeout(res,1800)}).then(function(){return api(action,payload,tryNo+1)});
+    throw e;
+  });
 }
 function norm(r){
   var o={};KEYS.forEach(function(k){o[k]=r[k]==null?'':r[k]});
@@ -296,7 +331,12 @@ function doChangePin(forced){
   var o=$('cp_o').value,n=$('cp_n').value,c=$('cp_c').value;
   if(!/^\d{6}$/.test(n))return flash('New PIN must be exactly 6 digits.','err');
   if(n!==c)return flash('The two new PINs do not match.','err');
-  api('changePin',{oldPin:o,newPin:n}).then(function(j){S.token=j.token;saveS();return forced?refreshData().then(start):(showTab(TAB),flash('PIN changed.'))}).catch(function(e){flash(e.message,'err')});
+  var done=function(j){S.token=j.token;if(j.user)S.designation=j.user.designation||S.designation||'';saveS();return forced?refreshData().catch(function(e){if(e.auth)throw e}).then(start):(showTab(TAB),flash('PIN changed.'))};
+  api('changePin',{oldPin:o,newPin:n}).then(done).catch(function(e){
+    if(e.server||!S.id)return flash(e.message,'err');
+    // the answer was lost: check whether the new PIN was in fact saved
+    api('login',{id:S.id,pin:n}).then(function(j){return done(j)}).catch(function(){flash(e.message+' (Your PIN may or may not have changed. Try logging in with the NEW PIN first, then with the old one.)','err')});
+  });
 }
 function start(){
   if(!S.role)return showLogin();
