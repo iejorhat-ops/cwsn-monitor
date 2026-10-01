@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ffe4ec">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>CWSN Therapeutic Services Monitoring System</title>
+<title>IE Monitoring System</title>
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,Helvetica,sans-serif;font-size:15px;margin:0;background:#fff;color:#000}
@@ -75,6 +75,12 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 .thumbs .th button{position:absolute;top:3px;right:3px;background:#ffc2d4;border:1px solid #000;font-size:12px;padding:0 5px;border-radius:0}
 #ov{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#fff;overflow:auto;padding:10px;z-index:9}
 #ov img{max-width:100%;border:1px solid #000;margin:6px 0;display:block}
+.geo{border:1px solid #ff8000;background:#fff5f8;padding:8px;margin:8px 0;font-size:14px}
+.geo.good{background:#e0ffe0;border-color:#008000}
+.geo.bad{background:#ffe0e0;border-color:#cc0000}
+.pinbox{border:3px solid #ff8000;background:#fff0d9;padding:10px;margin:10px 0}
+.pinbox .pin{font-family:Courier New,monospace;font-size:20px;font-weight:bold}
+#ov video{width:100%;max-width:640px;border:1px solid #000;background:#eee}
 .printonly{display:none}
 @media (max-width:760px){
  .tbl-wrap{display:none}
@@ -104,7 +110,7 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 <script>
 // ===== SET THIS ONCE by the District Office before sharing the link =====
 // Paste the Google Apps Script Web App URL between the quotes. Leave empty for local (single-device) mode.
-var DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbzf6iw6IZQdbHsUDqJUch0c7EUBK-1jST3gq2NGO2y97Z0a0NhTQmAfgNzAXUGaCUE8kg/exec';
+var DEFAULT_URL = '';
 var LOGO_DATA = 'data:image/jpeg;base64,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';
 // ========================================================================
 var DOMAINS=['Physiotherapy / Occupational / Sensory','Speech & Communication','Mobility & ADL','Counseling & Remedial'];
@@ -112,7 +118,8 @@ var MODES=['Block Resource Room (BRR)','Day Care Centre','Home-Based Education (
 var DAYS=['Mon','Tue','Wed','Thu','Fri','Sat'];
 var OFFICERS=['RP-IE','ARP-IE','AARP-IE','Special Educator'];
 var CAP_DAY=1500,CAP_CONT=500,MIN_DAYS=3,MIN_CWSN=10,MAX_CONT_MONTHS=10;
-var KEYS=['timestamp','id','weekEnding','block','mode','centre','centreCode','operatingDays','daysFunctioned','present','personName','phone','registerOk','iepOk','cwsn','dailyMinMet','preAssessment','domains','therapist','specialization','therapistDays','dailyHonorarium','totalHonorarium','contingency','sessions','photoLinks','submittedBy','status','verifiedBy','verifiedAt','remark','flags'];
+var MAX_ACC=150,SET_ACC=50;
+var KEYS=['timestamp','id','weekEnding','block','mode','centre','centreCode','operatingDays','daysFunctioned','present','personName','phone','registerOk','iepOk','cwsn','dailyMinMet','preAssessment','domains','therapist','specialization','therapistDays','dailyHonorarium','totalHonorarium','contingency','sessions','photoLinks','submittedBy','status','verifiedBy','verifiedAt','remark','flags','capturedAt','lat','lng','gpsAcc','distanceM','deviceId','photoHashes','secFlags','userId'];
 var DEF_BLOCKS=['Central','East','Jorhat','North West','Titabor'];
 
 function $(id){return document.getElementById(id)}
@@ -134,10 +141,15 @@ function roleName(r){return r==='field'?'IE Official':(r==='block'?'BEEO':'Distr
 function canVerify(){return S.role!=='field'}
 function isAdmin(){return S.role==='district'}
 
-var S=load('cwsn_s',{url:'',role:'',name:'',block:'',pin:''});
+var S=load('cwsn_s',{url:'',role:'',name:'',block:'',id:'',token:''});
+var DEV=(function(){try{var d=localStorage.getItem('cwsn_dev');if(!d){d=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():('D'+Date.now().toString(36)+Math.random().toString(36).slice(2,10));localStorage.setItem('cwsn_dev',d)}return d}catch(e){return 'nodev'+Math.random().toString(36).slice(2,12)}})();
+var GEO={fix:null,err:'',watch:null};
+function secure(){return !!S.url}
 if(S.role==='other')S.role='';
-if(!S.url&&DEFAULT_URL)S.url=DEFAULT_URL;
+if(S.url&&!S.token)S.role='';
+S.url=DEFAULT_URL;
 var CFG=load('cwsn_cfg',{district:'Jorhat',blocks:DEF_BLOCKS,centres:[],budget:0,logo:''});
+CFG.therapists=CFG.therapists||[];CFG.blockCodes=CFG.blockCodes||{};CFG.schoolRadius=CFG.schoolRadius||200;CFG.strictSchools=!!CFG.strictSchools;
 if(CFG.blocks&&(CFG.blocks.indexOf('Central Jorhat')>-1||CFG.blocks.indexOf('Jorhat East')>-1)&&CFG.blocks.length<=4){CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
 if(CFG.district==='Golaghat'){CFG.district='Jorhat';if(CFG.blocks.indexOf('Dergaon')>-1)CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
 var REC=load('cwsn_rec',[]);
@@ -157,121 +169,151 @@ function idbGet(k){return idb().then(function(db){return new Promise(function(re
 function idbDel(k){return idb().then(function(db){return new Promise(function(res){var t=db.transaction('photos','readwrite');t.objectStore('photos').delete(k);t.oncomplete=res;t.onerror=res})}).catch(function(){})}
 
 // ---------- server ----------
+function ctx(){var c={now:Date.now()};if(GEO.fix&&Date.now()-GEO.fix.ts<=120000){c.lat=GEO.fix.lat;c.lng=GEO.fix.lng;c.acc=GEO.fix.acc;c.ts=GEO.fix.ts}return c}
 function api(action,payload){
   if(!S.url)return Promise.reject(new Error('No server'));
   var ctrl=window.AbortController?new AbortController():null;
   var t=setTimeout(function(){if(ctrl)ctrl.abort()},90000);
-  return fetch(S.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,role:S.role,name:S.name,block:S.block,payload:payload||{}}),signal:ctrl?ctrl.signal:undefined})
+  return fetch(S.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:action,token:S.token||'',dev:DEV,ctx:ctx(),payload:payload||{}}),signal:ctrl?ctrl.signal:undefined})
   .then(function(r){clearTimeout(t);return r.json()})
-  .then(function(j){if(!j.ok){var e=new Error(j.error||'Server error');e.server=true;throw e}return j});
+  .then(function(j){if(!j.ok){var e=new Error(j.error||'Server error');e.server=true;e.auth=!!j.auth;if(e.auth&&action!=='login')endSession(e.message);throw e}return j});
 }
 function norm(r){
   var o={};KEYS.forEach(function(k){o[k]=r[k]==null?'':r[k]});
-  ['operatingDays','present','domains','photoLinks'].forEach(function(k){var v=r[k];o[k]=Array.isArray(v)?v:(v?String(v).split(' | '):[])});
+  ['operatingDays','present','domains','photoLinks','photoHashes'].forEach(function(k){var v=r[k];o[k]=Array.isArray(v)?v:(v?String(v).split(' | '):[])});
   ['daysFunctioned','cwsn','therapistDays','dailyHonorarium','totalHonorarium','contingency','sessions'].forEach(function(k){o[k]=num(r[k])});
+  ['capturedAt','lat','lng','gpsAcc','distanceM'].forEach(function(k){o[k]=(r[k]===''||r[k]==null)?'':Number(r[k])});
   o.weekEnding=String(o.weekEnding).slice(0,10);o.phone=String(o.phone||'');o.status=o.status||'Pending';
   o.photoCount=o.photoLinks.length||num(r.photoCount);o.localPhotos=!!r.localPhotos;o._pending=!!r._pending;
   return o;
 }
+function mergeCfg(c){if(!c)return;CFG.district=c.district||CFG.district;if(c.blocks&&c.blocks.length)CFG.blocks=c.blocks;CFG.centres=c.centres||[];CFG.budget=c.budget||0;CFG.radius=c.radius||150;CFG.therapists=c.therapists||[];CFG.blockCodes=c.blockCodes||{};CFG.schoolRadius=c.schoolRadius||200;CFG.strictSchools=!!c.strictSchools;saveCfg()}
 function refreshData(){
   if(!S.url)return Promise.resolve();
   return api('list').then(function(j){
-    var pend=REC.filter(function(r){return r._pending});
-    REC=j.rows.map(norm).concat(pend);saveRec();
-  });
+    var keep=REC.filter(function(r){return r._pending||r.status==='Rejected'});
+    REC=j.rows.map(norm).concat(keep);mergeCfg(j.config);saveRec();
+  }).then(function(){return refreshExtra()});
 }
-function syncOutbox(){
-  if(!S.url||!OUT.length||SYNCING)return Promise.resolve();
-  SYNCING=true;var sent=0,failMsg='';
+function syncOutbox(){return syncWeekly().then(function(){return syncDaily()})}
+function syncWeekly(){
+  if(!S.url||!S.token||!OUT.length||SYNCING)return Promise.resolve();
+  SYNCING=true;var sent=0,rej=0,failMsg='';
   return OUT.slice().reduce(function(p,id){return p.then(function(){
+    if(failMsg)return;
     var r=REC.filter(function(x){return x.id===id})[0];
     if(!r){OUT=OUT.filter(function(i){return i!==id});return}
     return idbGet(id).then(function(ph){
       var rec={};KEYS.forEach(function(k){rec[k]=r[k]});
-      return api('submit',{record:rec,photos:(ph||[]).map(function(p,i){return {name:(r.weekEnding+'_'+r.centre+'_'+(i+1)).replace(/[^A-Za-z0-9_-]+/g,'_')+'.jpg',mime:'image/jpeg',data:p.data.split(',')[1]}})});
+      var sec={lat:r.lat,lng:r.lng,acc:r.gpsAcc,fixTs:r.capturedAt,capturedAt:r.capturedAt};
+      return api('submit',{record:rec,sec:sec,offline:(Date.now()-num(r.capturedAt))>120000,photos:(ph||[]).map(function(p,i){return {name:(r.weekEnding+'_'+r.centre+'_'+(i+1)).replace(/[^A-Za-z0-9_-]+/g,'_')+'.jpg',mime:'image/jpeg',data:p.data.split(',')[1],sha:p.sha,dh:p.dh,lat:p.lat,lng:p.lng,acc:p.acc,ts:p.ts}})});
     }).then(function(j){
       var n=norm(j.record);REC=REC.map(function(x){return x.id===id?n:x});
       OUT=OUT.filter(function(i){return i!==id});idbDel(id);sent++;
+    }).catch(function(e){
+      if(e.server&&!e.auth){r.status='Rejected';r.remark=e.message;r._pending=false;OUT=OUT.filter(function(i){return i!==id});rej++}
+      else failMsg=e.message||'network';
     });
-  })},Promise.resolve()).catch(function(e){failMsg=e.message||'network'}).then(function(){
+  })},Promise.resolve()).then(function(){
     SYNCING=false;saveRec();saveOut();banner();
     if(sent)flash('Uploaded '+sent+' entr'+(sent>1?'ies':'y')+' to the district server.');
-    if(failMsg&&!/Failed to fetch|NetworkError|Load failed|abort/i.test(failMsg))flash('Upload problem: '+failMsg,'err');
-    if(sent&&RESFN)drawRes();
+    if(rej)flash(rej+' entr'+(rej>1?'ies were':'y was')+' REJECTED by the server. Open My Entries to see the reason.','err');
+    if((sent||rej)&&RESFN)drawRes();
   });
 }
 window.addEventListener('online',function(){syncOutbox()});
 
 // ---------- login / session ----------
 function showLogin(){
-  $('tabs').innerHTML='';RESFN=null;drawHdr();banner();
-  var h='<h2>Login</h2><div id="msg"></div><div class="fld">'+
-  ['field','block','district'].map(function(r){return '<label class="opt"><input type="radio" name="l_role" value="'+r+'" onchange="loginRole()" '+(S.role===r?'checked':'')+'> '+roleName(r)+'</label>'}).join('')+'</div>'+
-  '<div id="l_nm" class="fld"><label class="t">Your name</label><input type="text" id="l_name" value="'+esc(S.name)+'" placeholder="e.g. Rina Devi"></div>'+
-  '<div id="l_bl" class="fld"><label class="t">Your block</label><select id="l_block">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select></div>'+
-  '<button class="btn big" onclick="doLogin()">Login</button>'+
-  '<details style="margin-top:20px"><summary>Server connection (District Office only)</summary><div class="fld"><label class="t">Web App URL</label><input type="url" id="l_url" value="'+esc(S.url)+'" placeholder="https://script.google.com/macros/s/.../exec"><div class="hint">Leave empty to use Local mode (data stays on this device only, for testing).</div></div></details>';
+  $('tabs').innerHTML='';RESFN=null;stopGeo();drawHdr();banner();
+  var h='<h2>Login</h2><div id="msg"></div>';
+  if(S.url){
+    h+='<div class="fld"><label class="t">Mobile number (your User ID)</label><input type="tel" id="l_id" inputmode="numeric" autocomplete="username" placeholder="10-digit mobile number" value="'+esc(S.id||'')+'"></div>'+
+       '<div class="fld"><label class="t">PIN</label><input type="password" id="l_pin" inputmode="numeric" autocomplete="current-password" maxlength="6" placeholder="6-digit PIN"></div>'+
+       '<button class="btn big" onclick="doLogin()">Login</button><p class="note">Your login is personal and tied to your phone. Never share your PIN. Every login and every upload is recorded for the District Office.</p>';
+  }else{
+    h+='<div class="warn">Demo mode: no security and no shared data. Connect the server for real use.</div><div class="fld">'+
+    ['field','block','district'].map(function(r){return '<label class="opt"><input type="radio" name="l_role" value="'+r+'" onchange="loginRole()" '+(S.role===r?'checked':'')+'> '+roleName(r)+'</label>'}).join('')+'</div>'+
+    '<div id="l_nm" class="fld"><label class="t">Your name</label><input type="text" id="l_name" value="'+esc(S.name)+'" placeholder="e.g. Rina Devi"></div>'+
+    '<div id="l_bl" class="fld"><label class="t">Your block</label><select id="l_block">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select></div>'+
+    '<button class="btn big" onclick="doLogin()">Login</button>';
+  }
   $('main').innerHTML=h;loginRole();
 }
 function loginRole(){var r=rv('l_role');if($('l_nm'))$('l_nm').style.display=(r==='district')?'none':'block';if($('l_bl'))$('l_bl').style.display=(r==='district')?'none':'block'}
 function doLogin(){
-  var role=rv('l_role'),name=$('l_name').value.trim(),block=$('l_block').value,url=$('l_url').value.trim();
+  if(S.url){
+    var id=$('l_id').value.trim(),pin=$('l_pin').value.trim();
+    if(!id||!pin)return flash('Enter your mobile number and PIN.','err');
+    S.id=id;flash('Logging in...','info');
+    return api('login',{id:id,pin:pin}).then(function(j){
+      S.token=j.token;S.role=j.user.role;S.name=j.user.name;S.block=j.user.block||'';S.id=j.user.id;S.designation=j.user.designation||'';saveS();mergeCfg(j.config);
+      if(j.user.mustChange)return showChangePin(true);
+      return refreshData().then(start);
+    }).catch(function(e){S.token='';S.role='';saveS();flash(e.server?e.message:'Cannot reach the server. Check your internet connection.','err')});
+  }
+  var role=rv('l_role'),name=$('l_name').value.trim(),block=$('l_block').value;
   var er=[];if(!role)er.push('Choose who you are.');if(role!=='district'&&role){if(!name)er.push('Enter your name.');if(!block)er.push('Select your block.')}
   if(er.length)return flash(er.join(' '),'err');
-  S={url:url||DEFAULT_URL,role:role,name:role==='district'?'District Office':name,block:role==='district'?'':block};
-  if(S.url){
-    flash('Logging in...','info');
-    api('login').then(function(j){
-      var c=j.config||{};CFG.district=c.district||CFG.district;if(c.blocks&&c.blocks.length)CFG.blocks=c.blocks;CFG.centres=c.centres||[];CFG.budget=c.budget||0;saveCfg();
-      try{localStorage.setItem('cwsn_ok','1')}catch(e){}
-      saveS();return refreshData();
-    }).then(start).catch(function(e){
-      if(e.server){S.role='';flash(e.message,'err');return}
-      if(localStorage.getItem('cwsn_ok')==='1'){saveS();start();flash('No internet. Working offline - entries will upload later.','warn')}
-      else{S.role='';flash('Cannot reach the server. Check internet. (First login needs internet.)','err')}
-    });
-  }else{
-    saveS();start();
-  }
+  S={url:'',role:role,name:role==='district'?'District Office':name,block:role==='district'?'':block,id:'',token:''};
+  saveS();start();
 }
-function logout(){S.role='';saveS();showLogin()}
+function endSession(msg){S.token='';S.role='';saveS();stopGeo();showLogin();if(msg)flash(msg,'err')}
+function logout(){if(S.url&&S.token){api('logout').catch(function(){})}S.token='';S.role='';saveS();stopGeo();showLogin()}
+function showChangePin(forced){
+  RESFN=null;if(forced)$('tabs').innerHTML='';drawHdr();
+  $('main').innerHTML='<div id="msg"></div><h2>'+(forced?'Set your own PIN':'Change PIN')+'</h2>'+(forced?'<div class="warn">For security, replace the PIN given by the District Office with your own before you continue.</div>':'')+
+   fld('Current PIN','<input type="password" id="cp_o" inputmode="numeric" maxlength="6">')+fld('New PIN (6 digits)','<input type="password" id="cp_n" inputmode="numeric" maxlength="6">','Avoid simple PINs like 123456 or 111111.')+fld('Confirm new PIN','<input type="password" id="cp_c" inputmode="numeric" maxlength="6">')+
+   '<button class="btn g big" onclick="doChangePin('+(forced?'true':'false')+')">Save PIN</button>'+(forced?'':' <button class="btn o" onclick="showTab(TAB)">Cancel</button>');
+}
+function doChangePin(forced){
+  var o=$('cp_o').value,n=$('cp_n').value,c=$('cp_c').value;
+  if(!/^\d{6}$/.test(n))return flash('New PIN must be exactly 6 digits.','err');
+  if(n!==c)return flash('The two new PINs do not match.','err');
+  api('changePin',{oldPin:o,newPin:n}).then(function(j){S.token=j.token;saveS();return forced?refreshData().then(start):(showTab(TAB),flash('PIN changed.'))}).catch(function(e){flash(e.message,'err')});
+}
 function start(){
   if(!S.role)return showLogin();
   F.block=S.block||'';F.chip='all';F.q='';F.status='';F.sample=null;
   drawHdr();showTab(tabsFor()[0][0]);banner();syncOutbox();
 }
 function refreshBtn(){
-  if(!S.url){flash('Local mode: nothing to refresh.','info');return}
+  if(!S.url){flash('Demo mode: nothing to refresh.','info');return}
   flash('Refreshing...','info');
   syncOutbox().then(refreshData).then(function(){flash('Data refreshed.');if(RESFN)drawRes();else showTab(TAB)}).catch(function(e){flash('Could not refresh: '+(e.message||'no internet'),'err')});
 }
 function tabsFor(){
   var v=[['dash','Dashboard'],['grid','Centre Activity'],['alerts','Compliance Alerts'],['photos','Photo Verification'],['report','Higher Authority Report']],h=[['help','Help']];
-  if(S.role==='field')return [['entry','New Entry'],['mine','My Entries']].concat(v,h);
-  if(S.role==='block')return [['review','Block Review'],['entry','New Entry'],['mine','My Entries']].concat(v,h);
-  return v.concat([['entry','New Entry'],['setup','Centres & Settings']],h);
+  if(S.role==='field')return [['daily','Daily Activity'],['dlog','My Activity Log'],['monthly','Monthly Report'],['entry','Weekly Entry'],['mine','My Entries']].concat(v,h);
+  if(S.role==='block')return [['review','Block Review'],['dreview','Activity Review'],['monthly','Monthly Reports'],['entry','Weekly Entry'],['mine','My Entries']].concat(v,secure()?[['locs','Centre Locations']]:[],h);
+  if(secure())return v.concat([['dall','Daily Activity Log'],['monthly','Monthly Reports'],['locs','Centre Locations'],['security','Security & Audit'],['setup','Centres & Settings']],h);
+  return v.concat([['dall','Daily Activity Log'],['monthly','Monthly Reports'],['entry','New Entry'],['setup','Centres & Settings']],h);
 }
-var VIEWS={entry:function(){return viewEntry()},mine:function(){return viewMine()},review:function(){return viewList('review')},dash:function(){return viewDash()},grid:function(){return viewList('grid')},alerts:function(){return viewList('alerts')},photos:function(){return viewPhotos()},report:function(){return viewReport()},setup:function(){return viewSetup()},help:function(){return viewHelp()}};
+var VIEWS={entry:function(){return viewEntry()},mine:function(){return viewMine()},review:function(){return viewList('review')},dash:function(){return viewDash()},grid:function(){return viewList('grid')},alerts:function(){return viewList('alerts')},photos:function(){return viewPhotos()},report:function(){return viewReport()},setup:function(){return viewSetup()},help:function(){return viewHelp()},locs:function(){return viewLocs()},security:function(){return viewSecurity()},daily:function(){return viewDaily()},dlog:function(){return viewDlog('dlog')},dreview:function(){return viewDlog('dreview')},dall:function(){return viewDlog('dall')},monthly:function(){return viewMonthly()}};
 var NEWTAB=false;
 function showTab(t){
   NEWTAB=(TAB!==t);TAB=t;RESFN=null;if(NEWTAB){if(t!=='photos')F.sample=null;F.q='';F.status='';F.chip=(t==='alerts')?'flagged':'all'}
   $('tabs').innerHTML=tabsFor().map(function(x){return '<button class="tab'+(x[0]===t?' on':'')+'" onclick="showTab(\''+x[0]+'\')">'+x[1]+'</button>'}).join('');
   $('main').innerHTML='<div id="msg"></div>'+VIEWS[t]();
+  if(secure()&&(t==='entry'||t==='locs'||t==='daily'))startGeo();else stopGeo();
   if(t==='entry')refreshCentres();
+  if(t==='entry'||t==='locs'||t==='daily')geoUi();
   if(RESFN)drawRes();
   window.scrollTo(0,0);
+  softRefresh(t);
 }
 function drawHdr(){
   var logo=CFG.logo||LOGO_DATA;
-  $('hdr').innerHTML='<div class="hrow"><img class="logoimg" alt="Samagra Shiksha" src="'+esc(logo)+'" onerror="logoFail(this)"><div class="ht"><b>CWSN Therapeutic Services Monitoring System</b><br><span class="sub">Office of the District Mission Coordinator, Samagra Shiksha - '+esc(CFG.district)+'</span></div><div class="hu">'+
-  (S.role?esc(roleName(S.role))+(S.role!=='district'?': '+esc(S.name)+' ('+esc(S.block||'All blocks')+')':'')+'<br><button class="btn sm" onclick="refreshBtn()">Refresh data</button> <button class="btn o sm" onclick="logout()">Logout</button>':'')+'</div></div>';
+  $('hdr').innerHTML='<div class="hrow"><img class="logoimg" alt="Samagra Shiksha" src="'+esc(logo)+'" onerror="logoFail(this)"><div class="ht"><b>IE Monitoring System</b><br><span class="sub">Office of the District Mission Coordinator, Samagra Shiksha - '+esc(CFG.district)+'</span></div><div class="hu">'+
+  (S.role?esc(roleName(S.role))+(S.role!=='district'?': '+esc(S.name)+' ('+esc(S.block||'All blocks')+')':'')+'<br><button class="btn sm" onclick="refreshBtn()">Refresh data</button> '+(secure()?'<button class="btn sm" onclick="showChangePin(false)">Change PIN</button> ':'')+'<button class="btn o sm" onclick="logout()">Logout</button>':'')+'</div></div>';
   $('foot').innerHTML='';
 }
 function logoFail(el){var d=document.createElement('div');d.className='logo';d.textContent='SS';el.parentNode.replaceChild(d,el)}
 function banner(){
   var h='';
-  if(OUT.length)h+='<div class="warn" style="margin:0"><b>'+OUT.length+' entr'+(OUT.length>1?'ies are':'y is')+' saved on this device and waiting to upload.</b> <button class="btn g sm" onclick="syncOutbox()">Send now</button></div>';
-  else if(!S.url&&S.role)h+='<div class="info" style="margin:0">Local mode: data is kept only on this device. To share data across phones and the district office, connect the server (see Help).</div>';
+  var pend=OUT.length+DOUT.length;
+  if(pend)h+='<div class="warn" style="margin:0"><b>'+pend+' entr'+(pend>1?'ies are':'y is')+' saved on this device and waiting to upload.</b> <button class="btn g sm" onclick="syncOutbox()">Send now</button></div>';
+  else if(!S.url&&S.role)h+='<div class="info" style="margin:0">Demo mode: data is kept only on this device and there is no security. Connect the server for real use (see Help).</div>';
   $('banner').innerHTML=h;
 }
 function flash(m,type){var e=$('msg');if(!e)return;e.innerHTML='<div class="'+(type==='err'?'err':type==='warn'?'warn':type==='info'?'info':'okmsg')+'">'+esc(m)+'</div>';if(type!=='info')window.scrollTo(0,0)}
@@ -287,6 +329,7 @@ function fld(label,inner,hint){return '<div class="fld"><label class="t">'+label
 function viewEntry(){
   RESFN=null;PH=[];
   var h='<h2>New Weekly Entry</h2><div id="errs"></div>';
+  if(secure())h+='<div id="geo_box" class="geo"></div>';
   h+=fld('Reporting week ending date *','<input type="date" id="e_we" max="'+today()+'" value="'+today()+'">');
   h+=fld('Block *','<select id="e_blk" onchange="refreshCentres()">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select>');
   h+=fld('Service delivery mode *',radios('e_mode',MODES,'','onchange="modeChg()"'));
@@ -294,8 +337,8 @@ function viewEntry(){
   h+=fld('Designated operating days of the centre *',checks('e_opd',DAYS));
   h+=fld('Days functioned this week *','<input type="number" id="e_days" min="1" max="6" step="1" inputmode="numeric">','Day Care Centres must function at least 3 days a week.');
   h+=fld('Officials present / monitoring *',checks('e_off',OFFICERS));
-  h+=fld('Name of officer / special educator present *','<input type="text" id="e_pn">');
-  h+=fld('Contact number *','<input type="tel" id="e_ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number">');
+  h+=fld('Name of officer / special educator present *','<input type="text" id="e_pn" value="'+(secure()&&S.role==='field'?esc(S.name):'')+'">');
+  h+=fld('Contact number *','<input type="tel" id="e_ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" value="'+(secure()&&S.role==='field'?esc(S.id):'')+'">');
   h+=fld('Attendance register maintained and verified on site? *',radios('e_reg',['Yes','No'],''));
   h+=fld('IEP updated / verified for all attendees? *',radios('e_iep',['Yes','No'],''));
   h+=fld('Total distinct CWSN attended this week *','<input type="number" id="e_cw" min="0" step="1" inputmode="numeric">');
@@ -304,25 +347,41 @@ function viewEntry(){
   h+=fld('Formal assessment completed BEFORE therapy started? *',radios('e_pre',['Yes','No'],''),'Therapy cannot be recorded without a prior formal assessment.');
   h+=fld('Therapy domains delivered this week *',checks('e_dom',DOMAINS));
   h+=fld('Number of therapy sessions conducted this week *','<input type="number" id="e_ses" min="0" step="1" inputmode="numeric">');
-  h+=fld('Name of assigned therapist / specialist','<input type="text" id="e_th">');
+  h+=fld('Name of assigned therapist / specialist','<span id="e_thbox"><input type="text" id="e_th"></span>');
   h+=fld('Specialization','<select id="e_sp">'+opts(DOMAINS.concat(['Other']),'','-- Select --')+'</select>');
   h+=fld('Working days engaged this week','<input type="number" id="e_td" min="0" max="6" step="1" inputmode="numeric" value="0" oninput="calcTot()">');
   h+=fld('Daily honorarium claimed (Rs.)','<input type="number" id="e_hr" min="0" max="'+CAP_DAY+'" step="1" inputmode="numeric" value="0" oninput="calcTot()">','Maximum Rs. 1,500 per day.');
   h+='<div class="fld"><b>Total honorarium: <span id="e_tot">Rs. 0</span></b></div>';
-  h+=fld('Therapy session photographs * (1 to 5)','<input type="file" id="e_ph_in" accept="image/*" multiple onchange="addPhotos(this)"><div class="hint">Tap and choose Camera. Each photo gets a date-time stamp. Up to 10 MB each.</div><div id="e_thumbs" class="thumbs"></div>');
+  if(secure())h+=fld('Therapy session photographs * (1 to 5)','<button class="btn" onclick="openCam()">Take live photo</button><div class="hint">Photos must be taken live with this camera at the centre. Gallery uploads are not allowed. Each photo is stamped with place and time and checked by the server.</div><div id="e_thumbs" class="thumbs"></div>');
+  else h+=fld('Therapy session photographs * (1 to 5)','<input type="file" id="e_ph_in" accept="image/*" multiple onchange="addPhotos(this)"><div class="hint">Tap and choose Camera. Each photo gets a date-time stamp. Up to 10 MB each.</div><div id="e_thumbs" class="thumbs"></div>');
   h+='<div class="fld"><button class="btn g big" id="e_go" onclick="submitEntry()">Submit Entry</button> <button class="btn o" onclick="showTab(\'entry\')">Clear form</button></div>';
   return h;
 }
 function modeChg(){refreshCentres();var d=$('e_dc');if(d)d.style.display=isDC(rv('e_mode'))?'block':'none'}
+function myCentres(b,m){return CFG.centres.filter(function(c){if(c.block!==b||c.mode!==m)return false;if(secure()&&S.role==='field'&&c.assigned&&c.assigned.length&&c.assigned.indexOf(S.id)<0)return false;return true})}
+function findCentre(b,n){var h=null;CFG.centres.forEach(function(c){if(c.block===b&&c.name===n)h=c});return h}
 function refreshCentres(){
   var b=$('e_blk').value,m=rv('e_mode'),sel=$('e_ctr');
-  if(!b||!m){sel.innerHTML='<option value="">-- Select block and mode first --</option>';$('e_new').style.display='none';return}
-  var list=CFG.centres.filter(function(c){return c.block===b&&c.mode===m});
-  sel.innerHTML='<option value="">-- Select centre --</option>'+list.map(function(c){return '<option value="'+esc(c.name)+'" data-code="'+esc(c.code||'')+'">'+esc(c.name)+(c.code?' ('+esc(c.code)+')':'')+'</option>'}).join('')+'<option value="__new">Not in list - type name</option>';
-  if(!list.length)sel.value='__new';
+  if(!b||!m){sel.innerHTML='<option value="">-- Select block and mode first --</option>';$('e_new').style.display='none';geoUi();return}
+  var list=myCentres(b,m);
+  sel.innerHTML='<option value="">-- Select centre --</option>'+list.map(function(c){return '<option value="'+esc(c.name)+'" data-code="'+esc(c.code||'')+'">'+esc(c.name)+(c.code?' ('+esc(c.code)+')':'')+'</option>'}).join('')+(secure()?'':'<option value="__new">Not in list - type name</option>');
+  if(!list.length&&!secure())sel.value='__new';
+  if(!list.length&&secure())sel.innerHTML='<option value="">No centre registered for you here. Ask the District Office.</option>';
   ctrChg();
 }
-function ctrChg(){$('e_new').style.display=$('e_ctr').value==='__new'?'block':'none'}
+function ctrChg(){$('e_new').style.display=$('e_ctr').value==='__new'?'block':'none';fillTherapists();geoUi()}
+function fillTherapists(){
+  var bx=$('e_thbox');if(!bx)return;
+  var b=$('e_blk').value,cn=$('e_ctr').value,c=cn&&cn!=='__new'?findCentre(b,cn):null;
+  var list=c&&CFG.therapists.length?CFG.therapists.filter(function(t){return String(t.code)===String(c.code)||t.centre===c.name}):[];
+  if(!list.length){if(!$('e_th')||$('e_th').tagName!=='INPUT')bx.innerHTML='<input type="text" id="e_th">';return}
+  bx.innerHTML='<select id="e_th" onchange="thChg()"><option value="">-- Select therapist --</option>'+list.map(function(t){return '<option value="'+esc(t.name)+'" data-d="'+esc(t.domain||'')+'">'+esc(t.name)+(t.qual?' ('+esc(t.qual)+')':'')+'</option>'}).join('')+'<option value="__other">Not in list - type name (will be flagged)</option></select><input type="text" id="e_th2" placeholder="Therapist name" style="display:none;margin-top:6px">';
+}
+function thChg(){
+  var s=$('e_th'),o=s.options[s.selectedIndex];$('e_th2').style.display=s.value==='__other'?'block':'none';
+  var sp=specFor(o?o.getAttribute('data-d'):'');if(sp&&s.value!=='__other')$('e_sp').value=sp;
+}
+function thVal(){var e=$('e_th');return e.value==='__other'?($('e_th2').value||'').trim():e.value.trim()}
 function calcTot(){$('e_tot').textContent=inr(num($('e_td').value)*num($('e_hr').value))}
 function addPhotos(inp){
   var files=[].slice.call(inp.files);inp.value='';
@@ -352,7 +411,7 @@ function submitEntry(){
   else if(ctr){cname=ctr;var o=$('e_ctr').options[$('e_ctr').selectedIndex];ccode=o?o.getAttribute('data-code')||'':''}
   var days=parseInt($('e_days').value,10),opd=cv('e_opd'),off=cv('e_off'),pn=$('e_pn').value.trim(),ph=$('e_ph').value.trim();
   var reg=rv('e_reg'),iep=rv('e_iep'),cw=$('e_cw').value,dm=rv('e_dm'),pre=rv('e_pre'),dom=cv('e_dom'),ses=$('e_ses').value;
-  var th=$('e_th').value.trim(),sp=$('e_sp').value,td=num($('e_td').value),hr=num($('e_hr').value),ct=num($('e_ct')?$('e_ct').value:0),dc=isDC(mode);
+  var th=thVal(),sp=$('e_sp').value,td=num($('e_td').value),hr=num($('e_hr').value),ct=num($('e_ct')?$('e_ct').value:0),dc=isDC(mode);
   if(!we)er.push('Select the week ending date.');else if(we>today())er.push('Week ending date cannot be in the future.');
   if(!blk)er.push('Select the block.');if(!mode)er.push('Select the service delivery mode.');if(!cname)er.push('Select or type the centre name.');
   if(!opd.length)er.push('Tick the designated operating days.');
@@ -372,24 +431,40 @@ function submitEntry(){
   if(ct>CAP_CONT)er.push('Contingency cannot exceed Rs. 500 per month.');
   if(!PH.length)er.push('Add at least one therapy session photograph.');
   if(er.length){$('errs').innerHTML='<div class="err"><b>Please correct:</b><br>- '+er.map(esc).join('<br>- ')+'</div>';window.scrollTo(0,0);return}
-  var rec={timestamp:new Date().toISOString(),id:uid(),weekEnding:we,block:blk,mode:mode,centre:cname,centreCode:ccode,operatingDays:opd,daysFunctioned:days,present:off,personName:pn,phone:ph,registerOk:reg,iepOk:iep,cwsn:parseInt(cw,10),dailyMinMet:dc?dm:'NA',preAssessment:'Yes',domains:dom,therapist:th,specialization:sp,therapistDays:td,dailyHonorarium:hr,totalHonorarium:td*hr,contingency:dc?ct:0,sessions:parseInt(ses,10),photoLinks:[],submittedBy:S.name,status:'Pending',verifiedBy:'',verifiedAt:'',remark:'',flags:'',photoCount:PH.length,localPhotos:!S.url};
-  var n=norm(rec),c=buildCtx(scope().concat([n])),fl=flagsOf(n,c);
-  if(fl.length&&!confirm('This entry will be marked with these audit flags:\n\n- '+fl.join('\n- ')+'\n\nSubmit anyway?'))return;
+  var build=function(fix){
+    var rec={timestamp:new Date().toISOString(),id:uid(),weekEnding:we,block:blk,mode:mode,centre:cname,centreCode:ccode,operatingDays:opd,daysFunctioned:days,present:off,personName:pn,phone:ph,registerOk:reg,iepOk:iep,cwsn:parseInt(cw,10),dailyMinMet:dc?dm:'NA',preAssessment:'Yes',domains:dom,therapist:th,specialization:sp,therapistDays:td,dailyHonorarium:hr,totalHonorarium:td*hr,contingency:dc?ct:0,sessions:parseInt(ses,10),photoLinks:[],submittedBy:S.name,status:'Pending',verifiedBy:'',verifiedAt:'',remark:'',flags:'',photoHashes:[],secFlags:'',userId:S.id||'',photoCount:PH.length,localPhotos:!S.url,
+      capturedAt:fix?fix.ts:'',lat:fix?fix.lat:'',lng:fix?fix.lng:'',gpsAcc:fix?Math.round(fix.acc):'',distanceM:'',deviceId:secure()?DEV:''};
+    var cen=findCentre(blk,cname);if(fix&&cen&&cen.lat&&mode.indexOf('Home')<0)rec.distanceM=Math.round(haversine(fix.lat,fix.lng,cen.lat,cen.lng));
+    var n=norm(rec),c=buildCtx(scope().concat([n])),fl=flagsOf(n,c);
+    if(fl.length&&!confirm('This entry will be marked with these audit flags:\n\n- '+fl.join('\n- ')+'\n\nSubmit anyway?')){$('e_go').disabled=false;return}
+    $('e_go').disabled=true;
+    MEMPH[rec.id]=PH.slice();
+    idbSet(rec.id,PH.slice()).catch(function(){}).then(function(){
+      if(!S.url){REC.push(n);saveRec();showTab('entry');flash('Entry saved on this device (demo mode).');return}
+      n._pending=true;REC.push(n);OUT.push(rec.id);saveRec();saveOut();banner();showTab('entry');
+      flash('Entry saved. Uploading to the district server...');syncOutbox();
+    });
+  };
+  if(!secure())return build(null);
   $('e_go').disabled=true;
-  MEMPH[rec.id]=PH.slice();
-  idbSet(rec.id,PH.slice()).catch(function(){}).then(function(){
-    if(!S.url){REC.push(n);saveRec();showTab('entry');flash('Entry saved on this device (local mode).');return}
-    n._pending=true;REC.push(n);OUT.push(rec.id);saveRec();saveOut();banner();showTab('entry');
-    flash('Entry saved. Uploading to the district server...');syncOutbox();
-  });
+  freshFix().then(function(fix){
+    var cen=findCentre(blk,cname),bad='';
+    if(fix.acc>MAX_ACC)bad='GPS accuracy is '+Math.round(fix.acc)+' m (needs under '+MAX_ACC+' m). Go outdoors and wait for a better signal.';
+    else if(mode.indexOf('Home')<0&&cen&&cen.lat){var d=Math.round(haversine(fix.lat,fix.lng,cen.lat,cen.lng)),rad=cen.radius||CFG.radius||150;if(d-Math.min(fix.acc,50)>rad)bad='You are about '+d+' m from the centre (allowed '+rad+' m). Submit from the centre.'}
+    if(bad){$('e_go').disabled=false;$('errs').innerHTML='<div class="err"><b>Cannot submit:</b><br>'+esc(bad)+'</div>';window.scrollTo(0,0);return}
+    build(fix);
+  }).catch(function(e){$('e_go').disabled=false;$('errs').innerHTML='<div class="err"><b>Cannot submit:</b><br>'+esc(e.message||'Location unavailable')+'</div>';window.scrollTo(0,0)});
 }
+function isMine(r){return secure()?r.userId===S.id:(r.submittedBy===S.name&&(!S.block||r.block===S.block))}
 function viewMine(){
   RESFN=function(){
-    var rows=prep().filter(function(r){return r.submittedBy===S.name}).sort(byDate);
-    return '<button class="btn sm" onclick="refreshBtn()">Refresh</button>'+grid(COLS(['we','mode','ctr','days','cw','aud','st','up']),rows);
+    var c=buildCtx(scope()),rows=REC.filter(isMine).sort(byDate);
+    rows.forEach(function(r){r._f=r.status==='Rejected'?[]:flagsOf(r,c);r._s=[]});
+    return '<button class="btn sm" onclick="refreshBtn()">Refresh</button>'+grid(COLS(['we','mode','ctr','days','cw','aud','st','up','mact']),rows);
   };
   return '<h2>My Entries</h2><div id="res"></div>';
 }
+function discard(id){if(!confirm('Remove this rejected entry from your phone? You can enter it again correctly.'))return;REC=REC.filter(function(x){return x.id!==id});OUT=OUT.filter(function(x){return x!==id});idbDel(id);saveRec();saveOut();banner();drawRes()}
 
 // ---------- COMPLIANCE ----------
 function buildCtx(all){
@@ -416,8 +491,8 @@ function flagsOf(r,c){
   if(c.dup[ck+'|'+r.weekEnding]>1)f.push('Duplicate entry (same centre and week)');
   return f;
 }
-function scope(){return S.block?REC.filter(function(r){return r.block===S.block}):REC}
-function prep(){var all=scope(),c=buildCtx(all);all.forEach(function(r){r._f=flagsOf(r,c)});return all}
+function scope(){var a=REC.filter(function(r){return r.status!=='Rejected'});return S.block?a.filter(function(r){return r.block===S.block}):a}
+function prep(){var all=scope(),c=buildCtx(all);all.forEach(function(r){r._f=flagsOf(r,c);r._s=r.secFlags?String(r.secFlags).split(' ; '):[]});return all}
 function byDate(a,b){return a.weekEnding<b.weekEnding?1:a.weekEnding>b.weekEnding?-1:(a.timestamp<b.timestamp?1:-1)}
 function filt(all,base){
   var q=F.q.toLowerCase();
@@ -430,8 +505,9 @@ function filt(all,base){
     if(F.status&&r.status!==F.status)return false;
     if(F.sample&&F.sample.indexOf(r.id)<0)return false;
     var ch=F.chip;
-    if(ch==='flagged'&&!r._f.length)return false;
-    if(ch==='ok'&&r._f.length)return false;
+    if(ch==='flagged'&&!r._f.length&&!r._s.length)return false;
+    if(ch==='ok'&&(r._f.length||r._s.length))return false;
+    if(ch==='sec'&&!r._s.length)return false;
     if((ch==='Day Care'||ch==='BRR'||ch==='HBE')&&modeShort(r.mode)!==ch)return false;
     if(ch==='Pending'&&r.status!=='Pending')return false;
     if(ch==='Returned'&&r.status!=='Returned')return false;
@@ -454,15 +530,15 @@ function bar(o){
   h+='<div><label>From (week ending)</label><input type="date" id="f_from" value="'+F.from+'" onchange="F.from=this.value;drawRes()"></div><div><label>To</label><input type="date" id="f_to" value="'+F.to+'" onchange="F.to=this.value;drawRes()"></div>';
   if(!o.nostatus)h+=fsel('Status','status',['Pending','Verified','Returned'],'Any status');
   h+='</div><div style="margin-top:6px"><button class="btn sm" onclick="setRange(\'7\')">Last 7 days</button><button class="btn sm" onclick="setRange(\'m\')">This month</button><button class="btn sm" onclick="setRange(\'30\')">Last 30 days</button><button class="btn sm" onclick="setRange(\'all\')">All time</button></div>';
-  if(!o.nochips){h+='<div>';[['all','All'],['flagged','Flagged'],['ok','Compliant'],['Day Care','Day Care'],['BRR','BRR'],['HBE','HBE'],['Pending','Pending'],['Returned','Returned']].forEach(function(c){h+='<span class="chip'+(F.chip===c[0]?' on':'')+'" onclick="F.chip=\''+c[0]+'\';showTab(TAB)">'+c[1]+'</span>'});h+='</div>'}
+  if(!o.nochips){h+='<div>';[['all','All'],['flagged','Flagged'],['ok','Compliant']].concat(secure()&&canVerify()?[['sec','Security flags']]:[]).concat([['Day Care','Day Care'],['BRR','BRR'],['HBE','HBE'],['Pending','Pending'],['Returned','Returned']]).forEach(function(c){h+='<span class="chip'+(F.chip===c[0]?' on':'')+'" onclick="F.chip=\''+c[0]+'\';showTab(TAB)">'+c[1]+'</span>'});h+='</div>'}
   return h+'</div>';
 }
 function setRange(k){
   if(k==='7'){F.from=daysAgo(6);F.to=today()}else if(k==='30'){F.from=daysAgo(29);F.to=today()}else if(k==='m'){F.from=monthStart();F.to=today()}else{F.from='';F.to=''}
   $('f_from').value=F.from;$('f_to').value=F.to;drawRes();
 }
-function drawRes(){if(RESFN&&$('res'))$('res').innerHTML=RESFN()}
-function flagHtml(r){return r._f.length?'<span class="bad">FLAG</span><br>'+r._f.map(esc).join('<br>'):'<span class="ok">COMPLIANT</span>'}
+function drawRes(){if(RESFN&&$('res'))$('res').innerHTML=RESFN();else if(TAB==='security')secDraw()}
+function flagHtml(r){if(r.status==='Rejected')return '<span class="bad">REJECTED</span><br>'+esc(r.remark);return r._f.length?'<span class="bad">FLAG</span><br>'+r._f.map(esc).join('<br>'):'<span class="ok">COMPLIANT</span>'}
 function photoCell(r){
   if(r.photoLinks.length)return r.photoLinks.map(function(u,i){return '<a href="'+esc(u)+'" target="_blank" rel="noopener">Photo '+(i+1)+'</a>'}).join(' ');
   if(r.localPhotos)return '<a href="#" onclick="showPh(\''+r.id+'\');return false">View ('+r.photoCount+')</a>';
@@ -483,6 +559,7 @@ function actBtns(r){
   if(isAdmin())h+='<button class="btn o sm" onclick="delRec(\''+r.id+'\')">Delete</button>';
   return h;
 }
+function mapLink(a,b){return '<a href="https://www.google.com/maps?q='+a+','+b+'" target="_blank" rel="noopener">'+Number(a).toFixed(5)+', '+Number(b).toFixed(5)+'</a>'}
 function COLS(keys){
   var A={
     we:{h:'Week ending',f:function(r){return esc(r.weekEnding)}},
@@ -499,6 +576,10 @@ function COLS(keys){
     st:{h:'Status',f:function(r){return esc(r.status)+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
     ph:{h:'Photos',f:photoCell},
     up:{h:'Upload',f:function(r){return r._pending?'<span class="bad">Waiting</span>':'Done'}},
+    sec:{h:'Security checks',f:function(r){return r._s&&r._s.length?'<span class="bad">CHECK</span><br>'+r._s.map(esc).join('<br>'):'<span class="ok">OK</span>'}},
+    loc:{h:'Location',f:function(r){return r.lat===''||r.lat==null?'-':(r.distanceM!==''?r.distanceM+' m from centre':'no fence (home visit / not set)')+'<br>'+mapLink(r.lat,r.lng)+' +-'+r.gpsAcc+' m'}},
+    by:{h:'Submitted by',f:function(r){return esc(r.submittedBy)+'<br><span class="note">ID '+esc(r.userId)+'<br>Phone '+esc(String(r.deviceId).slice(0,8))+'<br>'+esc(String(r.timestamp).slice(0,16).replace('T',' '))+'</span>'}},
+    mact:{h:'Action',a:1,f:function(r){return r.status==='Rejected'?'<button class="btn o sm" onclick="discard(\''+r.id+'\')">Discard</button>':''}},
     act:{h:'Action',a:1,f:actBtns}
   };
   return keys.map(function(k){return A[k]});
@@ -507,13 +588,14 @@ function grid(cs,rows){
   if(!rows.length)return '<p class="note">No entries found.</p>';
   var cap=300,shown=rows.slice(0,cap);
   var t='<div class="tbl-wrap scroll"><table class="tbl"><tr>'+cs.map(function(c){return '<th'+(c.a?' class="act"':'')+'>'+c.h+'</th>'}).join('')+'</tr>';
-  shown.forEach(function(r){t+='<tr'+(r._f&&r._f.length?' class="flag"':'')+'>'+cs.map(function(c){return '<td'+(c.a?' class="act"':'')+'>'+c.f(r)+'</td>'}).join('')+'</tr>'});
+  shown.forEach(function(r){t+='<tr'+((r._f&&r._f.length)||(r._s&&r._s.length)?' class="flag"':'')+'>'+cs.map(function(c){return '<td'+(c.a?' class="act"':'')+'>'+c.f(r)+'</td>'}).join('')+'</tr>'});
   t+='</table></div><div class="cards">';
-  shown.forEach(function(r){t+='<div class="card'+(r._f&&r._f.length?' flag':'')+'">'+cs.map(function(c){return '<div><b>'+c.h+':</b> '+c.f(r)+'</div>'}).join('')+'</div>'});
+  shown.forEach(function(r){t+='<div class="card'+((r._f&&r._f.length)||(r._s&&r._s.length)?' flag':'')+'">'+cs.map(function(c){return '<div><b>'+c.h+':</b> '+c.f(r)+'</div>'}).join('')+'</div>'});
   return '<div class="count">'+rows.length+' entries'+(rows.length>cap?' (showing first '+cap+'; narrow the filters or export Excel)':'')+'</div>'+t+'</div>';
 }
 function viewList(kind){
   var keys={grid:['we','blk','mode','ctr','days','cw','ther','sup','ses','amt','aud','st','ph','act'],alerts:['we','blk','mode','ctr','aud','sup','st','ph','act'],review:['we','mode','ctr','days','cw','ther','sup','aud','st','ph','act']}[kind].filter(function(k){return k!=='act'||canVerify()});
+  if(secure()&&canVerify())keys.splice(keys.indexOf('st'),0,'by','loc','sec');
   RESFN=function(){
     var all=prep(),rows=filt(all).sort(byDate),h='';
     if(kind==='alerts'){var z=zeroCentres(filt(all,true));h+='<h3>Zero-activity centres (no entry in the selected period): '+z.length+'</h3>'+(z.length?'<p>'+z.map(function(c){return esc(c.name)+' <span class="note">('+esc(c.block)+', '+modeShort(c.mode)+')</span>'}).join('; ')+'</p>':'<p class="ok">All registered centres have reported.</p>')+'<h3>Flagged entries</h3>'}
@@ -558,7 +640,7 @@ function viewDash(){
       stat('Honorarium',inr(t.hon))+
       stat('Contingency',inr(t.cont))+
       stat('Total expenditure',inr(t.total),bud?'Overall '+inr(spentAll)+' of '+inr(bud)+' sanctioned ('+Math.round(spentAll*100/bud)+'%)':'Set sanctioned budget in Centres & Settings')+
-      stat('Entries with violations',t.fl,'of '+t.entries,t.fl>0)+'</div>';
+      stat('Entries with violations',t.fl,'of '+t.entries,t.fl>0)+(secure()&&canVerify()?stat('Security-flagged entries',rows.filter(function(x){return x._s&&x._s.length}).length,'location / photo / time checks',true):'')+'</div>';
     var fc=flagCounts(rows);
     h+='<h3>Compliance radar</h3>'+(fc.length?tbl(['Violation','Entries'],fc.map(function(x){return '<tr><td>'+esc(x[0])+'</td><td>'+x[1]+'</td></tr>'}),[1]):'<p class="ok">No violations in the selected period.</p>');
     var dc=DOMAINS.map(function(d){return rows.filter(function(r){return r.domains.indexOf(d)>-1}).length}),mx=Math.max.apply(null,dc.concat([1]));
@@ -622,7 +704,7 @@ function viewReport(){
   return '<h2>Higher Authority Report</h2><p class="note">Choose the period and block, then download or print. Includes all statuses; verify entries first for a clean report.</p>'+bar({nostatus:1,nochips:1})+'<div id="res"></div>';
 }
 function copySummary(){
-  var d=reportData(),t=d.t,s='CWSN Therapeutic Services - '+CFG.district+' District\nPeriod (week ending): '+periodText()+'\nCentres reported: '+t.centres+' | Entries: '+t.entries+'\nCWSN attended: '+t.cwsn+' | Sessions: '+t.ses+'\nHonorarium: '+inr(t.hon)+' | Contingency: '+inr(t.cont)+' | Total: '+inr(t.total)+'\nEntries with violations: '+t.fl+' | Zero-activity centres: '+d.z.length+'\n\nBlock-wise (centres / CWSN / sessions / Rs.):\n'+d.blocks.map(function(b){return b.key+': '+b.centres+' / '+b.cwsn+' / '+b.ses+' / '+b.total}).join('\n');
+  var d=reportData(),t=d.t,s='IE Monitoring System - '+CFG.district+' District\nPeriod (week ending): '+periodText()+'\nCentres reported: '+t.centres+' | Entries: '+t.entries+'\nCWSN attended: '+t.cwsn+' | Sessions: '+t.ses+'\nHonorarium: '+inr(t.hon)+' | Contingency: '+inr(t.cont)+' | Total: '+inr(t.total)+'\nEntries with violations: '+t.fl+' | Zero-activity centres: '+d.z.length+'\n\nBlock-wise (centres / CWSN / sessions / Rs.):\n'+d.blocks.map(function(b){return b.key+': '+b.centres+' / '+b.cwsn+' / '+b.ses+' / '+b.total}).join('\n');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(function(){flash('Summary copied. Paste it into WhatsApp or the reporting form.')},function(){prompt('Copy this text:',s)});else prompt('Copy this text:',s);
 }
 function exportXlsx(){
@@ -633,8 +715,8 @@ function exportXlsx(){
   var top=[['Therapeutic Services for CWSN - '+CFG.district+' District'],['Period (week ending): '+periodText()],[]];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(top.concat([head],d.blocks.map(line),[['TOTAL',t.centres,t.entries,t.cwsn,t.ses,t.hon,t.cont,t.total,t.fl]])),'Summary_By_Block');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Mode'].concat(head.slice(1))].concat(d.modes.map(line))),'By_Mode');
-  var eh=['Week ending','Block','Mode','Centre','Code','Operating days','Days functioned','Officials present','Person name','Phone','Register','IEP','CWSN','10+ CWSN daily','Pre-assessment','Domains','Therapist','Specialization','Therapist days','Daily Rs.','Total honorarium Rs.','Contingency Rs.','Sessions','Photo links','Submitted by','Status','Remark','Audit flags'];
-  var er=function(r){return [r.weekEnding,r.block,r.mode,r.centre,r.centreCode,r.operatingDays.join(', '),r.daysFunctioned,r.present.join(', '),r.personName,r.phone,r.registerOk,r.iepOk,r.cwsn,r.dailyMinMet,r.preAssessment,r.domains.join(', '),r.therapist,r.specialization,r.therapistDays,r.dailyHonorarium,r.totalHonorarium,r.contingency,r.sessions,r.photoLinks.join(' '),r.submittedBy,r.status,r.remark,r._f.join('; ')]};
+  var eh=['Week ending','Block','Mode','Centre','Code','Operating days','Days functioned','Officials present','Person name','Phone','Register','IEP','CWSN','10+ CWSN daily','Pre-assessment','Domains','Therapist','Specialization','Therapist days','Daily Rs.','Total honorarium Rs.','Contingency Rs.','Sessions','Photo links','Submitted by','Status','Remark','Audit flags','Security flags','Latitude','Longitude','GPS accuracy m','Distance from centre m','User ID','Phone ID'];
+  var er=function(r){return [r.weekEnding,r.block,r.mode,r.centre,r.centreCode,r.operatingDays.join(', '),r.daysFunctioned,r.present.join(', '),r.personName,r.phone,r.registerOk,r.iepOk,r.cwsn,r.dailyMinMet,r.preAssessment,r.domains.join(', '),r.therapist,r.specialization,r.therapistDays,r.dailyHonorarium,r.totalHonorarium,r.contingency,r.sessions,r.photoLinks.join(' '),r.submittedBy,r.status,r.remark,r._f.join('; '),r.secFlags||'',r.lat,r.lng,r.gpsAcc,r.distanceM,r.userId,String(r.deviceId).slice(0,8)]};
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([eh].concat(d.rows.map(er))),'Entries');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([eh].concat(d.rows.filter(function(r){return r._f.length}).map(er))),'Alerts');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Block','Mode','Centre','Code']].concat(d.z.map(function(c){return [c.block,modeShort(c.mode),c.name,c.code||'']}))),'Zero_Activity');
@@ -646,15 +728,20 @@ function normMode(s){s=String(s||'').toLowerCase();return s.indexOf('day')>-1?MO
 function viewSetup(){
   RESFN=null;
   var h='<h2>Centres & Settings</h2>';
-  h+='<h3>District</h3>'+fld('District name','<input type="text" id="s_dist" value="'+esc(CFG.district)+'">')+fld('Sanctioned budget for therapeutic services (Rs.)','<input type="number" id="s_bud" min="0" value="'+(CFG.budget||0)+'">')+
+  h+='<h3>District</h3>'+fld('District name','<input type="text" id="s_dist" value="'+esc(CFG.district)+'">')+fld('Geo-fence radius around each fixed centre (metres)','<input type="number" id="s_rad" min="50" max="1000" value="'+(CFG.radius||150)+'">','Entries for BRR and Day Care centres are accepted only within this distance of the centre location. Home-based (HBE) visits are not fenced.')+fld('Sanctioned budget for therapeutic services (Rs.)','<input type="number" id="s_bud" min="0" value="'+(CFG.budget||0)+'">')+
      fld('Blocks (one per line)','<textarea id="s_blk" rows="7">'+esc(CFG.blocks.join('\n'))+'</textarea>','Starter list only - please correct it to match the district.')+'<button class="btn g" onclick="saveSetup()">Save district settings</button>'+fld('Logo (Samagra Shiksha)','<input type="file" accept="image/*" onchange="setLogo(this)"> <button class="btn o sm" onclick="CFG.logo=\'\';saveCfg();drawHdr();showTab(\'setup\')">Remove logo</button>','The Samagra Shiksha logo is built in. Upload here only to replace it (this device only).');
   h+='<h3>Centres ('+CFG.centres.length+')</h3><div class="info">Register every BRR, Day Care Centre and HBE cluster here. IE Officials pick from this list, and centres with no entry appear as zero-activity.</div>';
-  h+='<div class="fgrid noprint"><div><label>Block</label><select id="c_b">'+opts(CFG.blocks,'','-- Block --')+'</select></div><div><label>Mode</label><select id="c_m">'+opts(MODES,'','-- Mode --')+'</select></div><div><label>Centre name</label><input type="text" id="c_n"></div><div><label>Code</label><input type="text" id="c_c"></div></div><button class="btn" onclick="addCentre()">Add centre</button>';
-  h+='<div class="fld"><label class="t">Or import from Excel / CSV (columns: Block, Mode, Centre, Code)</label><input type="file" accept=".xlsx,.xls,.csv" onchange="importCentres(this)"></div>';
-  h+=CFG.centres.length?tbl(['Block','Mode','Centre','Code',''],CFG.centres.map(function(c,i){return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.code||'')+'</td><td><button class="btn o sm" onclick="delCentre('+i+')">Remove</button></td></tr>'})):'';
-  h+='<h3>Server connection</h3>'+fld('Web App URL','<input type="url" id="s_url" value="'+esc(S.url)+'" placeholder="https://script.google.com/macros/s/.../exec">','Leave empty for Local mode. Changes here apply to this device; to give the same URL to everyone, paste it into DEFAULT_URL in the HTML file.')+'<button class="btn" onclick="saveUrl()">Save URL</button>';
+  h+='<div class="fgrid noprint"><div><label>Block</label><select id="c_b">'+opts(CFG.blocks,'','-- Block --')+'</select></div><div><label>Mode</label><select id="c_m">'+opts(MODES,'','-- Mode --')+'</select></div><div><label>Centre name</label><input type="text" id="c_n"></div><div><label>Code</label><input type="text" id="c_c"></div><div><label>IE Official mobile (optional)</label><input type="tel" id="c_ie" placeholder="10-digit, comma for more"></div></div><button class="btn" onclick="addCentre()">Add centre</button>';
+  h+='<div class="fld"><label class="t">Or import from Excel / CSV (columns: Block, Mode, Centre, Code, IE Mobile, Latitude, Longitude, Radius - the last four are optional)</label><input type="file" accept=".xlsx,.xls,.csv" onchange="importCentres(this)"></div>';
+  h+=CFG.centres.length?tbl(['Block','Mode','Centre','Code','IE Official(s)','Location',''],CFG.centres.map(function(c,i){return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.code||'')+'</td><td>'+esc((c.assigned||[]).join(', ')||'-')+' <button class="btn sm" onclick="assignCentre('+i+')">Set</button></td><td>'+(c.lat?'Set':(c.mode.indexOf('Home')>-1?'n/a':'<span class="bad">Not set</span>'))+'</td><td><button class="btn o sm" onclick="delCentre('+i+')">Remove</button></td></tr>'})):'';
+  h+='<h3>Master data (blocks, centres, IE Officials, therapists)</h3><div class="info">Upload <b>CWSN_MONITORING_MASTER.xlsx</b> (sheets: Block, Centre, IEOfficials, therapist). It sets the blocks, centres with codes and coordinates, creates a personal login for every IE Official (their mobile number) and assigns them to their centres. You can upload an updated file again at any time.</div>'+(S.url?'<div class="fld"><input type="file" accept=".xlsx,.xls" onchange="importMaster(this)"></div>':'<p class="note">Connect the server to import the master workbook.</p>');
+  var nl=SCH.filter(function(s){return s.lat!==''&&s.lat!=null}).length;
+  h+='<h3>Schools master (for school visits)</h3><div class="info">Upload the school list with latitude and longitude. IE Officials pick the school from this list, and school-visit photos must be taken within the radius below. Columns: Block (or Blk code), UDISE Code, School Name, Village, Latitude, Longitude, CWSN Count. <button class="btn sm" onclick="schoolTemplate()">Download blank template</button></div>';
+  h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(S.url?'<div class="fld"><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
+     fld('School photo geo-fence radius (metres)','<input type="number" id="s_srad" min="50" max="1000" value="'+(CFG.schoolRadius||200)+'">','School-visit photos must be taken within this distance of the school.')+
+     '<label class="opt"><input type="checkbox" id="s_strict" '+(CFG.strictSchools?'checked':'')+'> Allow only schools from the master list (no typing a school name). Tick this once the school list is loaded.</label><br><button class="btn g" onclick="saveSetup()">Save settings</button>';
   if(!S.url){
-    h+='<h3>Local mode tools</h3>'+'<button class="btn" onclick="loadSample()">Load sample data (for testing)</button><button class="btn o" onclick="clearLocal()">Delete all local data</button>';
+    h+='<h3>Demo mode tools</h3>'+'<button class="btn" onclick="loadSample()">Load sample data (for testing)</button><button class="btn o" onclick="clearLocal()">Delete all local data</button>';
   }
   return h;
 }
@@ -665,10 +752,10 @@ function setLogo(inp){
 }
 function pushCfg(msg){
   if(!S.url){flash(msg||'Saved.');return Promise.resolve()}
-  return api('saveConfig',{district:CFG.district,blocks:CFG.blocks,centres:CFG.centres,budget:CFG.budget}).then(function(){flash((msg||'Saved')+' (server updated).')}).catch(function(e){flash('Saved on this device only. Server: '+e.message,'err')});
+  return api('saveConfig',{district:CFG.district,blocks:CFG.blocks,centres:CFG.centres,budget:CFG.budget,radius:CFG.radius||150,therapists:CFG.therapists||[],blockCodes:CFG.blockCodes||{},schoolRadius:CFG.schoolRadius||200,strictSchools:!!CFG.strictSchools}).then(function(){flash((msg||'Saved')+' (server updated).')}).catch(function(e){flash('Saved on this device only. Server: '+e.message,'err')});
 }
 function saveSetup(){
-  CFG.district=$('s_dist').value.trim()||CFG.district;CFG.budget=num($('s_bud').value);
+  CFG.district=$('s_dist').value.trim()||CFG.district;CFG.budget=num($('s_bud').value);CFG.radius=Math.max(50,Math.min(1000,num($('s_rad').value)||150));if($('s_srad')){CFG.schoolRadius=Math.max(50,Math.min(1000,num($('s_srad').value)||200));CFG.strictSchools=$('s_strict').checked}
   var b=$('s_blk').value.split('\n').map(function(x){return x.trim()}).filter(function(x){return x});if(b.length)CFG.blocks=b;
   saveCfg();drawHdr();pushCfg('Settings saved.').then(function(){showTab('setup')});
 }
@@ -676,8 +763,10 @@ function addCentre(){
   var b=$('c_b').value,m=$('c_m').value,n=$('c_n').value.trim(),c=$('c_c').value.trim();
   if(!b||!m||!n)return flash('Select block, mode and enter the centre name.','err');
   if(CFG.centres.some(function(x){return x.block===b&&x.name.toLowerCase()===n.toLowerCase()}))return flash('This centre is already registered.','err');
-  CFG.centres.push({block:b,mode:m,name:n,code:c});saveCfg();pushCfg('Centre added.').then(function(){showTab('setup')});
+  CFG.centres.push({block:b,mode:m,name:n,code:c,assigned:parseIe($('c_ie').value)});saveCfg();pushCfg('Centre added.').then(function(){showTab('setup')});
 }
+function parseIe(s){return String(s||'').split(/[,;\s]+/).map(function(x){return x.trim()}).filter(function(x){return /^[6-9][0-9]{9}$/.test(x)})}
+function assignCentre(i){var c=CFG.centres[i],v=prompt('Mobile number(s) of the IE Official(s) for '+c.name+' (separate with commas). Leave empty for no restriction:',(c.assigned||[]).join(', '));if(v===null)return;c.assigned=parseIe(v);saveCfg();pushCfg('Assignment saved.').then(function(){showTab('setup')})}
 function delCentre(i){if(!confirm('Remove this centre from the list? Past entries are kept.'))return;CFG.centres.splice(i,1);saveCfg();pushCfg('Centre removed.').then(function(){showTab('setup')})}
 function importCentres(inp){
   var f=inp.files[0];if(!f)return;
@@ -691,14 +780,13 @@ function importCentres(inp){
         var b=g('block'),nm=g('centre')||g('center')||g('centre name')||g('name');if(!b||!nm)return;
         if(CFG.blocks.indexOf(b)<0)CFG.blocks.push(b);
         if(CFG.centres.some(function(x){return x.block===b&&x.name.toLowerCase()===nm.toLowerCase()}))return;
-        CFG.centres.push({block:b,mode:normMode(g('mode')),name:nm,code:g('code')});n++;
+        var ce={block:b,mode:normMode(g('mode')),name:nm,code:g('code'),assigned:parseIe(g('ie mobile')||g('ie official mobile')||g('assigned'))};var la=parseFloat(g('latitude')),lo=parseFloat(g('longitude')),ra=parseFloat(g('radius'));if(isFinite(la)&&isFinite(lo)){ce.lat=la;ce.lng=lo}if(isFinite(ra))ce.radius=ra;CFG.centres.push(ce);n++;
       });
       saveCfg();pushCfg(n+' centres imported.').then(function(){showTab('setup')});
     }catch(e){alert('Could not read the file.')}
   };
   rd.readAsArrayBuffer(f);
 }
-function saveUrl(){S.url=$('s_url').value.trim();saveS();drawHdr();banner();showTab('setup');flash(S.url?'URL saved. Log out and log in again to load server data.':'Local mode selected.')}
 function clearLocal(){if(!confirm('Delete ALL local entries and centres on this device?'))return;REC=[];OUT=[];CFG.centres=[];saveRec();saveOut();saveCfg();showTab('setup');flash('Local data deleted.')}
 function loadSample(){
   if(!confirm('Add sample centres and entries for testing?'))return;
@@ -717,16 +805,737 @@ function loadSample(){
 // ---------- HELP ----------
 function viewHelp(){
   var h='<h2>Help</h2>';
-  h+='<h3>Who can do what</h3><ul><li><b>All officials</b> (IE Official, BEEO, District Authority) can add entries and view the dashboard, centre activity, alerts, photos and reports for their block. The District Authority sees all blocks.</li><li><b>BEEO and District Authority</b> can Verify or Return entries.</li><li><b>District Authority only</b> can delete entries and change centres and settings.</li></ul>';
-  h+='<h3>How to send your weekly entry</h3><ol><li>Open <b>New Entry</b>.</li><li>Choose the week ending date, block, mode and centre.</li><li>Tap the days, officials and therapy domains that apply.</li><li>Type only the numbers and names asked for.</li><li>Add 1 to 5 photos using the camera.</li><li>Tap <b>Submit Entry</b>.</li></ol><p>No internet? The entry is saved on your phone and uploads automatically when the internet returns. You can also tap <b>Send now</b> in the orange bar.</p><p>If the BEEO or district office returns your entry, open <b>My Entries</b>, read the reason, and submit a corrected entry.</p>';
-  h+='<h3>Rules the app checks</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>Day Care Centres must run at least 3 days a week and have at least 10 CWSN per day (entry is saved but flagged in red).</li><li>Missing IEP, missing attendance register, missing photos and duplicate entries are flagged.</li></ul>';
-  if(S.role==='district')h+='<h3>Setting up for everyone (District Office)</h3><ol><li>Create the Google Sheet and add the Apps Script backend (file Code.gs) as described at its top.</li><li>Deploy it as a Web App and copy the URL.</li><li>Paste the URL into <b>DEFAULT_URL</b> near the top of this HTML file (or into Centres & Settings), then host the file (for example on GitHub Pages) and share the link on the WhatsApp groups.</li><li>On a phone: open the link, then use the browser menu and choose <b>Add to Home screen</b>.</li><li>Register blocks and centres under Centres & Settings.</li><li>Every Friday: open Higher Authority Report, choose the period, then download Excel or print as PDF.</li></ol>';
+  h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> adds entries for the centres assigned to them and views their block.</li><li><b>BEEO:</b> views their block, verifies or returns entries, and sets centre locations.</li><li><b>District Authority:</b> views all blocks, verifies, manages users and phones, sets centre locations and settings, and reads the security and access log.</li></ul>';
+  if(S.role==='field')h+='<h3>Daily activity and the monthly report</h3><ol><li>Open <b>Daily Activity</b> every day you work. Choose School Visit, Home Visit (HBE), Centre Attendance or Other Official Work.</li><li>For a school visit, pick the school and take the photos <b>at the school</b>: photos taken away from it are rejected. Centre attendance works the same way.</li><li>Check your entries in <b>My Activity Log</b>. The BEEO verifies them.</li><li>At the end of the month (from the 25th) open <b>Monthly Report</b>, check the totals, add a short summary and submit it. After that the month is locked unless the BEEO returns it.</li></ol>';
+  if(S.role==='block')h+='<h3>Reviewing activity</h3><p><b>Activity Review</b> lists the daily activities of your IE Officials with photo distance and security checks. <b>Monthly Reports</b> shows who has consolidated the month, and lets you verify or return each report.</p>';
+  if(S.role!=='district')h+='<h3>How to send your weekly entry</h3><ol><li>Open <b>New Entry</b> and allow Location and Camera when the phone asks.</li><li>Stand at the centre. Wait until the green location box shows you are inside the allowed distance.</li><li>Choose the week ending date, block, mode and centre.</li><li>Fill in the numbers and tick the boxes.</li><li>Tap <b>Take live photo</b> and photograph the session (1 to 5 photos).</li><li>Tap <b>Submit Entry</b>.</li></ol><p>No internet? The entry is saved on your phone with its place and time, and uploads when the internet returns. If the server rejects an entry, open <b>My Entries</b> to see the reason.</p>';
+  h+='<h3>Security you should know about</h3><ul><li>Your login is personal: your mobile number and your own 6-digit PIN. Never share the PIN.</li><li>Five wrong PINs lock the account for 15 minutes.</li><li>Your account works on your registered phone only. A new phone needs District Office approval.</li><li>Entries for BRR and Day Care centres are accepted only from the centre, and photos must be taken live in the app.</li><li>Every login, upload and rejected attempt is recorded for the District Authority.</li></ul>';
+  h+='<h3>Rules the app checks</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>Day Care Centres must run at least 3 days a week and have at least 10 CWSN per day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
+  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres & Settings: add blocks and centres. Security & Audit, Users: add IE Officials and BEEOs, then give each person their PIN privately.</li><li>Centres & Settings: upload the master workbook (it creates the IE Official logins) and the schools master with latitude and longitude.</li><li>Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
   return h;
 }
+// ---------- GEO (live location) ----------
+function haversine(a,b,c,d){var R=6371000,p=Math.PI/180,x=Math.sin((c-a)*p/2),y=Math.sin((d-b)*p/2),h=x*x+Math.cos(a*p)*Math.cos(c*p)*y*y;return 2*R*Math.asin(Math.sqrt(h))}
+function setFix(p){GEO.fix={lat:p.coords.latitude,lng:p.coords.longitude,acc:p.coords.accuracy,ts:Date.now()};GEO.err=''}
+function geoErr(e){GEO.err=e.code===1?'Location permission is blocked. Allow location for this site in the browser settings, then reload.':(e.code===3?'Timed out waiting for GPS. Go outdoors and try again.':'Cannot read location ('+(e.message||'error')+').')}
+function startGeo(){
+  if(GEO.watch!==null)return;
+  if(!navigator.geolocation){GEO.err='This device does not support location.';return}
+  GEO.watch=navigator.geolocation.watchPosition(function(p){setFix(p);geoUi()},function(e){geoErr(e);geoUi()},{enableHighAccuracy:true,maximumAge:0,timeout:30000});
+}
+function stopGeo(){if(GEO.watch!==null&&navigator.geolocation)navigator.geolocation.clearWatch(GEO.watch);GEO.watch=null}
+function freshFix(){return new Promise(function(res,rej){
+  if(!navigator.geolocation)return rej(new Error('This device does not support location.'));
+  if(GEO.watch!==null&&GEO.fix&&Date.now()-GEO.fix.ts<=15000&&GEO.fix.acc<=MAX_ACC){return res(GEO.fix)}
+  navigator.geolocation.getCurrentPosition(function(p){setFix(p);geoUi();res(GEO.fix)},function(e){geoErr(e);geoUi();rej(new Error(GEO.err))},{enableHighAccuracy:true,maximumAge:0,timeout:25000});
+})}
+function refreshGeo(){freshFix().catch(function(){})}
+function geoUi(){
+  var b=$('geo_box');if(!b||!secure())return;
+  var f=GEO.fix,cls='geo',t='';
+  if(GEO.err){cls+=' bad';t='<b>Location problem:</b> '+esc(GEO.err)}
+  else if(!f){t='Waiting for GPS... Please allow location access when the phone asks.'}
+  else{
+    t='<b>Your location:</b> '+f.lat.toFixed(5)+', '+f.lng.toFixed(5)+' (accuracy +-'+Math.round(f.acc)+' m)';
+    if(f.acc>MAX_ACC){cls+=' bad';t+='<br>Signal too weak (needs under '+MAX_ACC+' m). Go outdoors.'}
+    else if(TAB==='entry'){
+      var bl=$('e_blk'),ce=$('e_ctr'),m=rv('e_mode');
+      if(bl&&ce&&m&&ce.value&&ce.value!=='__new'){
+        var c=findCentre(bl.value,ce.value);
+        if(m.indexOf('Home')>-1)t+='<br>Home-based visit: location is recorded, no distance limit.';
+        else if(c&&c.lat){var d=Math.round(haversine(f.lat,f.lng,c.lat,c.lng)),rad=c.radius||CFG.radius||150;
+          if(d-Math.min(f.acc,50)<=rad){cls+=' good';t+='<br>'+d+' m from the centre. Inside the allowed '+rad+' m.'}else{cls+=' bad';t+='<br>'+d+' m from the centre. You must be within '+rad+' m to submit.'}}
+        else t+='<br>This centre has no saved location yet (ask the BEEO or District Office). The entry will be flagged.';
+      }
+    }
+    else if(TAB==='daily'&&typeof dGeoNote==='function'){var dn=dGeoNote(f);cls+=dn.cls;t+=dn.t}
+  }
+  b.className=cls;b.innerHTML=t+' <button class="btn sm" onclick="refreshGeo()">Refresh location</button>';
+}
 
+// ---------- LIVE CAMERA (no gallery uploads in secure mode) ----------
+var CAM={stream:null};
+function openCam(){
+  if(PH.length>=5)return alert('Maximum 5 photos per entry.');
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return alert('This browser cannot open the camera. Use Chrome or Safari on the secure (https) link.');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:false}).then(function(s){
+    CAM.stream=s;var o=$('ov');o.style.display='block';
+    o.innerHTML='<video id="cam_v" autoplay playsinline muted></video><div style="margin:8px 0"><button class="btn g big" onclick="snap()">Capture photo</button> <button class="btn o big" onclick="closeCam()">Done</button></div><div id="cam_m" class="note">Point the camera at the therapy session and tap Capture. Photos taken: '+PH.length+'</div>';
+    $('cam_v').srcObject=s;
+  }).catch(function(){alert('Camera permission is needed to take photos. Allow camera access for this site and try again.')});
+}
+function closeCam(){if(CAM.stream){CAM.stream.getTracks().forEach(function(t){t.stop()});CAM.stream=null}var o=$('ov');o.style.display='none';o.innerHTML='';drawPh()}
+function dHash(src){var c=document.createElement('canvas');c.width=9;c.height=8;var x=c.getContext('2d');x.drawImage(src,0,0,9,8);var d=x.getImageData(0,0,9,8).data,g=[];for(var i=0;i<72;i++)g.push(d[i*4]*0.3+d[i*4+1]*0.59+d[i*4+2]*0.11);var bits='';for(var y=0;y<8;y++)for(var k=0;k<8;k++)bits+=g[y*9+k]>g[y*9+k+1]?'1':'0';var h='';for(var j=0;j<64;j+=4)h+=parseInt(bits.substr(j,4),2).toString(16);return h}
+function sha256(dataUrl){var b=atob(dataUrl.split(',')[1]),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return crypto.subtle.digest('SHA-256',u).then(function(h){return [].slice.call(new Uint8Array(h)).map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('')})}
+function snap(){
+  var v=$('cam_v'),m=$('cam_m');if(!v||!v.videoWidth)return;
+  m.textContent='Reading GPS...';
+  freshFix().then(function(f){
+    if(f.acc>MAX_ACC)throw new Error('GPS accuracy is '+Math.round(f.acc)+' m. Move outdoors and wait for a better signal.');
+    var s=Math.min(1,1280/Math.max(v.videoWidth,v.videoHeight)),c=document.createElement('canvas');
+    c.width=Math.round(v.videoWidth*s);c.height=Math.round(v.videoHeight*s);
+    var x=c.getContext('2d');x.drawImage(v,0,0,c.width,c.height);
+    var ce=camCheck(f);if(ce)throw new Error(ce);
+    var dh=dHash(c),t=new Date(),fs=Math.max(14,Math.round(c.width/38));
+    var l1=t.toLocaleDateString('en-GB')+' '+t.toLocaleTimeString('en-GB')+'   '+S.name,l2=f.lat.toFixed(5)+', '+f.lng.toFixed(5)+' (+-'+Math.round(f.acc)+'m)   '+camLabel();
+    x.fillStyle='rgba(255,255,255,0.88)';x.fillRect(0,c.height-2*fs-14,c.width,2*fs+14);
+    x.fillStyle='#000';x.font='bold '+fs+'px Arial';x.fillText(l1,8,c.height-fs-8);x.fillText(l2,8,c.height-6);
+    var data=c.toDataURL('image/jpeg',0.7);
+    return sha256(data).then(function(sha){
+      PH.push({data:data,sha:sha,dh:dh,lat:f.lat,lng:f.lng,acc:f.acc,ts:Date.now()});drawPh();
+      m.textContent='Photo '+PH.length+' saved.';if(PH.length>=5)closeCam();
+    });
+  }).catch(function(e){m.textContent=e.message||'Could not capture'});
+}
+
+// ---------- CENTRE LOCATIONS (BEEO + District) ----------
+function viewLocs(){
+  RESFN=null;
+  var list=CFG.centres.map(function(c,i){return {c:c,i:i}}).filter(function(x){return !S.block||x.c.block===S.block});
+  var h='<h2>Centre Locations (geo-fence)</h2><div class="info">Stand <b>at the centre</b> (outdoors, near the entrance), wait until accuracy is under '+SET_ACC+' m, then tap <b>Set location here</b>. IE Officials can then submit BRR and Day Care entries only from within '+(CFG.radius||150)+' m of this point. Home-based (HBE) visits are not fenced.</div><div id="geo_box" class="geo"></div>';
+  h+=list.length?tbl(['Block','Mode','Centre','Location','Action'],list.map(function(x){var c=x.c,hbe=c.mode.indexOf('Home')>-1;return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+(hbe?'Not needed (home visits)':(c.lat?'<span class="ok">Set</span> '+mapLink(c.lat,c.lng)+'<br><span class="note">by '+esc(c.locBy||'import')+' '+esc(String(c.locAt||'').slice(0,10))+'</span>':'<span class="bad">Not set</span>'))+'</td><td>'+(hbe?'':'<button class="btn g sm" onclick="setCentreLoc('+x.i+')">Set location here</button>')+'</td></tr>'})):'<p class="note">No centres registered yet.</p>';
+  return h;
+}
+function setCentreLoc(i){
+  var c=CFG.centres[i];
+  if(!confirm('You must be standing at "'+c.name+'" right now. Save your current GPS position as the centre location?'))return;
+  freshFix().then(function(f){if(f.acc>SET_ACC)throw new Error('GPS accuracy is '+Math.round(f.acc)+' m. Go outdoors and wait until it is under '+SET_ACC+' m.');return api('setLoc',{block:c.block,name:c.name})}).then(function(j){CFG.centres[i]=j.centre;saveCfg();showTab('locs');flash('Location saved for '+c.name+'.')}).catch(function(e){flash(e.message,'err')});
+}
+
+// ---------- SECURITY & AUDIT (District Authority) ----------
+var SEC={tab:'alerts',users:[],log:[],pins:null,f:{q:'',res:'',act:''}};
+function viewSecurity(){
+  RESFN=null;
+  var names={alerts:'Alerts',users:'Users & Phones',audit:'Access & Upload Log'};
+  var h='<h2>Security & Audit</h2><div class="noprint">'+['alerts','users','audit'].map(function(t){return '<button class="tab'+(SEC.tab===t?' on':'')+'" onclick="SEC.tab=\''+t+'\';showTab(\'security\')">'+names[t]+'</button>'}).join('')+' <button class="btn sm" onclick="showTab(\'security\')">Reload</button></div><div id="secbody"><p class="note">Loading from server...</p></div>';
+  setTimeout(secLoad,0);
+  return h;
+}
+var SECLOAD=0;
+function secDirty(){var d=false;[].forEach.call(document.querySelectorAll('#secbody input[type=text],#secbody input[type=tel],#secbody input[type=password],#secbody textarea'),function(i){if(i.value)d=true});return d}
+function secLoad(){
+  if(TAB!=='security')return;
+  var my=++SECLOAD;
+  Promise.all([api('users'),api('audit'),refreshData()]).then(function(r){if(my!==SECLOAD)return;SEC.users=r[0].users;SEC.log=r[1].log;if(secDirty())return;secDraw()}).catch(function(e){var b=$('secbody');if(b&&!e.auth)b.innerHTML='<div class="err">'+esc(e.message||'Could not load')+'</div>'});
+}
+function secDraw(){var b=$('secbody');if(!b)return;b.innerHTML=SEC.tab==='users'?secUsers():(SEC.tab==='audit'?secAudit():secAlerts());if(SEC.tab==='audit')drawAudit()}
+function secAlerts(){
+  var now=Date.now(),day=86400000,recent=function(l,d){return now-new Date(l.time).getTime()<d},L=SEC.log,U=SEC.users;
+  var failed=L.filter(function(l){return l.action==='login'&&l.result==='DENIED'&&recent(l,day)}).length;
+  var rej=L.filter(function(l){return (l.action==='submit'||l.action==='dsubmit')&&l.result==='DENIED'&&recent(l,day)}).length;
+  var locked=U.filter(function(u){return u.locked}).length,pend=U.filter(function(u){return u.pending});
+  var flagged=prep().filter(function(r){return r._s.length}).sort(byDate);
+  var h='<div class="stats">'+stat('Failed logins (24 h)',failed,'',failed>0)+stat('Locked accounts',locked,'',locked>0)+stat('Phone approvals waiting',pend.length,'',pend.length>0)+stat('Rejected uploads (24 h)',rej,'wrong place, reused photo, etc.',rej>0)+stat('Entries with security flags',flagged.length,'all time',flagged.length>0)+'</div>';
+  h+='<h3>Phones waiting for approval</h3>'+(pend.length?tbl(['User','Block','Action'],pend.map(function(u){return '<tr><td>'+esc(u.name)+' ('+esc(u.id)+')</td><td>'+esc(u.block)+'</td><td><button class="btn g sm" onclick="userAct(\'deviceApprove\',\''+u.id+'\')">Approve this new phone</button></td></tr>'})):'<p class="ok">None.</p>');
+  var bad=L.filter(function(l){return l.result==='DENIED'&&recent(l,2*day)}).slice(0,40);
+  h+='<h3>Blocked or suspicious events (last 48 hours)</h3>'+(bad.length?tbl(['Time','User','Action','Reason','Location'],bad.map(function(l){return '<tr class="flag"><td>'+esc(new Date(l.time).toLocaleString('en-IN'))+'</td><td>'+esc(l.name||l.uid||'-')+' <span class="note">'+esc(l.uid)+'</span></td><td>'+esc(l.action)+'</td><td>'+esc(l.detail)+'</td><td>'+(l.lat===''?'-':mapLink(l.lat,l.lng))+'</td></tr>'})):'<p class="ok">None.</p>');
+  h+='<h3>Weekly entries with security flags</h3>'+grid(COLS(['we','blk','ctr','by','loc','sec','st','act']),flagged.slice(0,50));
+  var dfl=prepD(DREC.filter(function(r){return r.secFlags&&r.status!=='Rejected'}).sort(function(a,b){return a.date<b.date?1:-1}));
+  h+='<h3>Daily activities with security flags ('+dfl.length+')</h3>'+grid(DCOLS(['date','who','type','what','loc','sec','st','dact']),dfl.slice(0,50));
+  return h;
+}
+function roleLabel(r){return r==='field'?'IE Official':(r==='block'?'BEEO':'District Authority')}
+function secUsers(){
+  var h='';
+  if(SEC.pins&&SEC.pins.length)h+='<div class="pinbox"><b>New PINs - shown only once. Give each PIN to the person privately (not in a WhatsApp group).</b>'+tbl(['Name','User ID','PIN'],SEC.pins.map(function(p){return '<tr><td>'+esc(p.name)+'</td><td>'+esc(p.id)+'</td><td class="pin">'+esc(p.pin)+'</td></tr>'}))+'<button class="btn" onclick="pinCsv()">Download PIN sheet (CSV)</button> <button class="btn o" onclick="SEC.pins=null;secDraw()">I have noted them - hide</button></div>';
+  h+='<h3>Add a user</h3><div class="fgrid"><div><label>Name</label><input type="text" id="u_n"></div><div><label>Mobile (User ID)</label><input type="tel" id="u_m" maxlength="10" inputmode="numeric"></div><div><label>Role</label><select id="u_r"><option value="field">IE Official</option><option value="block">BEEO</option></select></div><div><label>Block</label><select id="u_b">'+opts(CFG.blocks,'','-- Block --')+'</select></div></div><button class="btn g" onclick="userAdd()">Create user</button>';
+  h+='<div class="fld"><label class="t">Or import from Excel / CSV (columns: Name, Mobile, Role, Block)</label><input type="file" accept=".xlsx,.xls,.csv" onchange="usersImport(this)"></div>';
+  h+='<h3>Users ('+SEC.users.length+')</h3>'+tbl(['Name','User ID','Role','Block','Phone','Account','Last login','Actions'],SEC.users.map(function(u){
+    var ph=u.role==='district'?'n/a':(u.pending?'<span class="bad">NEW PHONE WAITING</span>':(u.device==='Registered'?'Registered':'Not used yet'));
+    var ac=esc(u.status)+(u.locked?' <span class="bad">LOCKED</span>':'')+(u.mustChange?'<br><span class="note">PIN not changed yet</span>':'');
+    var b='<button class="btn sm" onclick="userAct(\'userReset\',\''+u.id+'\')">Reset PIN</button> ';
+    if(u.id!=='ADMIN')b+='<button class="btn o sm" onclick="userAct(\''+(u.status==='Active'?'disable':'enable')+'\',\''+u.id+'\')">'+(u.status==='Active'?'Disable':'Enable')+'</button> ';
+    if(u.pending)b+='<button class="btn g sm" onclick="userAct(\'deviceApprove\',\''+u.id+'\')">Approve phone</button> ';
+    if(u.device==='Registered'&&u.role!=='district')b+='<button class="btn o sm" onclick="userAct(\'deviceReset\',\''+u.id+'\')">Clear phone</button>';
+    return '<tr><td>'+esc(u.name)+'</td><td>'+esc(u.id)+'</td><td>'+roleLabel(u.role)+(u.designation?'<br><span class="note">'+esc(u.designation)+'</span>':'')+'</td><td>'+esc(u.block||'All')+'</td><td>'+ph+'</td><td>'+ac+'</td><td>'+esc(u.lastLogin?new Date(u.lastLogin).toLocaleString('en-IN'):'never')+'</td><td>'+b+'</td></tr>';
+  }));
+  return h;
+}
+function userSaved(results){
+  var pins=results.filter(function(x){return x.pin}),errs=results.filter(function(x){return x.error});
+  SEC.pins=(SEC.pins||[]).concat(pins);
+  return api('users').then(function(j){SEC.users=j.users;secDraw();if(errs.length)flash(errs.length+' row(s) not saved: '+errs.map(function(e){return (e.name||e.id)+' ('+e.error+')'}).join('; '),'err');else flash(pins.length+' user(s) created, '+(results.length-pins.length)+' updated.')});
+}
+function userAdd(){
+  var it={name:$('u_n').value.trim(),mobile:$('u_m').value.trim(),role:$('u_r').value,block:$('u_b').value};
+  if(!it.name||!it.mobile||!it.block)return flash('Enter name, mobile number and block.','err');
+  api('userSave',{items:[it]}).then(function(j){return userSaved(j.results)}).catch(function(e){flash(e.message,'err')});
+}
+function usersImport(inp){
+  var f=inp.files[0];if(!f)return;
+  if(typeof XLSX==='undefined')return alert('Excel library could not load. Connect to the internet and reload.');
+  var rd=new FileReader();
+  rd.onload=function(){try{
+    var wb=XLSX.read(rd.result,{type:'array'}),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}),items=[];
+    rows.forEach(function(r){var g=function(k){for(var x in r){if(x.trim().toLowerCase()===k)return String(r[x]).trim()}return ''};
+      var m=g('mobile').replace(/\D/g,'').slice(-10);if(!m&&!g('name'))return;
+      items.push({name:g('name'),mobile:m,role:/beeo|block/i.test(g('role'))?'block':'field',block:g('block')})});
+    if(!items.length)return flash('No rows found. Columns needed: Name, Mobile, Role, Block.','err');
+    api('userSave',{items:items}).then(function(j){return userSaved(j.results)}).catch(function(e){flash(e.message,'err')});
+  }catch(e){alert('Could not read the file.')}};
+  rd.readAsArrayBuffer(f);
+}
+function userAct(kind,id){
+  var u=SEC.users.filter(function(x){return x.id===id})[0]||{name:id};
+  var go=function(a,p,after){api(a,p).then(function(j){if(after)after(j);return secLoad()}).then(function(){flash('Done.')}).catch(function(e){flash(e.message,'err')})};
+  if(kind==='userReset'){if(!confirm('Reset the PIN for '+u.name+'? They must set a new PIN at next login and are logged out now.'))return;go('userReset',{id:id},function(j){SEC.pins=[{id:id,name:u.name,pin:j.pin}]})}
+  else if(kind==='disable'||kind==='enable'){if(kind==='disable'&&!confirm('Disable '+u.name+'? They are logged out immediately.'))return;go('userStatus',{id:id,status:kind==='disable'?'Disabled':'Active'})}
+  else if(kind==='deviceApprove')go('deviceApprove',{id:id});
+  else if(kind==='deviceReset'){if(!confirm('Clear the registered phone of '+u.name+'? The next phone they log in from becomes their registered phone.'))return;go('deviceReset',{id:id})}
+}
+function pinCsv(){
+  var t='Name,User ID,PIN\n'+SEC.pins.map(function(p){return '"'+p.name.replace(/"/g,'')+'",'+p.id+','+p.pin}).join('\n');
+  var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='PIN_sheet_'+today()+'.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+function secAudit(){
+  var acts={};SEC.log.forEach(function(l){acts[l.action]=1});
+  return '<div class="filters noprint"><input type="text" style="max-width:none" placeholder="Search name, ID, detail..." value="'+esc(SEC.f.q)+'" oninput="SEC.f.q=this.value;drawAudit()"><div class="fgrid"><div><label>Result</label><select onchange="SEC.f.res=this.value;drawAudit()">'+opts(['OK','DENIED'],SEC.f.res,'All results')+'</select></div><div><label>Action</label><select onchange="SEC.f.act=this.value;drawAudit()">'+opts(Object.keys(acts).sort(),SEC.f.act,'All actions')+'</select></div></div><button class="btn g sm" onclick="exportAudit()">Download Excel</button></div><div id="auditres"></div>';
+}
+function auditRows(){
+  var q=SEC.f.q.toLowerCase();
+  return SEC.log.filter(function(l){return (!SEC.f.res||l.result===SEC.f.res)&&(!SEC.f.act||l.action===SEC.f.act)&&(!q||(l.name+' '+l.uid+' '+l.detail+' '+l.action).toLowerCase().indexOf(q)>-1)}).map(function(l){var o={};for(var k in l)o[k]=l[k];o._f=l.result==='DENIED'?['x']:[];o._s=[];return o});
+}
+function drawAudit(){
+  var cs=[{h:'Time',f:function(r){return esc(new Date(r.time).toLocaleString('en-IN'))}},{h:'User',f:function(r){return esc(r.name||r.uid||'-')+'<br><span class="note">'+esc(r.uid)+'</span>'}},{h:'Role',f:function(r){return esc(r.role||'-')}},{h:'Action',f:function(r){return esc(r.action)}},{h:'Result',f:function(r){return r.result==='OK'?'<span class="ok">OK</span>':'<span class="bad">'+esc(r.result)+'</span>'}},{h:'Detail',f:function(r){return esc(r.detail)}},{h:'Location',f:function(r){return r.lat===''?'-':mapLink(r.lat,r.lng)+' +-'+r.acc+' m'}},{h:'Phone',f:function(r){return esc(String(r.dev).slice(0,8))}}];
+  var e=$('auditres');if(e)e.innerHTML=grid(cs,auditRows());
+}
+function exportAudit(){
+  if(typeof XLSX==='undefined')return alert('The Excel library could not load. Connect to the internet and reload.');
+  var rows=auditRows(),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Time','User ID','Name','Role','Block','Action','Result','Detail','Latitude','Longitude','GPS accuracy m','Phone ID']].concat(rows.map(function(l){return [l.time,l.uid,l.name,l.role,l.block,l.action,l.result,l.detail,l.lat,l.lng,l.acc,l.dev]}))),'Access_Log');
+  XLSX.writeFile(wb,'CWSN_Access_Log_'+today()+'.xlsx');
+}
+// ============ DAILY ACTIVITY / MONTHLY CONSOLIDATION / MASTER IMPORT ============
+var ACTS=['School Visit','Home Visit (HBE)','Centre Attendance (Day Care / BRR)','Other Official Work'];
+var A_SCH=ACTS[0],A_HOME=ACTS[1],A_CTR=ACTS[2],A_OTH=ACTS[3];
+var ACTSHORT={};ACTSHORT[A_SCH]='School visit';ACTSHORT[A_HOME]='Home visit (HBE)';ACTSHORT[A_CTR]='Centre attendance';ACTSHORT[A_OTH]='Other official work';
+var PURP={};
+PURP[A_SCH]=['Identification / screening of CWSN','Assessment','IEP preparation / review','Teacher / school orientation','Aids, appliances & accessibility','Follow-up of enrolled CWSN','Other'];
+PURP[A_HOME]=['Home-based teaching','Therapy / exercises at home','IEP review','Parent counselling','Assessment','Follow-up','Other'];
+PURP[A_CTR]=['Session supervision / support','Attendance & register check','Assessment of new CWSN','Parent interaction','Other'];
+PURP[A_OTH]=['Meeting / review','Training / orientation','Awareness / community camp','Assessment camp','Reporting / data entry','Material / TLM preparation','Other'];
+var DREC=load('cwsn_drec',[]),DOUT=load('cwsn_dout',[]),MREC=load('cwsn_mrec',[]),SCH=load('cwsn_sch',[]),STAFF=[];
+var D={q:'',type:'',user:'',status:'',month:today().slice(0,7),block:''};
+var M={month:''};
+var DSYNC=false,MCLOSE=25;
+function saveDrec(){save('cwsn_drec',DREC.map(function(r){var o={};for(var k in r){if(k.charAt(0)!=='_')o[k]=r[k]}o._pending=!!r._pending;return o}))}
+function saveDout(){save('cwsn_dout',DOUT)}
+function duid(){return 'D'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function normD(r){
+  var o={};
+  ['timestamp','id','date','block','userId','officialName','designation','type','refCode','refName','place','child','purpose','notes','status','verifiedBy','verifiedAt','remark','deviceId','secFlags'].forEach(function(k){o[k]=r[k]==null?'':String(r[k])});
+  o.date=o.date.slice(0,10);o.status=o.status||'Pending';
+  ['photoLinks','photoHashes','photoGeo'].forEach(function(k){var v=r[k];o[k]=Array.isArray(v)?v:(v?String(v).split(' | '):[])});
+  o.cwsn=num(r.cwsn);o.hours=num(r.hours);
+  ['capturedAt','lat','lng','gpsAcc','distanceM'].forEach(function(k){o[k]=(r[k]===''||r[k]==null)?'':Number(r[k])});
+  o.photoCount=o.photoLinks.length||num(r.photoCount);o.localPhotos=!!r.localPhotos;o._pending=!!r._pending;
+  return o;
+}
+function refreshExtra(light){
+  if(!S.url)return Promise.resolve();
+  var ps=[
+    api('dlist').then(function(j){var keep=DREC.filter(function(r){return r._pending||r.status==='Rejected'});DREC=j.rows.map(normD).concat(keep);saveDrec()}),
+    api('mlist').then(function(j){MREC=j.rows;save('cwsn_mrec',MREC)}),
+    ];
+  if(!light)ps.push(api('schools').then(function(j){SCH=j.rows;save('cwsn_sch',SCH)}));
+  if(S.role!=='field')ps.push(api('staff').then(function(j){STAFF=j.rows}));
+  return Promise.all(ps.map(function(p){return p.catch(function(e){if(e.auth)throw e})}));
+}
+
+// when a person opens an activity / monthly / alerts tab, pull the latest data in the background
+function softRefresh(t){
+  if(!S.url||!NEWTAB||['dlog','dreview','dall','monthly','security'].indexOf(t)<0)return;
+  refreshExtra(true).then(function(){
+    if(TAB!==t)return;
+    if(RESFN&&$('res')){drawRes();return}
+    if(t==='security'){if(SEC.tab==='alerts')drawRes();return}
+    if(t==='monthly'){var s=$('m_sum'),c=$('m_chal');if((s&&s.value)||(c&&c.value))return;$('main').innerHTML='<div id="msg"></div>'+VIEWS.monthly()}
+  }).catch(function(){});
+}
+// ---------- background upload of daily activities ----------
+function syncDaily(){
+  if(!S.url||!S.token||!DOUT.length||DSYNC)return Promise.resolve();
+  DSYNC=true;var sent=0,rej=0,failMsg='';
+  return DOUT.slice().reduce(function(p,id){return p.then(function(){
+    if(failMsg)return;
+    var r=DREC.filter(function(x){return x.id===id})[0];
+    if(!r){DOUT=DOUT.filter(function(i){return i!==id});return}
+    return idbGet(id).then(function(ph){
+      var rec={};['id','date','block','type','refCode','refName','place','child','purpose','cwsn','hours','notes'].forEach(function(k){rec[k]=r[k]});
+      var sec={lat:r.lat,lng:r.lng,acc:r.gpsAcc,fixTs:r.capturedAt,capturedAt:r.capturedAt};
+      return api('dsubmit',{record:rec,sec:sec,offline:(Date.now()-num(r.capturedAt))>120000,photos:(ph||[]).map(function(p,i){return {name:(r.date+'_'+ACTSHORT[r.type]+'_'+(i+1)).replace(/[^A-Za-z0-9_-]+/g,'_')+'.jpg',mime:'image/jpeg',data:p.data.split(',')[1],sha:p.sha,dh:p.dh,lat:p.lat,lng:p.lng,acc:p.acc,ts:p.ts}})});
+    }).then(function(j){
+      var n=normD(j.record);DREC=DREC.map(function(x){return x.id===id?n:x});DOUT=DOUT.filter(function(i){return i!==id});idbDel(id);sent++;
+    }).catch(function(e){
+      if(e.server&&!e.auth){r.status='Rejected';r.remark=e.message;r._pending=false;DOUT=DOUT.filter(function(i){return i!==id});rej++}
+      else failMsg=e.message||'network';
+    });
+  })},Promise.resolve()).then(function(){
+    DSYNC=false;saveDrec();saveDout();banner();
+    if(sent)flash('Uploaded '+sent+' daily activit'+(sent>1?'ies':'y')+' to the district server.');
+    if(rej)flash(rej+' daily activit'+(rej>1?'ies were':'y was')+' REJECTED by the server. Open My Activity Log to see the reason.','err');
+    if((sent||rej)&&RESFN)drawRes();
+  });
+}
+
+// ---------- DAILY ACTIVITY FORM (IE Official) ----------
+function viewDaily(){
+  RESFN=null;PH=[];
+  var h='<h2>Daily Activity</h2><div class="info">Record each school visit, home visit (Home Based Education), Day Care / BRR attendance and other official work. At the end of the month you consolidate everything in <b>Monthly Report</b> for the district.</div><div id="errs"></div>';
+  if(secure())h+='<div id="geo_box" class="geo"></div>';
+  h+=fld('Date of activity *','<input type="date" id="d_date" min="'+daysAgo(7)+'" max="'+today()+'" value="'+today()+'">','Activities up to 7 days old can be added.');
+  h+=fld('What did you do? *',radios('d_type',ACTS,'','onchange="dTypeChg()"'));
+  h+='<div id="d_body"></div>';
+  h+='<div class="fld"><button class="btn g big" id="d_go" onclick="submitDaily()">Save Activity</button> <button class="btn o" onclick="showTab(\'daily\')">Clear form</button></div>';
+  return h;
+}
+function dMyCentres(){return CFG.centres.filter(function(c){if(c.block!==S.block||c.mode.indexOf('Home')>-1)return false;if(secure()&&c.assigned&&c.assigned.length&&c.assigned.indexOf(S.id)<0)return false;return true})}
+function dTypeChg(){
+  var t=rv('d_type'),h='';
+  if(!t){$('d_body').innerHTML='';return}
+  if(t===A_SCH){
+    h+=fld('School *','<input type="text" id="d_sq" placeholder="Type part of the school name or UDISE code to search" oninput="dSchFilter()"><select id="d_sch" onchange="dSchChg()" style="margin-top:6px"></select><div id="d_snew" style="display:none;margin-top:6px"><input type="text" id="d_sname" placeholder="School name"></div><div id="d_sinfo" class="hint"></div>');
+    h+=fld('Number of CWSN met / covered at the school *','<input type="number" id="d_cw" min="0" step="1" inputmode="numeric">');
+  }else if(t===A_HOME){
+    h+=fld('Child name / ID *','<input type="text" id="d_child" maxlength="80">')+fld('Village / locality *','<input type="text" id="d_place" maxlength="80">');
+  }else if(t===A_CTR){
+    var cs=dMyCentres();
+    h+=fld('Centre *','<select id="d_ctr" onchange="dCtrChg()"><option value="">'+(cs.length?'-- Select centre --':'No Day Care / BRR centre is assigned to you')+'</option>'+cs.map(function(c){return '<option value="'+esc(c.name)+'">'+esc(c.name)+(c.code?' ('+esc(c.code)+')':'')+'</option>'}).join('')+'</select><div id="d_cinfo" class="hint"></div>');
+    h+=fld('Number of CWSN present at the centre *','<input type="number" id="d_cw" min="0" step="1" inputmode="numeric">');
+  }
+  h+=fld((t===A_OTH?'Type of work':'Purpose')+' *','<select id="d_purp">'+opts(PURP[t],'','-- Select --')+'</select>');
+  h+=fld('Time spent (hours)','<input type="number" id="d_hrs" min="0" max="16" step="0.5" inputmode="decimal" placeholder="e.g. 2.5">');
+  h+=fld(t===A_OTH?'Describe the work done *':'Remarks / observations','<textarea id="d_notes" rows="3" maxlength="500"></textarea>');
+  var need=t!==A_OTH,fence=(t===A_SCH||t===A_CTR);
+  var lbl='Photographs '+(need?'* (1 to 5)':'(optional, up to 5)');
+  var hint=fence?'Take the photos AT the '+(t===A_SCH?'school':'centre')+'. Photos taken away from it are rejected.':'The location is recorded with every photo.';
+  if(secure())h+=fld(lbl,'<button class="btn" onclick="openCam()">Take live photo</button><div class="hint">Live camera only; gallery uploads are not allowed. '+hint+' Each photo is stamped with place and time.</div><div id="e_thumbs" class="thumbs"></div>');
+  else h+=fld(lbl,'<input type="file" id="e_ph_in" accept="image/*" multiple onchange="addPhotos(this)"><div id="e_thumbs" class="thumbs"></div>');
+  $('d_body').innerHTML=h;
+  if(t===A_SCH)dSchFilter();
+  drawPh();geoUi();
+}
+function dSchFilter(){
+  var q=($('d_sq').value||'').toLowerCase(),sel=$('d_sch'),cur=sel.value;
+  var all=SCH.filter(function(s){return s.block===S.block}),list=all.filter(function(s){return !q||(s.name+' '+s.udise+' '+(s.village||'')).toLowerCase().indexOf(q)>-1}).slice(0,150);
+  sel.innerHTML='<option value="">'+(all.length?'-- Select school ('+list.length+(list.length===150?'+':'')+' shown) --':'-- School list not loaded yet --')+'</option>'+list.map(function(s){return '<option value="'+esc(s.udise)+'">'+esc(s.name)+' ('+esc(s.udise)+')</option>'}).join('')+(CFG.strictSchools?'':'<option value="__other">School not in list - type name (will be flagged)</option>');
+  if(cur)sel.value=cur;
+  dSchChg();
+}
+function dSchChg(){
+  var v=$('d_sch').value;$('d_snew').style.display=v==='__other'?'block':'none';
+  var s=SCH.filter(function(x){return x.udise===v})[0],i='';
+  if(s)i='UDISE '+esc(s.udise)+(s.village?' &middot; '+esc(s.village):'')+(s.cwsn?' &middot; CWSN on master: '+s.cwsn:'')+' &middot; '+(s.lat!==''&&s.lat!=null?'location on master: photos must be within '+(CFG.schoolRadius||200)+' m':'<span class="bad">no location on master: photo fence not applied, entry will be flagged</span>');
+  else if(v==='__other')i='<span class="bad">Not on the master list: the photo fence cannot be applied and the entry will be flagged.</span>';
+  $('d_sinfo').innerHTML=i;geoUi();
+}
+function dCtrChg(){
+  var n=$('d_ctr').value,c=n&&findCentre(S.block,n);
+  $('d_cinfo').innerHTML=c?(c.lat?'Location on master: photos must be within '+(c.radius||CFG.radius||150)+' m':'<span class="bad">This centre has no saved location: photo fence not applied, entry will be flagged.</span>'):'';
+  geoUi();
+}
+function dSel(){
+  var t=rv('d_type');
+  if(t===A_SCH){var v=$('d_sch')?$('d_sch').value:'';if(v&&v!=='__other'){var s=SCH.filter(function(x){return x.udise===v})[0];if(s)return {kind:'school',code:s.udise,name:s.name,lat:s.lat,lng:s.lng,rad:CFG.schoolRadius||200}}}
+  if(t===A_CTR){var n=$('d_ctr')?$('d_ctr').value:'',c=n&&findCentre(S.block,n);if(c)return {kind:'centre',code:c.code||'',name:c.name,lat:c.lat===undefined?'':c.lat,lng:c.lng,rad:c.radius||CFG.radius||150}}
+  return null;
+}
+function hasLoc(t){return t&&t.lat!==''&&t.lat!=null&&isFinite(t.lat)}
+function dGeoNote(f){
+  var ty=rv('d_type'),t=dSel();
+  if(!ty)return {cls:'',t:''};
+  if(ty===A_HOME||ty===A_OTH)return {cls:'',t:'<br>The location is recorded with each photo. No distance limit for this activity.'};
+  if(!t)return {cls:'',t:'<br>Select the '+(ty===A_SCH?'school':'centre')+' to see the distance.'};
+  if(!hasLoc(t))return {cls:'',t:'<br>This '+t.kind+' has no saved location, so the photo fence is not applied and the entry will be flagged.'};
+  var d=Math.round(haversine(f.lat,f.lng,t.lat,t.lng));
+  return d-Math.min(f.acc,50)<=t.rad?{cls:' good',t:'<br>You are '+d+' m from the '+t.kind+' (photos must be within '+t.rad+' m). You can take photos now.'}:{cls:' bad',t:'<br>You are '+d+' m from the '+t.kind+'. Photos must be taken within '+t.rad+' m of it.'};
+}
+function camCheck(f){
+  if(TAB!=='daily')return '';
+  var t=dSel();if(!hasLoc(t))return '';
+  var d=Math.round(haversine(f.lat,f.lng,t.lat,t.lng));
+  return d-Math.min(f.acc,50)>t.rad?'You are about '+d+' m from the '+t.kind+'. Photos must be taken within '+t.rad+' m of it, so this photo was not saved.':'';
+}
+function camLabel(){
+  if(TAB==='daily'){var t=dSel();return t?t.name:(ACTSHORT[rv('d_type')]||'')}
+  return ($('e_ctr')&&$('e_ctr').value)||'';
+}
+function submitDaily(){
+  var er=[],date=$('d_date').value,type=rv('d_type');
+  if(!date)er.push('Select the date.');else if(date>today())er.push('The date cannot be in the future.');else if(date<daysAgo(7))er.push('Activities older than 7 days cannot be added.');
+  if(!type)er.push('Choose what you did.');
+  var f={refCode:'',refName:'',place:'',child:'',purpose:'',cwsn:0,hours:0,notes:''};
+  if(type){
+    f.purpose=$('d_purp').value;if(!f.purpose)er.push(type===A_OTH?'Select the type of work.':'Select the purpose.');
+    f.hours=num($('d_hrs').value);if(f.hours<0||f.hours>16)er.push('Hours spent must be between 0 and 16.');
+    f.notes=$('d_notes').value.trim();
+    if(type===A_SCH){
+      var v=$('d_sch').value;
+      if(!v)er.push('Select the school.');
+      else if(v==='__other'){f.refName=$('d_sname').value.trim();if(f.refName.length<3)er.push('Type the school name.')}
+      else{var sc=SCH.filter(function(x){return x.udise===v})[0];if(sc){f.refCode=sc.udise;f.refName=sc.name}}
+    }
+    if(type===A_HOME){f.child=$('d_child').value.trim();f.place=$('d_place').value.trim();if(f.child.length<2)er.push('Enter the child name / ID.');if(f.place.length<2)er.push('Enter the village / locality.')}
+    if(type===A_CTR){var cn=$('d_ctr').value;if(!cn)er.push('Select the centre.');else{var c=findCentre(S.block,cn);f.refName=cn;f.refCode=c?String(c.code||''):''}}
+    if(type===A_SCH||type===A_CTR){var cwv=$('d_cw').value;if(cwv===''||isNaN(parseInt(cwv,10))||parseInt(cwv,10)<0)er.push('Enter the number of CWSN.');else f.cwsn=parseInt(cwv,10)}
+    if(type===A_OTH&&f.notes.length<10)er.push('Describe the work done (at least 10 characters).');
+    if(type!==A_OTH&&!PH.length)er.push('Take at least one live photo.');
+    var tg=dSel();
+    if(secure()&&hasLoc(tg))PH.forEach(function(p,i){var d=Math.round(haversine(p.lat,p.lng,tg.lat,tg.lng));if(d-Math.min(p.acc,50)>tg.rad)er.push('Photo '+(i+1)+' was taken about '+d+' m from the '+tg.kind+' (allowed '+tg.rad+' m). Remove it and photograph at the '+tg.kind+'.')});
+  }
+  if(er.length){$('errs').innerHTML='<div class="err"><b>Please correct:</b><br>- '+er.map(esc).join('<br>- ')+'</div>';window.scrollTo(0,0);return}
+  $('errs').innerHTML='';
+  var build=function(fix){
+    var rec={timestamp:new Date().toISOString(),id:duid(),date:date,block:S.block,userId:S.id||'',officialName:S.name,designation:S.designation||'',type:type,refCode:f.refCode,refName:f.refName,place:f.place,child:f.child,purpose:f.purpose,cwsn:f.cwsn,hours:f.hours,notes:f.notes,photoLinks:[],status:'Pending',verifiedBy:'',verifiedAt:'',remark:'',photoHashes:[],photoGeo:[],secFlags:'',photoCount:PH.length,localPhotos:!S.url,
+      capturedAt:fix?fix.ts:'',lat:fix?fix.lat:'',lng:fix?fix.lng:'',gpsAcc:fix?Math.round(fix.acc):'',distanceM:'',deviceId:secure()?DEV:''};
+    var n=normD(rec);
+    $('d_go').disabled=true;
+    idbSet(rec.id,PH.slice()).catch(function(){}).then(function(){
+      if(!S.url){DREC.push(n);saveDrec();showTab('daily');flash('Activity saved on this device (demo mode).');return}
+      n._pending=true;DREC.push(n);DOUT.push(rec.id);saveDrec();saveDout();banner();showTab('daily');
+      flash('Activity saved. Uploading to the district server...');syncDaily();
+    });
+  };
+  if(!secure())return build(null);
+  $('d_go').disabled=true;
+  freshFix().then(function(fix){
+    if(fix.acc>MAX_ACC){$('d_go').disabled=false;$('errs').innerHTML='<div class="err"><b>Cannot save:</b><br>GPS accuracy is '+Math.round(fix.acc)+' m (needs under '+MAX_ACC+' m). Go outdoors and wait for a better signal.</div>';window.scrollTo(0,0);return}
+    build(fix);
+  }).catch(function(e){$('d_go').disabled=false;$('errs').innerHTML='<div class="err"><b>Cannot save:</b><br>'+esc(e.message||'Location unavailable')+'</div>';window.scrollTo(0,0)});
+}
+
+// ---------- ACTIVITY LISTS (own log / block review / district) ----------
+function dMine(r){return secure()?r.userId===S.id:true}
+function dScope(kind){
+  var a=DREC.filter(function(r){return kind==='dlog'?dMine(r):r.status!=='Rejected'});
+  if(S.block&&kind!=='dlog')a=a.filter(function(r){return r.block===S.block});
+  return a;
+}
+function dFilter(a){
+  var q=D.q.toLowerCase();
+  return a.filter(function(r){
+    if(D.month&&r.date.slice(0,7)!==D.month)return false;
+    if(D.type&&r.type!==D.type)return false;
+    if(D.user&&r.userId!==D.user)return false;
+    if(D.block&&r.block!==D.block)return false;
+    if(D.status&&r.status!==D.status)return false;
+    if(q&&(r.officialName+' '+r.refName+' '+r.child+' '+r.place+' '+r.purpose+' '+r.notes+' '+r.block+' '+r.type).toLowerCase().indexOf(q)<0)return false;
+    return true;
+  }).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:(a.timestamp<b.timestamp?1:-1)});
+}
+function dWhat(r){
+  if(r.type===A_SCH)return esc(r.refName)+(r.refCode?'<br><span class="note">UDISE '+esc(r.refCode)+'</span>':'');
+  if(r.type===A_HOME)return esc(r.child)+'<br><span class="note">'+esc(r.place)+'</span>';
+  if(r.type===A_CTR)return esc(r.refName)+(r.refCode?'<br><span class="note">'+esc(r.refCode)+'</span>':'');
+  return esc(String(r.notes).slice(0,90))+(r.notes.length>90?'...':'');
+}
+function dLoc(r){
+  if(r.lat===''||r.lat==null)return '-';
+  return (r.distanceM!==''?'Photo '+r.distanceM+' m from '+(r.type===A_SCH?'school':'centre')+'<br>':'')+mapLink(r.lat,r.lng)+' +-'+r.gpsAcc+' m';
+}
+function dAct(r){
+  if(r._pending)return '<span class="note">Not uploaded yet</span>';
+  if(r.status==='Rejected')return '<button class="btn o sm" onclick="dDiscard(\''+r.id+'\')">Discard</button>';
+  if(!canVerify())return '';
+  var h='';
+  if(r.status!=='Verified')h+='<button class="btn g sm" onclick="setDSt([\''+r.id+'\'],\'Verified\')">Verify</button> ';
+  if(r.status!=='Returned')h+='<button class="btn o sm" onclick="setDSt([\''+r.id+'\'],\'Returned\')">Return</button> ';
+  if(isAdmin())h+='<button class="btn o sm" onclick="delD(\''+r.id+'\')">Delete</button>';
+  return h;
+}
+function DCOLS(keys){
+  var A={
+    date:{h:'Date',f:function(r){return esc(r.date)}},
+    who:{h:'IE Official',f:function(r){return esc(r.officialName)+(r.designation?'<br><span class="note">'+esc(r.designation)+'</span>':'')+'<br><span class="note">'+esc(r.block)+'</span>'}},
+    type:{h:'Activity',f:function(r){return esc(ACTSHORT[r.type]||r.type)}},
+    what:{h:'Details',f:dWhat},
+    purp:{h:'Purpose',f:function(r){return esc(r.purpose)}},
+    cw:{h:'CWSN',f:function(r){return r.cwsn||'-'}},
+    hrs:{h:'Hours',f:function(r){return r.hours||'-'}},
+    notes:{h:'Remarks',f:function(r){return r.type===A_OTH?'-':(esc(r.notes)||'-')}},
+    ph:{h:'Photos',f:photoCell},
+    loc:{h:'Location',f:dLoc},
+    sec:COLS(['sec'])[0],
+    st:{h:'Status',f:function(r){return r.status==='Rejected'?'<span class="bad">REJECTED</span><br>'+esc(r.remark):esc(r.status)+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
+    up:COLS(['up'])[0],
+    dact:{h:'Action',a:1,f:dAct}
+  };
+  return keys.map(function(k){return A[k]});
+}
+function prepD(rows){rows.forEach(function(r){r._f=[];r._s=r.secFlags?String(r.secFlags).split(' ; '):[]});return rows}
+function viewDlog(kind){
+  var title={dlog:'My Activity Log',dreview:'Activity Review - '+esc(S.block),dall:'Daily Activity Log - all blocks'}[kind];
+  var keys=kind==='dlog'?['date','type','what','purp','cw','hrs','ph','st','up','dact']:['date','who','type','what','purp','cw','hrs','ph'].concat(secure()?['loc','sec']:[],['st','dact']);
+  RESFN=function(){
+    var rows=prepD(dFilter(dScope(kind))),cnt=function(t){return rows.filter(function(r){return r.type===t}).length};
+    var hrs=0;rows.forEach(function(r){hrs+=r.hours});
+    var h='<div class="stats">'+stat('Activities',rows.length)+stat('School visits',cnt(A_SCH))+stat('Home visits (HBE)',cnt(A_HOME))+stat('Centre attendance',cnt(A_CTR))+stat('Other work',cnt(A_OTH))+stat('Hours',Math.round(hrs*10)/10)+(kind!=='dlog'&&secure()?stat('Security flags',rows.filter(function(r){return r._s.length}).length,'',rows.some(function(r){return r._s.length})):'')+'</div>';
+    return h+grid(DCOLS(keys),rows);
+  };
+  var intro=kind==='dreview'?'<p class="note">Check each activity against its photos and location. Use <b>Verify</b>, or <b>Return</b> with a reason. "Verify all clean" verifies every pending activity shown that has no security flags.</p>':'';
+  return '<h2>'+title+'</h2>'+intro+dBar(kind)+'<div id="res"></div>';
+}
+function dBar(kind){
+  var users={};DREC.forEach(function(r){if(r.userId&&(kind==='dlog'||!S.block||r.block===S.block))users[r.userId]=r.officialName});
+  STAFF.forEach(function(s){users[s.id]=s.name});
+  var h='<div class="filters noprint"><input type="text" style="max-width:none" placeholder="Search school, child, place, official, remarks..." value="'+esc(D.q)+'" oninput="D.q=this.value;drawRes()"><div class="fgrid">';
+  h+='<div><label>Month</label><input type="month" value="'+esc(D.month)+'" onchange="D.month=this.value;drawRes()"></div>';
+  h+='<div><label>Activity</label><select onchange="D.type=this.value;drawRes()">'+opts(ACTS,D.type,'All activities')+'</select></div>';
+  if(kind!=='dlog'){
+    if(!S.block)h+='<div><label>Block</label><select onchange="D.block=this.value;drawRes()">'+opts(CFG.blocks,D.block,'All blocks')+'</select></div>';
+    h+='<div><label>IE Official</label><select onchange="D.user=this.value;drawRes()"><option value="">All officials</option>'+Object.keys(users).map(function(k){return '<option value="'+esc(k)+'"'+(D.user===k?' selected':'')+'>'+esc(users[k])+'</option>'}).join('')+'</select></div>';
+    h+='<div><label>Status</label><select onchange="D.status=this.value;drawRes()">'+opts(['Pending','Verified','Returned'],D.status,'Any status')+'</select></div>';
+  }
+  h+='</div><div style="margin-top:6px"><button class="btn sm" onclick="D.month=\'\';showTab(TAB)">All months</button>';
+  if(kind!=='dlog')h+=' <button class="btn g sm" onclick="exportDaily(\''+kind+'\')">Download Excel</button> <button class="btn sm" onclick="bulkVerify(\''+kind+'\')">Verify all clean</button>';
+  return h+' <button class="btn sm" onclick="window.print()">Print</button></div></div>';
+}
+function dDiscard(id){if(!confirm('Remove this rejected activity from your phone? You can enter it again correctly.'))return;DREC=DREC.filter(function(x){return x.id!==id});DOUT=DOUT.filter(function(x){return x!==id});idbDel(id);saveDrec();saveDout();banner();drawRes()}
+function setDSt(ids,st,noPrompt){
+  var remark='';
+  if(st==='Returned'){remark=prompt('Reason for returning (the IE Official will see this):','');if(remark===null)return;if(!remark.trim()){alert('Please give a reason.');return}}
+  var done=function(){DREC.forEach(function(r){if(ids.indexOf(r.id)>-1){r.status=st;r.remark=remark;r.verifiedBy=S.name||roleName(S.role);r.verifiedAt=new Date().toISOString()}});saveDrec();drawRes()};
+  if(S.url)api('dstatus',{ids:ids,status:st,remark:remark}).then(function(j){done();flash(j.done+' activit'+(j.done===1?'y':'ies')+' set to '+st+'.')}).catch(function(e){flash('Could not update: '+e.message,'err')});else done();
+}
+function bulkVerify(kind){
+  var rows=prepD(dFilter(dScope(kind))).filter(function(r){return r.status==='Pending'&&!r._s.length&&!r._pending});
+  if(!rows.length)return alert('No pending activities without security flags in the current view.');
+  if(!confirm('Verify '+rows.length+' pending activities that have no security flags?'))return;
+  setDSt(rows.map(function(r){return r.id}),'Verified');
+}
+function delD(id){
+  if(!confirm('Delete this activity permanently?'))return;
+  var done=function(){DREC=DREC.filter(function(x){return x.id!==id});saveDrec();idbDel(id);drawRes()};
+  if(S.url)api('ddelete',{id:id}).then(done).catch(function(e){flash('Could not delete: '+e.message,'err')});else done();
+}
+function exportDaily(kind){
+  if(typeof XLSX==='undefined')return alert('The Excel library could not load. Connect to the internet and reload.');
+  var rows=prepD(dFilter(dScope(kind))),wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Date','Block','IE Official','Designation','Activity','Code','School / Centre','Child','Place','Purpose','CWSN','Hours','Remarks','Status','Verified by','Remark','Security flags','Latitude','Longitude','Photo distance m','Photos','User ID']].concat(rows.map(function(r){return [r.date,r.block,r.officialName,r.designation,r.type,r.refCode,r.refName,r.child,r.place,r.purpose,r.cwsn,r.hours,r.notes,r.status,r.verifiedBy,r.remark,r.secFlags,r.lat,r.lng,r.distanceM,r.photoLinks.join(' ; '),r.userId]}))),'Daily_Activity');
+  XLSX.writeFile(wb,'IE_Daily_Activity_'+(D.month||'all')+'.xlsx');
+}
+
+// ---------- MONTHLY CONSOLIDATION ----------
+function curMonth(){return today().slice(0,7)}
+function defMonth(){var d=new Date();if(d.getDate()>=MCLOSE)return curMonth();var p=new Date(d.getFullYear(),d.getMonth()-1,1);return p.getFullYear()+'-'+pad(p.getMonth()+1)}
+function mTotals(uid,month){
+  var logs=DREC.filter(function(r){return r.userId===uid&&r.date.slice(0,7)===month&&r.status!=='Returned'&&r.status!=='Rejected'});
+  var t={logs:logs.length,activeDays:0,schoolVisits:0,uniqueSchools:0,homeVisits:0,uniqueChildren:0,centreDays:0,otherActivities:0,totalHours:0,cwsnCovered:0,photos:0,flaggedLogs:0},days={},sch={},kid={},cd={};
+  logs.forEach(function(x){
+    days[x.date]=1;t.totalHours+=x.hours;t.cwsnCovered+=x.cwsn;t.photos+=x.photoCount||x.photoLinks.length;if(x.secFlags)t.flaggedLogs++;
+    if(x.type===A_SCH){t.schoolVisits++;sch[(x.refCode||x.refName).toLowerCase()]=1}
+    else if(x.type===A_HOME){t.homeVisits++;kid[x.child.toLowerCase()]=1}
+    else if(x.type===A_CTR)cd[x.date]=1;else t.otherActivities++;
+  });
+  t.activeDays=Object.keys(days).length;t.uniqueSchools=Object.keys(sch).length;t.uniqueChildren=Object.keys(kid).length;t.centreDays=Object.keys(cd).length;t.totalHours=Math.round(t.totalHours*10)/10;
+  return t;
+}
+function monthName(m){var p=m.split('-');return new Date(+p[0],+p[1]-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'})}
+function viewMonthly(){
+  RESFN=null;if(!M.month)M.month=defMonth();
+  return S.role==='field'?mField():mReview();
+}
+function monthPick(){return '<div class="filters noprint"><div class="fgrid"><div><label>Month</label><input type="month" max="'+curMonth()+'" value="'+esc(M.month)+'" onchange="M.month=this.value||defMonth();showTab(TAB)"></div></div></div>'}
+function mHeadPrint(title,sub){return '<div class="printonly"><img src="'+esc(CFG.logo||LOGO_DATA)+'" style="height:60px"><h2 style="text-align:center">'+esc(title)+'<br>'+esc(sub)+'</h2><p style="text-align:center">Office of the District Mission Coordinator, Samagra Shiksha - '+esc(CFG.district)+'</p></div>'}
+function mField(){
+  var m=M.month,t=mTotals(S.id,m),sub=MREC.filter(function(r){return r.userId===S.id&&r.month===m})[0];
+  var cur=curMonth(),dayNow=new Date().getDate(),why='';
+  if(sub&&sub.status!=='Returned')why='This month is already '+sub.status.toLowerCase()+'.';
+  else if(!t.logs)why='No activity is recorded for this month.';
+  else if(m>cur)why='A future month cannot be consolidated.';
+  else if(m===cur&&dayNow<MCLOSE)why='The current month can be consolidated from the '+MCLOSE+'th. Earlier months can be submitted any time.';
+  else if(DOUT.length)why='Upload the '+DOUT.length+' activit'+(DOUT.length>1?'ies':'y')+' waiting on your phone first (tap Refresh data).';
+  var h=mHeadPrint('Monthly Activity Report - IE Official',monthName(m)+' - '+S.name+(S.designation?' ('+S.designation+')':'')+' - '+S.block+' Block');
+  h+='<h2 class="noprint">Monthly Report</h2><p class="note noprint">Your daily activities are consolidated automatically. Add a short summary and submit it for the BEEO and the District Office. The numbers are calculated by the server from your logs.</p>'+monthPick();
+  if(sub){var c=sub.status==='Verified'?'okmsg':(sub.status==='Returned'?'err':'info');h+='<div class="'+c+' noprint"><b>Status: '+esc(sub.status)+'</b>'+(sub.remark?' - '+esc(sub.remark):'')+(sub.verifiedBy?' (by '+esc(sub.verifiedBy)+')':'')+'</div>'}
+  h+='<div class="stats">'+stat('Active days',t.activeDays)+stat('School visits',t.schoolVisits,t.uniqueSchools+' different schools')+stat('Home visits (HBE)',t.homeVisits,t.uniqueChildren+' different children')+stat('Centre attendance days',t.centreDays)+stat('Other official work',t.otherActivities)+stat('Hours',t.totalHours)+stat('CWSN covered',t.cwsnCovered)+stat('Photos',t.photos)+stat('Logs with security flags',t.flaggedLogs,'',t.flaggedLogs>0)+'</div>';
+  var rows=prepD(DREC.filter(function(r){return r.userId===S.id&&r.date.slice(0,7)===m&&r.status!=='Rejected'}).sort(function(a,b){return a.date<b.date?-1:1}));
+  h+='<h3>Day-wise activities</h3>'+grid(DCOLS(['date','type','what','purp','cw','hrs','st']),rows);
+  h+=fld('Summary of the month - key work and achievements *',sub&&sub.status!=='Returned'?'<div class="card">'+esc(sub.summary)+'</div>':'<textarea id="m_sum" rows="4" maxlength="1500">'+esc(sub?sub.summary:'')+'</textarea>');
+  h+=fld('Challenges / support needed',sub&&sub.status!=='Returned'?'<div class="card">'+esc(sub.challenges||'-')+'</div>':'<textarea id="m_chal" rows="3" maxlength="1500">'+esc(sub?sub.challenges:'')+'</textarea>');
+  h+='<div class="fld noprint">'+(why?'<div class="warn">'+esc(why)+'</div>':'')+'<button class="btn g big" '+(why?'disabled':'')+' onclick="submitMonthly()">Submit monthly report</button> <button class="btn" onclick="window.print()">Print</button></div>';
+  h+='<div class="printonly"><br><br><table style="width:100%"><tr><td>Signature of IE Official</td><td style="text-align:right">Signature of BEEO</td></tr></table></div>';
+  return h;
+}
+function submitMonthly(){
+  var s=($('m_sum')||{}).value||'',c=($('m_chal')||{}).value||'';
+  if(s.trim().length<10)return flash('Write a short summary of the month (at least 10 characters).','err');
+  if(!confirm('Submit the report for '+monthName(M.month)+'? You cannot add activities to this month after submitting, unless it is returned to you.'))return;
+  var done=function(rec){MREC=MREC.filter(function(r){return !(r.userId===rec.userId&&r.month===rec.month)}).concat([rec]);save('cwsn_mrec',MREC);showTab('monthly');flash('Monthly report submitted.')};
+  if(S.url)api('msubmit',{month:M.month,summary:s,challenges:c}).then(function(j){done(j.record)}).catch(function(e){flash(e.message,'err')});
+  else{var t=mTotals(S.id,M.month);done({id:M.month+'|'+S.id,month:M.month,block:S.block,userId:S.id,officialName:S.name,designation:S.designation||'',submittedAt:new Date().toISOString(),activeDays:t.activeDays,schoolVisits:t.schoolVisits,uniqueSchools:t.uniqueSchools,homeVisits:t.homeVisits,uniqueChildren:t.uniqueChildren,centreDays:t.centreDays,otherActivities:t.otherActivities,totalHours:t.totalHours,cwsnCovered:t.cwsnCovered,photos:t.photos,flaggedLogs:t.flaggedLogs,summary:s,challenges:c,status:'Submitted',verifiedBy:'',verifiedAt:'',remark:''})}
+}
+function mPeople(){
+  var p={};
+  STAFF.forEach(function(s){p[s.id]={id:s.id,name:s.name,block:s.block,designation:s.designation}});
+  DREC.forEach(function(r){if(r.status!=='Rejected'&&!p[r.userId])p[r.userId]={id:r.userId,name:r.officialName,block:r.block,designation:r.designation}});
+  MREC.forEach(function(r){if(!p[r.userId])p[r.userId]={id:r.userId,name:r.officialName,block:r.block,designation:r.designation}});
+  return Object.keys(p).map(function(k){return p[k]}).filter(function(x){return (!S.block||x.block===S.block)&&(!D.block||x.block===D.block)}).sort(function(a,b){return a.block<b.block?-1:a.block>b.block?1:(a.name<b.name?-1:1)});
+}
+function mRows(){
+  return mPeople().map(function(p){
+    var s=MREC.filter(function(r){return r.userId===p.id&&r.month===M.month})[0],live=mTotals(p.id,M.month);
+    return {p:p,sub:s,live:live,t:s?s:null};
+  });
+}
+function mReview(){
+  var m=M.month,rows=mRows(),title=isAdmin()?'Monthly Reports - District consolidation':'Monthly Reports - '+S.block+' Block';
+  var h=mHeadPrint('Monthly Activity Consolidation - IE Officials',monthName(m)+' - '+(isAdmin()?CFG.district+' District':S.block+' Block'));
+  h+='<h2 class="noprint">'+esc(title)+'</h2><p class="note noprint">Each IE Official consolidates the month; you verify or return it. The district total counts submitted and verified reports.</p>';
+  h+='<div class="filters noprint"><div class="fgrid"><div><label>Month</label><input type="month" max="'+curMonth()+'" value="'+esc(m)+'" onchange="M.month=this.value||defMonth();showTab(TAB)"></div>'+(!S.block?'<div><label>Block</label><select onchange="D.block=this.value;showTab(TAB)">'+opts(CFG.blocks,D.block,'All blocks')+'</select></div>':'')+'</div><div style="margin-top:6px"><button class="btn g sm" onclick="exportMonthly()">Download Excel</button> <button class="btn sm" onclick="window.print()">Print</button></div></div>';
+  var tot={activeDays:0,schoolVisits:0,uniqueSchools:0,homeVisits:0,uniqueChildren:0,centreDays:0,otherActivities:0,totalHours:0,cwsnCovered:0,flaggedLogs:0},nsub=0,body=[],blkT={};
+  rows.forEach(function(x){
+    var s=x.sub,st=s?s.status:'Not submitted',b='';
+    if(s&&s.status!=='Returned'){nsub++;Object.keys(tot).forEach(function(k){tot[k]+=Number(s[k])||0});var bt=blkT[s.block]=blkT[s.block]||{n:0,schoolVisits:0,homeVisits:0,centreDays:0,otherActivities:0,totalHours:0,cwsnCovered:0};bt.n++;['schoolVisits','homeVisits','centreDays','otherActivities','totalHours','cwsnCovered'].forEach(function(k){bt[k]+=Number(s[k])||0})}
+    if(s&&canVerify()){b='<button class="btn sm" onclick="mDetail(\''+esc(s.id)+'\')">View</button> ';if(s.status==='Submitted')b+='<button class="btn g sm" onclick="mSt(\''+esc(s.id)+'\',\'Verified\')">Verify</button> ';if(s.status!=='Returned')b+='<button class="btn o sm" onclick="mSt(\''+esc(s.id)+'\',\'Returned\')">Return</button>'}
+    var cls=!s?' class="flag"':(s.status==='Returned'?' class="flag"':'');
+    var c=s&&s.status!=='Returned'?s:null;
+    body.push('<tr'+cls+'><td>'+esc(x.p.block)+'</td><td>'+esc(x.p.name)+(x.p.designation?'<br><span class="note">'+esc(x.p.designation)+'</span>':'')+'</td>'+
+      (c?'<td class="r">'+c.activeDays+'</td><td class="r">'+c.schoolVisits+' ('+c.uniqueSchools+')</td><td class="r">'+c.homeVisits+' ('+c.uniqueChildren+')</td><td class="r">'+c.centreDays+'</td><td class="r">'+c.otherActivities+'</td><td class="r">'+c.totalHours+'</td><td class="r">'+c.cwsnCovered+'</td><td class="r">'+(c.flaggedLogs?'<span class="bad">'+c.flaggedLogs+'</span>':'0')+'</td>':'<td colspan="8" class="note">'+(s?'Returned for correction: '+esc(s.remark):'Not submitted. '+x.live.logs+' activit'+(x.live.logs===1?'y':'ies')+' logged so far.')+'</td>')+
+      '<td>'+esc(st)+(s&&s.verifiedBy?'<br><span class="note">by '+esc(s.verifiedBy)+'</span>':'')+'</td><td class="noprint">'+b+'</td></tr>');
+  });
+  h+='<div class="stats">'+stat('IE Officials',rows.length)+stat('Reports submitted',nsub,'of '+rows.length,nsub<rows.length)+stat('School visits',tot.schoolVisits)+stat('Home visits (HBE)',tot.homeVisits)+stat('Centre attendance days',tot.centreDays)+stat('Hours',Math.round(tot.totalHours*10)/10)+stat('CWSN covered',tot.cwsnCovered)+'</div>';
+  h+=rows.length?'<div class="scroll"><table class="tbl"><tr><th>Block</th><th>IE Official</th><th class="r">Active days</th><th class="r">School visits (unique)</th><th class="r">Home visits (children)</th><th class="r">Centre days</th><th class="r">Other work</th><th class="r">Hours</th><th class="r">CWSN covered</th><th class="r">Flagged</th><th>Status</th><th class="noprint"></th></tr>'+body.join('')+
+    '<tr style="font-weight:bold"><td colspan="2">TOTAL (submitted + verified)</td><td class="r">'+tot.activeDays+'</td><td class="r">'+tot.schoolVisits+' ('+tot.uniqueSchools+')</td><td class="r">'+tot.homeVisits+' ('+tot.uniqueChildren+')</td><td class="r">'+tot.centreDays+'</td><td class="r">'+tot.otherActivities+'</td><td class="r">'+Math.round(tot.totalHours*10)/10+'</td><td class="r">'+tot.cwsnCovered+'</td><td class="r">'+tot.flaggedLogs+'</td><td colspan="2"></td></tr></table></div>':'<p class="note">No IE Officials found. Add them under Security & Audit > Users.</p>';
+  // school coverage
+  if(SCH.length){
+    var cov={};SCH.forEach(function(s){if(S.block&&s.block!==S.block)return;if(D.block&&s.block!==D.block)return;if(s.cwsn>0){var c=cov[s.block]=cov[s.block]||{tot:0,vis:0};c.tot++}});
+    var seen={};DREC.forEach(function(r){if(r.type===A_SCH&&r.refCode&&r.date.slice(0,7)===m&&r.status!=='Returned'&&r.status!=='Rejected')seen[r.refCode]=1});
+    SCH.forEach(function(s){if(s.cwsn>0&&seen[s.udise]&&cov[s.block])cov[s.block].vis++});
+    var ks=Object.keys(cov).sort();
+    if(ks.length)h+='<h3>Coverage of schools with CWSN ('+monthName(m)+')</h3>'+tbl(['Block','Schools with CWSN','Visited this month','Not yet visited'],ks.map(function(k){return '<tr><td>'+esc(k)+'</td><td class="r">'+cov[k].tot+'</td><td class="r">'+cov[k].vis+'</td><td class="r">'+(cov[k].tot-cov[k].vis)+'</td></tr>'}),[1,2,3]);
+  }
+  if(isAdmin()&&Object.keys(blkT).length)h+='<h3>Block-wise totals</h3>'+tbl(['Block','Reports','School visits','Home visits','Centre days','Other work','Hours','CWSN covered'],Object.keys(blkT).sort().map(function(k){var b=blkT[k];return '<tr><td>'+esc(k)+'</td><td class="r">'+b.n+'</td><td class="r">'+b.schoolVisits+'</td><td class="r">'+b.homeVisits+'</td><td class="r">'+b.centreDays+'</td><td class="r">'+b.otherActivities+'</td><td class="r">'+Math.round(b.totalHours*10)/10+'</td><td class="r">'+b.cwsnCovered+'</td></tr>'}),[1,2,3,4,5,6,7]);
+  return h;
+}
+function mSt(id,st){
+  var remark='';
+  if(st==='Returned'){remark=prompt('Reason for returning this report (the IE Official will see it):','');if(remark===null)return;if(!remark.trim()){alert('Please give a reason.');return}}
+  var done=function(){MREC.forEach(function(r){if(r.id===id){r.status=st;r.remark=remark;r.verifiedBy=S.name||roleName(S.role)}});save('cwsn_mrec',MREC);showTab('monthly')};
+  if(S.url)api('mstatus',{id:id,status:st,remark:remark}).then(done).catch(function(e){flash('Could not update: '+e.message,'err')});else done();
+}
+function mDetail(id){
+  var s=MREC.filter(function(r){return r.id===id})[0];if(!s)return;
+  var rows=prepD(DREC.filter(function(r){return r.userId===s.userId&&r.date.slice(0,7)===s.month&&r.status!=='Rejected'}).sort(function(a,b){return a.date<b.date?-1:1}));
+  var o=$('ov');o.style.display='block';
+  o.innerHTML='<button class="btn o" onclick="$(\'ov\').style.display=\'none\'">Close</button><h3>'+esc(s.officialName)+' - '+monthName(s.month)+'</h3><p><b>Summary:</b> '+esc(s.summary)+'</p><p><b>Challenges:</b> '+esc(s.challenges||'-')+'</p>'+grid(DCOLS(['date','type','what','purp','cw','hrs','loc','sec','st']),rows);
+}
+function exportMonthly(){
+  if(typeof XLSX==='undefined')return alert('The Excel library could not load. Connect to the internet and reload.');
+  var rows=mRows(),wb=XLSX.utils.book_new(),tot=[0,0,0,0,0,0,0,0,0];
+  var data=[['Monthly consolidation - '+CFG.district+' District - '+monthName(M.month)],[],['Block','IE Official','Designation','Active days','School visits','Unique schools','Home visits','Unique children','Centre days','Other work','Hours','CWSN covered','Flagged logs','Status','Summary','Challenges']];
+  rows.forEach(function(x){var s=x.sub;if(s){if(s.status!=='Returned')[s.activeDays,s.schoolVisits,s.uniqueSchools,s.homeVisits,s.uniqueChildren,s.centreDays,s.otherActivities,s.totalHours,s.cwsnCovered].forEach(function(v,i){tot[i]+=Number(v)||0});data.push([x.p.block,x.p.name,x.p.designation,s.activeDays,s.schoolVisits,s.uniqueSchools,s.homeVisits,s.uniqueChildren,s.centreDays,s.otherActivities,s.totalHours,s.cwsnCovered,s.flaggedLogs,s.status,s.summary,s.challenges])}else data.push([x.p.block,x.p.name,x.p.designation,'','','','','','','','','','','Not submitted','',''])});
+  data.push(['TOTAL','','',tot[0],tot[1],tot[2],tot[3],tot[4],tot[5],tot[6],Math.round(tot[7]*10)/10,tot[8]]);
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'Monthly_Consolidated');
+  XLSX.writeFile(wb,'IE_Monthly_Consolidation_'+M.month+'.xlsx');
+}
+
+// ---------- MASTER WORKBOOK IMPORT (District) ----------
+function tc(s){return String(s==null?'':s).trim().replace(/\s+/g,' ').replace(/\b([a-z])/g,function(m){return m.toUpperCase()})}
+function nk(s){return String(s).toLowerCase().replace(/[^a-z0-9]/g,'')}
+function gv(r,names){for(var k in r){var n=nk(k);for(var i=0;i<names.length;i++){if(n===names[i])return r[k]}}for(var k2 in r){var n2=nk(k2);for(var j=0;j<names.length;j++){if(n2.indexOf(names[j])===0)return r[k2]}}return ''}
+function sheetRows(wb,name){var n=null;wb.SheetNames.forEach(function(s){if(nk(s)===name||nk(s).indexOf(name)===0)n=s});return n?XLSX.utils.sheet_to_json(wb.Sheets[n],{defval:''}):[]}
+function modeFromAbbr(s){s=String(s||'').toLowerCase();if(s.indexOf('dcc')>-1||s.indexOf('day')>-1)return MODES[1];if(s.indexOf('hbe')>-1||s.indexOf('home')>-1)return MODES[2];return MODES[0]}
+function specFor(d){d=String(d||'').toLowerCase();if(d.indexOf('speech')>-1)return DOMAINS[1];if(d.indexOf('counsel')>-1||d.indexOf('remedial')>-1)return DOMAINS[3];if(d.indexOf('physio')>-1||d.indexOf('sensory')>-1||d.indexOf('occupational')>-1)return DOMAINS[0];if(d.indexOf('mobility')>-1||d.indexOf('adl')>-1)return DOMAINS[2];return ''}
+function importMaster(inp){
+  var f=inp.files[0];if(!f)return;inp.value='';
+  if(typeof XLSX==='undefined')return alert('Excel library could not load. Connect to the internet and reload.');
+  var rd=new FileReader();
+  rd.onload=function(){try{
+    var wb=XLSX.read(rd.result,{type:'array'}),warn=[];
+    var bR=sheetRows(wb,'block'),cR=sheetRows(wb,'centre'),iR=sheetRows(wb,'ieofficials'),tR=sheetRows(wb,'therapist');
+    if(!cR.length)return alert('The sheet "Centre" was not found or is empty. This does not look like the master workbook.');
+    var byCode={},blocks=[],codes={};
+    bR.forEach(function(r){var n=tc(gv(r,['blkname','blockname']));if(n){byCode[String(gv(r,['blkcode','blockcode']))]=n;if(blocks.indexOf(n)<0)blocks.push(n);codes[n]=String(gv(r,['blkcode','blockcode']))}});
+    var bn=function(r){var n=tc(gv(r,['blkname','blockname']));if(!n)n=byCode[String(gv(r,['blkcode','blockcode']))]||'';if(n&&blocks.indexOf(n)<0){blocks.push(n)}return n};
+    var ieByCentre={},users={};
+    iR.forEach(function(r){
+      var st=String(gv(r,['status'])||'Active').toLowerCase();if(st.indexOf('active')<0)return;
+      var ph=String(gv(r,['phoneno','phone','mobile'])).replace(/\D/g,'').slice(-10),nm=String(gv(r,['nameieofficial','name'])).trim(),cc=String(gv(r,['centrecode'])),b=bn(r);
+      if(!/^[6-9][0-9]{9}$/.test(ph)){warn.push('IE Official "'+nm+'": phone number is not a valid 10-digit mobile - skipped.');return}
+      (ieByCentre[cc]=ieByCentre[cc]||[]).push(ph);
+      if(!users[ph])users[ph]={name:nm,mobile:ph,role:'field',block:b,designation:String(gv(r,['designation'])).trim()};
+      else if(users[ph].block!==b)warn.push('IE Official "'+nm+'" appears in more than one block; the first block ('+users[ph].block+') is used.');
+    });
+    var centres=[],seenXY={};
+    cR.forEach(function(r){
+      var cc=String(gv(r,['centrecode'])),nm=tc(gv(r,['centrename'])),b=bn(r);if(!cc||!nm)return;
+      var c={block:b,mode:modeFromAbbr(gv(r,['mode'])),name:nm,code:cc,assigned:(ieByCentre[cc]||[]).filter(function(x,i,a){return a.indexOf(x)===i})};
+      var la=parseFloat(gv(r,['lat','latitude'])),lo=parseFloat(gv(r,['long','lng','longitude']));
+      if(isFinite(la)&&isFinite(lo)&&la&&lo){c.lat=la;c.lng=lo;c.locBy='Master file';c.locAt=today();if(c.mode.indexOf('Home')<0){var k=la+','+lo;(seenXY[k]=seenXY[k]||[]).push(nm)}}
+      centres.push(c);
+    });
+    Object.keys(seenXY).forEach(function(k){if(seenXY[k].length>1)warn.push('Identical coordinates ('+k+') for: '+seenXY[k].join(', ')+'. These look like placeholders. The geo-fence will block entries made at the real location until corrected.')});
+    var centreByCode={};centres.forEach(function(c){centreByCode[c.code]=c});
+    Object.keys(ieByCentre).forEach(function(cc){if(!centreByCode[cc])warn.push('IE Official sheet refers to centre code '+cc+' which is not in the Centre sheet.')});
+    var ths=[];
+    tR.forEach(function(r){
+      var st=String(gv(r,['status'])||'Active').toLowerCase();if(st.indexOf('active')<0)return;
+      var cc=String(gv(r,['assigendcentrecode','assignedcentrecode','centrecode'])),ce=centreByCode[cc],nm=String(gv(r,['nameth','name'])).trim();
+      if(!nm)return;if(!ce)warn.push('Therapist "'+nm+'": centre code '+cc+' is not in the Centre sheet.');
+      ths.push({name:nm,qual:String(gv(r,['qualification'])).trim(),domain:String(gv(r,['domain'])).trim(),mobile:String(gv(r,['mobile','phone'])).replace(/\D/g,'').slice(-10),code:cc,centre:ce?ce.name:tc(gv(r,['assigendcentrename','assignedcentrename'])),block:ce?ce.block:bn(r)});
+    });
+    var ulist=Object.keys(users).map(function(k){return users[k]});
+    var msg='Import the master workbook?\n\nBlocks: '+blocks.length+'\nCentres: '+centres.length+' ('+centres.filter(function(c){return c.lat}).length+' with coordinates)\nIE Officials (logins): '+ulist.length+'\nTherapists: '+ths.length+'\n\nThis REPLACES the current blocks, centres and therapist list. Existing logins are updated, new logins get a PIN.'+(warn.length?'\n\nCHECK THESE:\n- '+warn.join('\n- '):'');
+    if(!confirm(msg))return;
+    blocks.sort();
+    var old={};CFG.centres.forEach(function(c){old[c.code||c.name]=c});
+    centres.forEach(function(c){var o=old[c.code];if(!c.lat&&o&&o.lat){c.lat=o.lat;c.lng=o.lng;c.locBy=o.locBy;c.locAt=o.locAt}});
+    CFG.blocks=blocks;CFG.blockCodes=codes;CFG.centres=centres;CFG.therapists=ths;saveCfg();
+    pushCfg('Master data imported.').then(function(){
+      if(!S.url||!ulist.length){showTab('setup');return}
+      return api('userSave',{items:ulist}).then(function(j){SEC.pins=(SEC.pins||[]).concat(j.results.filter(function(x){return x.pin}));SEC.tab='users';var bad=j.results.filter(function(x){return x.error});showTab('security');if(bad.length)flash(bad.length+' login(s) not created: '+bad.map(function(e){return (e.name||e.id)+' ('+e.error+')'}).join('; '),'err')});
+    }).catch(function(e){flash(e.message,'err')});
+  }catch(e){alert('Could not read this file: '+e.message)}};
+  rd.readAsArrayBuffer(f);
+}
+
+// ---------- SCHOOL MASTER IMPORT (District) ----------
+function importSchools(inp){
+  var f=inp.files[0];if(!f)return;inp.value='';
+  if(typeof XLSX==='undefined')return alert('Excel library could not load. Connect to the internet and reload.');
+  var rd=new FileReader();
+  rd.onload=function(){try{
+    var wb=XLSX.read(rd.result,{type:'array'}),rows=sheetRows(wb,'school');
+    if(!rows.length)rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+    var rev={};Object.keys(CFG.blockCodes||{}).forEach(function(n){rev[String(CFG.blockCodes[n])]=n});
+    var items=[],skipNoBlock=0,noLoc=0,seen={},dups=0;
+    rows.forEach(function(r){
+      var ud=String(gv(r,['udisecode','udise','schoolcode'])).trim(),nm=String(gv(r,['schoolname','nameofschool','school'])).trim();
+      var b=tc(gv(r,['blkname','blockname','block']));if(!b)b=rev[String(gv(r,['blkcode','blockcode']))]||'';
+      if(!ud||!nm)return;
+      if(!b||CFG.blocks.indexOf(b)<0){skipNoBlock++;return}
+      if(seen[ud]){dups++;return}seen[ud]=1;
+      var la=parseFloat(gv(r,['latitude','lat'])),lo=parseFloat(gv(r,['longitude','long','lng','lon']));
+      var ok=isFinite(la)&&isFinite(lo)&&la&&lo;if(!ok)noLoc++;
+      items.push({block:b,udise:ud,name:nm,village:String(gv(r,['village','cluster','locality'])).trim(),lat:ok?la:'',lng:ok?lo:'',cwsn:num(gv(r,['cwsncount','noofcwsn','totalcwsn','cwsn']))});
+    });
+    if(!items.length)return alert('No usable school rows found. Columns needed: Block (or Blk Name / Blk code), UDISE Code, School Name, Latitude, Longitude. Optional: Village, CWSN Count. Blocks must match the block list.'+(skipNoBlock?'\n\n'+skipNoBlock+' rows were skipped because the block was missing or not in the block list.':''));
+    var msg='Import '+items.length+' schools?\n\nWith location: '+(items.length-noLoc)+'\nWithout location: '+noLoc+(skipNoBlock?'\nSkipped (block not recognised): '+skipNoBlock:'')+(dups?'\nSkipped duplicates (same UDISE): '+dups:'')+'\n\nThis REPLACES the current school list.';
+    if(!confirm(msg))return;
+    var done=function(){SCH=items;save('cwsn_sch',SCH);showTab('setup');flash(items.length+' schools imported.')};
+    if(S.url)api('schoolsSave',{items:items}).then(done).catch(function(e){flash(e.message,'err')});else done();
+  }catch(e){alert('Could not read this file: '+e.message)}};
+  rd.readAsArrayBuffer(f);
+}
+function schoolTemplate(){
+  if(typeof XLSX==='undefined')return alert('The Excel library could not load. Connect to the internet and reload.');
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Blk code','Blk Name','UDISE Code','School Name','Village / Cluster','Latitude','Longitude','CWSN Count'],[181701,'Central','18170100101','Sample LP School','Sample Village',26.7509,94.2037,3]]),'School');
+  XLSX.writeFile(wb,'School_Master_Template.xlsx');
+}
 // ---------- INIT ----------
-if(S.role&&(S.role==='district'||S.block))start();else showLogin();
-if('serviceWorker' in navigator&&location.protocol.indexOf('http')===0){/* single-file app: no service worker */}
+(function(){
+  if(S.url){
+    if(S.token&&S.role){
+      api('session').then(function(j){
+        S.role=j.user.role;S.name=j.user.name;S.block=j.user.block||'';S.id=j.user.id;S.designation=j.user.designation||'';saveS();mergeCfg(j.config);
+        if(j.user.mustChange)return showChangePin(true);
+        return refreshData().then(start);
+      }).catch(function(e){if(e.auth)return;if(e.server)return showLogin();start()});
+    }else showLogin();
+  }else if(S.role&&(S.role==='district'||S.block))start();else showLogin();
+})();
 </script>
 </body>
 </html>
