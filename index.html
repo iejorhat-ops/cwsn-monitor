@@ -250,6 +250,7 @@ window.addEventListener('online',function(){syncOutbox()});
 
 // ---------- login / session ----------
 function showLogin(){
+  if(S.url){S.token='';S.role='';S.name='';S.block='';S.designation='';saveS()}
   clearNav();RESFN=null;stopGeo();drawHdr();banner();
   var h='<h2>Login</h2><div id="msg"></div>';
   if(S.url){
