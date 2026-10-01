@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffe4ec">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>IE Monitoring System</title>
+<title>Xomonnoy-Dristi | IE Monitoring System</title>
 <style>
 *{box-sizing:border-box}
 body{font-family:Arial,Helvetica,sans-serif;font-size:15px;margin:0;background:#fff;color:#000}
@@ -88,6 +88,22 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
 .pinbox .pin{font-family:Courier New,monospace;font-size:20px;font-weight:bold}
 #ov video{width:100%;max-width:640px;border:1px solid #000;background:#eee}
 .printonly{display:none}
+.as{font-family:'Nirmala UI','Noto Sans Bengali','Noto Sans Assamese','Vrinda','Shonar Bangla',Arial,sans-serif}
+.hero{border:2px solid #ff8000;background:#fff7ec;text-align:center;padding:0 12px 16px 12px;margin:0 0 14px 0}
+.hero3{display:flex;height:10px;margin:0 -12px 14px -12px}
+.hero3 span{flex:1;display:block}
+.heroas{font-size:40px;font-weight:bold;color:#b34700;line-height:1.3}
+.heroen{font-size:30px;font-weight:bold;color:#1f5f99;letter-spacing:1px}
+.tagrule{width:120px;height:3px;background:#ff8000;margin:12px auto}
+.tagas{font-size:20px;font-weight:bold;color:#2e7d32;line-height:1.5}
+.tagen{font-size:18px;font-weight:bold;color:#000;margin-top:2px}
+.herosub{font-size:14px;color:#333;margin-top:10px}
+.feats{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 14px 0}
+.feat{flex:1;min-width:220px;border:1px solid #ff8000;border-top:5px solid #ff8000;background:#fff;padding:10px 12px;font-size:14px}
+.feat b{display:block;font-size:16px;margin-bottom:4px}
+.feat.g{border-top-color:#2e9e4f}.feat.b{border-top-color:#1f78c1}
+.loginbox{border:1px solid #ff8000;background:#fff;padding:6px 16px 14px 16px;max-width:460px;margin:0 auto}
+.trust{max-width:460px;margin:8px auto 0 auto;text-align:center;font-size:13px;color:#333}
 #busy{display:none;position:fixed;top:0;left:0;right:0;z-index:30;pointer-events:none}
 #busy .bb{margin:0 auto;max-width:560px;background:#fff0d9;border:2px solid #ff8000;border-top:0;padding:10px 12px;font-size:16px;font-weight:bold;text-align:center;color:#000}
 #busy.blk{bottom:0;pointer-events:auto;background:rgba(255,255,255,.7)}
@@ -104,6 +120,11 @@ table.tbl{border-collapse:collapse;width:100%;font-size:13px}
  #main{padding:8px 10px}
  #hdr{padding:6px 10px}
  .logoimg{height:42px}
+ .heroas{font-size:30px}
+ .heroen{font-size:24px}
+ .tagas{font-size:17px}
+ .tagen{font-size:15px}
+ .feat{min-width:100%}
  .ht{min-width:0;font-size:15px}
  .ht .sub{display:none}
  .hu{width:100%}
@@ -284,10 +305,21 @@ function syncWeekly(){
 window.addEventListener('online',function(){syncOutbox()});
 
 // ---------- login / session ----------
+function heroHtml(){
+  return '<div class="hero"><div class="hero3"><span style="background:#f39c12"></span><span style="background:#2e9e4f"></span><span style="background:#1f78c1"></span></div>'+
+   '<div class="heroas as">\u09B8\u09AE\u09A8\u09CD\u09AC\u09AF\u09BC-\u09A6\u09C3\u09B7\u09CD\u099F\u09BF</div><div class="heroen">Xomonnoy-Dristi</div><div class="tagrule"></div>'+
+   '<div class="tagas as">\u09AC\u09BE\u09A7\u09BE \u09A8\u09C7\u0993\u099A\u09BF \u09AA\u09CD\u09F0\u0997\u09A4\u09BF\u09F0 \u09A8\u09BF\u09F0\u09C0\u0995\u09CD\u09B7\u09A3</div><div class="tagen">Bridging Barriers, Monitoring Progress</div>'+
+   '<div class="herosub">IE Monitoring System &middot; Inclusive Education &middot; Samagra Shiksha, Jorhat</div></div>';
+}
+function featsHtml(){
+  return '<div class="feats"><div class="feat"><b>Daily Activity</b>School visits, home visits (Home Based Education), Day Care / BRR attendance and other official work, recorded every day from your phone.</div>'+
+   '<div class="feat g"><b>Therapeutic Services</b>Weekly reports of Day Care Centres, BRR and Home-Based centres, with live photos and location.</div>'+
+   '<div class="feat b"><b>Monthly Report</b>The IE Official consolidates the month, the BEEO verifies it, and the District sees the full picture.</div></div>';
+}
 function showLogin(){
   if(S.url){S.token='';S.role='';S.name='';S.block='';S.designation='';saveS()}
   clearNav();RESFN=null;stopGeo();drawHdr();banner();
-  var h='<h2>Login</h2><div id="msg"></div>';
+  var h=heroHtml()+'<div class="loginbox"><h2>Login</h2><div id="msg"></div>';
   if(S.url){
     h+='<div class="fld"><label class="t">Mobile number (your User ID)</label><input type="tel" id="l_id" inputmode="numeric" autocomplete="username" placeholder="10-digit mobile number" value="'+esc(S.id||'')+'"></div>'+
        '<div class="fld"><label class="t">PIN</label><input type="password" id="l_pin" inputmode="numeric" autocomplete="current-password" maxlength="6" placeholder="6-digit PIN"></div>'+
@@ -299,6 +331,7 @@ function showLogin(){
     '<div id="l_bl" class="fld"><label class="t">Your block</label><select id="l_block">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select></div>'+
     '<button class="btn big" onclick="doLogin()">Login</button>';
   }
+  h+='</div><div class="trust">Personal login &middot; Registered phone &middot; Live photos &middot; Location checked</div><div style="margin-top:14px">'+featsHtml()+'</div>';
   $('main').innerHTML=h;loginRole();
 }
 function loginRole(){var r=rv('l_role');if($('l_nm'))$('l_nm').style.display=(r==='district')?'none':'block';if($('l_bl'))$('l_bl').style.display=(r==='district')?'none':'block'}
