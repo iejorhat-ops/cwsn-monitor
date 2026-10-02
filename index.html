@@ -210,7 +210,7 @@ function secure(){return !!S.url}
 if(S.role==='other')S.role='';
 if(S.url&&!S.token)S.role='';
 S.url=DEFAULT_URL;
-var CFG=load('cwsn_cfg',{district:'Jorhat',blocks:DEF_BLOCKS,centres:[],budget:0,logo:''});
+var CFG=load('cwsn_cfg',{district:'Jorhat',blocks:DEFAULT_URL?[]:DEF_BLOCKS,centres:[],budget:0,logo:''});
 CFG.therapists=CFG.therapists||[];CFG.blockCodes=CFG.blockCodes||{};CFG.schoolRadius=CFG.schoolRadius||200;CFG.strictSchools=!!CFG.strictSchools;
 if(CFG.blocks&&(CFG.blocks.indexOf('Central Jorhat')>-1||CFG.blocks.indexOf('Jorhat East')>-1)&&CFG.blocks.length<=4){CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
 if(CFG.district==='Golaghat'){CFG.district='Jorhat';if(CFG.blocks.indexOf('Dergaon')>-1)CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
@@ -232,7 +232,7 @@ function idbDel(k){return idb().then(function(db){return new Promise(function(re
 
 // ---------- server ----------
 function ctx(){var c={now:Date.now()};if(GEO.fix&&Date.now()-GEO.fix.ts<=120000){c.lat=GEO.fix.lat;c.lng=GEO.fix.lng;c.acc=GEO.fix.acc;c.ts=GEO.fix.ts}return c}
-var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',sync:'Loading data from the server...',repissue:'Preparing the report...',replist:'Loading reports...',repget:'Opening the report...',repupload:'Uploading the signed copy...',repscan:'Loading the scanned copy...',repverify:'Checking the report against the entries...',repdecide:'Saving...',repcancel:'Saving...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
+var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',masterSave:'Writing the master data to the Google Sheet...',masterUsers:'Creating logins from the Sheet...',cfgReload:'Reading the Google Sheet...',saveConfig:'Saving to the Google Sheet...',sync:'Loading data from the server...',repissue:'Preparing the report...',replist:'Loading reports...',repget:'Opening the report...',repupload:'Uploading the signed copy...',repscan:'Loading the scanned copy...',repverify:'Checking the report against the entries...',repdecide:'Saving...',repcancel:'Saving...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
 var BUSYREAD={sync:1,replist:1,repget:1,tslocks:1,session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
 var BUSYQ=[],BUSYID=0,BUSYTMR=null;
 function busyStart(msg,blk){var id=++BUSYID;BUSYQ.push({id:id,msg:msg,blk:blk,t:Date.now()});if(blk)busyDraw();else setTimeout(busyDraw,450);if(!BUSYTMR)BUSYTMR=setInterval(busyDraw,1000);return id}
@@ -276,7 +276,7 @@ function norm(r){
   o.photoCount=o.photoLinks.length||num(r.photoCount);o.localPhotos=!!r.localPhotos;o._pending=!!r._pending;
   return o;
 }
-function mergeCfg(c){if(!c)return;CFG.district=c.district||CFG.district;if(c.blocks&&c.blocks.length)CFG.blocks=c.blocks;CFG.centres=c.centres||[];CFG.budget=c.budget||0;CFG.radius=c.radius||150;CFG.therapists=c.therapists||[];CFG.blockCodes=c.blockCodes||{};CFG.schoolRadius=c.schoolRadius||200;CFG.strictSchools=!!c.strictSchools;saveCfg()}
+function mergeCfg(c){if(!c)return;CFG.district=c.district||CFG.district;if(S.url)CFG.blocks=c.blocks||[];else if(c.blocks&&c.blocks.length)CFG.blocks=c.blocks;CFG.centres=c.centres||[];CFG.budget=c.budget||0;CFG.radius=c.radius||150;CFG.therapists=c.therapists||[];CFG.blockCodes=c.blockCodes||{};CFG.schoolRadius=c.schoolRadius||200;CFG.strictSchools=!!c.strictSchools;saveCfg()}
 // ---------- one-call sync: show what is on the phone at once, refresh quietly in the background ----------
 var SYNC={t:0,p:null,sch:0},STALE_MS=15000,HOLD_MS=(typeof window.__HOLD==='number')?window.__HOLD:10000,INFLIGHT={},SYNCERR='',HOLDTMR=null;
 function applySync(j){
@@ -927,12 +927,12 @@ function viewSetup(){
   RESFN=null;
   var h='<h2>Centres & Settings</h2>';
   h+='<h3>District</h3>'+fld('District name','<input type="text" id="s_dist" value="'+esc(CFG.district)+'">')+fld('Geo-fence radius around each fixed centre (metres)','<input type="number" id="s_rad" min="50" max="1000" value="'+(CFG.radius||150)+'">','Entries for BRR and Day Care centres are accepted only within this distance of the centre location. Home-based (HBE) visits are not fenced.')+fld('Sanctioned budget for therapeutic services (Rs.)','<input type="number" id="s_bud" min="0" value="'+(CFG.budget||0)+'">')+
-     fld('Blocks (one per line)','<textarea id="s_blk" rows="7">'+esc(CFG.blocks.join('\n'))+'</textarea>','Starter list only - please correct it to match the district.')+'<button class="btn g" onclick="saveSetup()">Save district settings</button>'+fld('Logo (Samagra Shiksha)','<input type="file" accept="image/*" onchange="setLogo(this)"> <button class="btn o sm" onclick="CFG.logo=\'\';saveCfg();drawHdr();showTab(\'setup\')">Remove logo</button>');
+     fld('Blocks (one per line)','<textarea id="s_blk" rows="7">'+esc(CFG.blocks.join('\n'))+'</textarea>','These are the rows of the Block tab in the Google Sheet. Saving here updates that tab.')+'<button class="btn g" onclick="saveSetup()">Save district settings</button>'+fld('Logo (Samagra Shiksha)','<input type="file" accept="image/*" onchange="setLogo(this)"> <button class="btn o sm" onclick="CFG.logo=\'\';saveCfg();drawHdr();showTab(\'setup\')">Remove logo</button>');
   h+='<h3>Centres ('+CFG.centres.length+')</h3><div class="info">Register every BRR, Day Care Centre and HBE cluster here. IE Officials pick from this list, and centres with no entry appear as zero-activity.</div>';
   h+='<div class="fgrid noprint"><div><label>Block</label><select id="c_b">'+opts(CFG.blocks,'','-- Block --')+'</select></div><div><label>Mode</label><select id="c_m">'+opts(MODES,'','-- Mode --')+'</select></div><div><label>Centre name</label><input type="text" id="c_n"></div><div><label>Code</label><input type="text" id="c_c"></div><div><label>IE Official mobile (optional)</label><input type="tel" id="c_ie" placeholder="10-digit, comma for more"></div></div><button class="btn" onclick="addCentre()">Add centre</button>';
   h+='<div class="fld"><label class="t">Or import from Excel / CSV (columns: Block, Mode, Centre, Code, IE Mobile, Latitude, Longitude, Radius - the last four are optional)</label><input type="file" accept=".xlsx,.xls,.csv" onchange="importCentres(this)"></div>';
   h+=CFG.centres.length?tbl(['Block','Mode','Centre','Code','IE Official(s)','Location',''],CFG.centres.map(function(c,i){return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.code||'')+'</td><td>'+esc((c.assigned||[]).join(', ')||'-')+' <button class="btn sm" onclick="assignCentre('+i+')">Set</button></td><td>'+(c.lat?'Set':(c.mode.indexOf('Home')>-1?'n/a':'<span class="bad">Not set</span>'))+'</td><td><button class="btn o sm" onclick="delCentre('+i+')">Remove</button></td></tr>'})):'';
-  h+='<h3>Master data (blocks, centres, IE Officials, therapists)</h3><div class="info">Upload <b>CWSN_MONITORING_MASTER.xlsx</b> (sheets: Block, Centre, IEOfficials, therapist). It sets the blocks, centres with codes and coordinates, creates a personal login for every IE Official (their mobile number) and assigns them to their centres. You can upload an updated file again at any time.</div>'+(S.url?'<div class="fld"><input type="file" accept=".xlsx,.xls" onchange="importMaster(this)"></div>':'<p class="note">Connect the server to import the master workbook.</p>');
+  h+='<h3>Master data (blocks, centres, IE Officials, therapists)</h3><div class="info"><b>The master data lives in the Google Sheet</b>: the tabs <b>Block, Centre, IEOfficials, therapist</b> and <b>Settings</b>. Everything here is read from them and saved back to them. You can edit those tabs directly in Google Sheets (then tap <b>Reload from the Sheet</b>), or upload <b>CWSN_MONITORING_MASTER.xlsx</b> below: it is written into the same tabs, and a login is created for every IE Official (their mobile number).</div>'+(S.url?'<div class="fld"><input type="file" accept=".xlsx,.xls" onchange="importMaster(this)"></div><div class="fld"><button class="btn g" onclick="cfgReloadSheet()">Reload from the Sheet</button> <button class="btn" onclick="masterUsersFromSheet()">Create logins from the IEOfficials tab</button><div class="hint">Use these after you type changes directly in the Google Sheet. The app also picks up Sheet changes by itself within about a minute.</div></div>':'<p class="note">Connect the server to import the master workbook.</p>');
   var nl=SCH.filter(function(s){return s.lat!==''&&s.lat!=null}).length;
   h+='<h3>Schools master (for school visits)</h3><div class="info">Upload the school list with latitude and longitude. IE Officials pick the school from this list, and school-visit photos must be taken within the radius below. Columns: Block (or Blk code), UDISE Code, School Name, Village, Latitude, Longitude, CWSN Count. <button class="btn sm" onclick="schoolTemplate()">Download blank template</button></div>';
   h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(S.url?'<div class="fld"><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
@@ -950,7 +950,7 @@ function setLogo(inp){
 }
 function pushCfg(msg){
   if(!S.url){flash(msg||'Saved.');return Promise.resolve()}
-  return api('saveConfig',{district:CFG.district,blocks:CFG.blocks,centres:CFG.centres,budget:CFG.budget,radius:CFG.radius||150,therapists:CFG.therapists||[],blockCodes:CFG.blockCodes||{},schoolRadius:CFG.schoolRadius||200,strictSchools:!!CFG.strictSchools}).then(function(){flash((msg||'Saved')+' (server updated).')}).catch(function(e){flash('Saved on this device only. Server: '+e.message,'err')});
+  return api('saveConfig',{district:CFG.district,blocks:CFG.blocks,centres:CFG.centres,budget:CFG.budget,radius:CFG.radius||150,therapists:CFG.therapists||[],blockCodes:CFG.blockCodes||{},schoolRadius:CFG.schoolRadius||200,strictSchools:!!CFG.strictSchools}).then(function(j){if(j&&j.config){mergeCfg(j.config);drawHdr()}flash((msg||'Saved')+' (saved in the Google Sheet).')}).catch(function(e){flash('Saved on this device only. Server: '+e.message,'err')});
 }
 function saveSetup(){
   CFG.district=$('s_dist').value.trim()||CFG.district;CFG.budget=num($('s_bud').value);CFG.radius=Math.max(50,Math.min(1000,num($('s_rad').value)||150));if($('s_srad')){CFG.schoolRadius=Math.max(50,Math.min(1000,num($('s_srad').value)||200));CFG.strictSchools=$('s_strict').checked}
@@ -1010,7 +1010,7 @@ function viewHelp(){
   h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> records daily activity, the monthly report and the Therapeutic Services daily reports for the centres of their block (maximum 3 days a week for a centre, one IE Official per centre per week).</li><li><b>BEEO:</b> approves or rejects the Daily Activity, Monthly Reports and Therapeutic Services entries of their block, then prepares the signed report for the District Office.</li><li><b>District Authority:</b> sees all blocks, manages users and phones, settings and the security log.</li></ul>';
   h+='<h3>Security you should know about</h3><ul><li>Your login is personal: your mobile number and your own 6-digit PIN. Never share the PIN.</li><li>Five wrong PINs lock the account for 15 minutes.</li><li>Your account works on your registered phone only. A new phone needs District Office approval.</li><li>Photos must be taken live in the app, at the school or centre.</li><li>Every login, upload and rejected attempt is recorded for the District Authority.</li></ul>';
   if(S.role!=='district')h+='<h3>Rules the app checks (Therapeutic Services)</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>A centre can report at most 3 days a week, one report per day, and only one IE Official can report a centre in a week (the server blocks the rest).</li><li>Day Care Centres should have at least 10 CWSN on the day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
-  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it creates the IE Official logins) and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
+  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it is written into the Block, Centre, IEOfficials and therapist tabs of the Google Sheet and creates the IE Official logins), or edit those tabs in the Sheet and tap Reload from the Sheet and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
   return h;
 }
 // ---------- GEO (live location) ----------
@@ -1247,7 +1247,7 @@ function refreshExtra(light){
 }
 
 // when a person opens an activity / monthly / alerts tab, pull the latest data in the background
-var LIVE_TABS=['dlog','dreview','dall','monthly','security','dash','breport','rverify','review','mine','grid','alerts','photos','report','locs'];
+var LIVE_TABS=['setup','dlog','dreview','dall','monthly','security','dash','breport','rverify','review','mine','grid','alerts','photos','report','locs'];
 function redrawAfterSync(t){
   if(TAB!==t)return;
   if(RESFN&&$('res')){drawRes();if($('ie_dash'))$('ie_dash').innerHTML=dashIE();return}
@@ -1695,14 +1695,23 @@ function importMaster(inp){
     var ulist=Object.keys(users).map(function(k){return users[k]});
     var msg='Import the master workbook?\n\nBlocks: '+blocks.length+'\nCentres: '+centres.length+' ('+centres.filter(function(c){return c.lat}).length+' with coordinates)\nIE Officials (logins): '+ulist.length+'\nTherapists: '+ths.length+'\n\nThis REPLACES the current blocks, centres and therapist list. Existing logins are updated, new logins get a PIN.'+(warn.length?'\n\nCHECK THESE:\n- '+warn.join('\n- '):'');
     if(!confirm(msg))return;
+    if(S.url){
+      var tabs={};
+      ['Block','Centre','IEOfficials','therapist'].forEach(function(n){var nm=null;wb.SheetNames.forEach(function(x){if(nk(x)===nk(n)||nk(x).indexOf(nk(n))===0)nm=x});if(nm)tabs[n]=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:''})});
+      api('masterSave',{tabs:tabs}).then(function(j){
+        mergeCfg(j.config);SYNC.t=0;drawHdr();
+        SEC.pins=(SEC.pins||[]).concat(j.results.filter(function(x){return x.pin}));SEC.tab='users';
+        var bad=j.results.filter(function(x){return x.error});
+        showTab('security');
+        flash('Master data saved in the Google Sheet ('+j.wrote.join(', ')+'). '+j.results.filter(function(x){return x.pin}).length+' new login(s) created.'+(bad.length?' '+bad.length+' login(s) not created: '+bad.map(function(e){return (e.name||e.id)+' ('+e.error+')'}).join('; '):''),bad.length?'err':undefined);
+      }).catch(function(e){flash(e.message,'err')});
+      return;
+    }
     blocks.sort();
     var old={};CFG.centres.forEach(function(c){old[c.code||c.name]=c});
     centres.forEach(function(c){var o=old[c.code];if(!c.lat&&o&&o.lat){c.lat=o.lat;c.lng=o.lng;c.locBy=o.locBy;c.locAt=o.locAt}});
     CFG.blocks=blocks;CFG.blockCodes=codes;CFG.centres=centres;CFG.therapists=ths;saveCfg();
-    pushCfg('Master data imported.').then(function(){
-      if(!S.url||!ulist.length){showTab('setup');return}
-      return api('userSave',{items:ulist}).then(function(j){SEC.pins=(SEC.pins||[]).concat(j.results.filter(function(x){return x.pin}));SEC.tab='users';var bad=j.results.filter(function(x){return x.error});showTab('security');if(bad.length)flash(bad.length+' login(s) not created: '+bad.map(function(e){return (e.name||e.id)+' ('+e.error+')'}).join('; '),'err')});
-    }).catch(function(e){flash(e.message,'err')});
+    showTab('setup');flash('Master data imported (demo mode: kept on this device).');
   }catch(e){alert('Could not read this file: '+e.message)}};
   rd.readAsArrayBuffer(f);
 }
@@ -1762,6 +1771,18 @@ function dashIE(){
   var nolog=ppl.filter(function(p){return !tdU[p.id]});
   if(ppl.length&&nolog.length)h+='<p class="note"><b>No activity logged today:</b> '+nolog.slice(0,40).map(function(p){return esc(p.name)+' ('+esc(p.block)+')'}).join('; ')+(nolog.length>40?' ...':'')+'</p>';
   return h+'<p class="noprint"><button class="btn sm" onclick="showTab(\'dall\')">Open Activity Log</button> <button class="btn sm" onclick="showTab(\'monthly\')">Open Monthly Reports</button></p>';
+}
+
+function cfgReloadSheet(){
+  api('cfgReload').then(function(j){mergeCfg(j.config);SYNC.t=0;return syncAll(true,true)}).then(function(){drawHdr();showTab('setup');flash('Read the latest data from the Google Sheet.')}).catch(function(e){flash(e.message,'err')});
+}
+function masterUsersFromSheet(){
+  api('masterUsers').then(function(j){
+    var made=j.results.filter(function(x){return x.pin}),bad=j.results.filter(function(x){return x.error});
+    SEC.pins=(SEC.pins||[]).concat(made);SEC.tab='users';
+    if(made.length||bad.length){showTab('security');flash(made.length+' new login(s) created from the IEOfficials tab.'+(bad.length?' Not created: '+bad.map(function(e){return (e.name||e.id)+' ('+e.error+')'}).join('; '):''),bad.length?'err':undefined)}
+    else flash('Every active IE Official in the IEOfficials tab already has a login ('+j.count+' checked).');
+  }).catch(function(e){flash(e.message,'err')});
 }
 // ============ REPORT FOR SIGNATURE (BEEO) AND REPORT APPROVAL (DISTRICT) ============
 var REPS=load('cwsn_reps',[]),RP={from:'',to:''},REPUP='';
