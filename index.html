@@ -224,8 +224,8 @@ function idbDel(k){return idb().then(function(db){return new Promise(function(re
 
 // ---------- server ----------
 function ctx(){var c={now:Date.now()};if(GEO.fix&&Date.now()-GEO.fix.ts<=120000){c.lat=GEO.fix.lat;c.lng=GEO.fix.lng;c.acc=GEO.fix.acc;c.ts=GEO.fix.ts}return c}
-var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
-var BUSYREAD={session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
+var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
+var BUSYREAD={tslocks:1,session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
 var BUSYQ=[],BUSYID=0,BUSYTMR=null;
 function busyStart(msg,blk){var id=++BUSYID;BUSYQ.push({id:id,msg:msg,blk:blk,t:Date.now()});if(blk)busyDraw();else setTimeout(busyDraw,450);if(!BUSYTMR)BUSYTMR=setInterval(busyDraw,1000);return id}
 function busyEnd(id){BUSYQ=BUSYQ.filter(function(b){return b.id!==id});busyDraw();if(!BUSYQ.length&&BUSYTMR){clearInterval(BUSYTMR);BUSYTMR=null}}
@@ -297,6 +297,7 @@ function syncWeekly(){
     });
   })},Promise.resolve()).then(function(){
     SYNCING=false;saveRec();saveOut();banner();
+    if((sent||rej)&&typeof refreshLocks==='function')refreshLocks().catch(function(){});
     if(sent)flash('Uploaded '+sent+' entr'+(sent>1?'ies':'y')+' to the district server.');
     if(rej)flash(rej+' entr'+(rej>1?'ies were':'y was')+' REJECTED by the server. Open Therapeutic Services, then My Entries, to see the reason.','err');
     if((sent||rej)&&RESFN)drawRes();
@@ -312,9 +313,9 @@ function heroHtml(){
    '<div class="herosub">IE Monitoring System &middot; Inclusive Education &middot; Samagra Shiksha, Jorhat</div></div>';
 }
 function featsHtml(){
-  return '<div class="feats"><div class="feat"><b>Daily Activity</b>School visits, home visits (Home Based Education), Day Care / BRR attendance and other official work, recorded every day from your phone.</div>'+
-   '<div class="feat g"><b>Therapeutic Services</b>Weekly reports of Day Care Centres, BRR and Home-Based centres, with live photos and location.</div>'+
-   '<div class="feat b"><b>Monthly Report</b>The IE Official consolidates the month, the BEEO verifies it, and the District sees the full picture.</div></div>';
+  return '<div class="feats"><div class="feat"><b>Daily Activity</b>School visits, home visits (Home Based Education), Day Care Centre / BRR visits and other official work, recorded every day from your phone.</div>'+
+   '<div class="feat g"><b>Therapeutic Services</b>Daily reports of the therapist / specialist at Day Care Centres, BRR and Home-Based centres, approved by the BEEO.</div>'+
+   '<div class="feat b"><b>Monthly Report</b>The IE Official consolidates the month, the BEEO approves it, and the District sees the full picture.</div></div>';
 }
 function showLogin(){
   if(S.url){S.token='';S.role='';S.name='';S.block='';S.designation='';saveS()}
@@ -434,7 +435,9 @@ function banner(){
 function flash(m,type){var e=$('msg');if(!e)return;e.innerHTML='<div class="'+(type==='err'?'err':type==='warn'?'warn':type==='info'?'info':'okmsg')+'">'+esc(m)+'</div>';if(type!=='info')window.scrollTo(0,0)}
 
 // ---------- form helpers ----------
-function opts(list,sel,first){return (first!=null?'<option value="">'+esc(first)+'</option>':'')+list.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(v)+'</option>'}).join('')}
+var ST_SHORT={Pending:'Pending approval',Verified:'Approved',Returned:'Returned'};
+function stLbl(s){return {Pending:'Pending BEEO approval',Verified:'Approved by BEEO',Returned:'Returned',Submitted:'Submitted - pending BEEO approval',Rejected:'REJECTED'}[s]||s}
+function opts(list,sel,first){return (first!=null?'<option value="">'+esc(first)+'</option>':'')+list.map(function(v){return '<option value="'+esc(v)+'"'+(v===sel?' selected':'')+'>'+esc(ST_SHORT[v]||v)+'</option>'}).join('')}
 function radios(name,list,checked,extra){return list.map(function(v){return '<label class="opt"><input type="radio" name="'+name+'" value="'+esc(v)+'" '+(v===checked?'checked ':'')+(extra||'')+'> '+esc(v)+'</label>'}).join('')}
 function checks(name,list,extra){return list.map(function(v){return '<label class="opt"><input type="checkbox" name="'+name+'" value="'+esc(v)+'" '+(extra||'')+'> '+esc(v)+'</label>'}).join('')}
 function rv(name){var e=document.querySelector('input[name="'+name+'"]:checked');return e?e.value:''}
@@ -443,37 +446,34 @@ function fld(label,inner,hint){return '<div class="fld"><label class="t">'+label
 // ---------- NEW ENTRY ----------
 function viewEntry(){
   RESFN=null;PH=[];
-  var h='<h2>Therapeutic Services - New Entry</h2><div id="errs"></div>';
+  var h='<h2>Therapeutic Services - New Entry</h2><div class="info">One entry = <b>one day</b> on which the outside therapist / specialist (honorarium based) worked at the centre. A centre can report <b>up to 3 days a week</b>. When one IE Official has started reporting a centre in a week, the other IE Officials of the block cannot report that centre that week. The BEEO approves every entry.</div><div id="errs"></div>';
   if(secure())h+='<div id="geo_box" class="geo"></div>';
-  h+=fld('Reporting week ending date *','<input type="date" id="e_we" max="'+today()+'" value="'+today()+'">');
+  h+=fld('Reporting day *','<input type="date" id="e_we" min="'+daysAgo(7)+'" max="'+today()+'" value="'+today()+'" onchange="tsInfo()">','The day the therapist / specialist worked (up to 7 days back).');
   h+=fld('Block *','<select id="e_blk" onchange="refreshCentres()">'+opts(CFG.blocks,S.block,'-- Select block --')+'</select>');
   h+=fld('Service delivery mode *',radios('e_mode',MODES,'','onchange="modeChg()"'));
   h+=fld('Centre / School *','<select id="e_ctr" onchange="ctrChg()"></select><div id="e_new" style="display:none;margin-top:6px"><input type="text" id="e_cname" placeholder="Centre / School name"><br><input type="text" id="e_ccode" placeholder="Centre code (optional)" style="margin-top:6px"></div>');
-  h+=fld('Designated operating days of the centre *',checks('e_opd',DAYS));
-  h+=fld('Days functioned this week *','<input type="number" id="e_days" min="1" max="6" step="1" inputmode="numeric">','Day Care Centres must function at least 3 days a week.');
+  h+='<div id="e_lock"></div>';
   h+=fld('Officials present / monitoring *',checks('e_off',OFFICERS));
   h+=fld('Name of officer / special educator present *','<input type="text" id="e_pn" value="'+(secure()&&S.role==='field'?esc(S.name):'')+'">');
   h+=fld('Contact number *','<input type="tel" id="e_ph" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" value="'+(secure()&&S.role==='field'?esc(S.id):'')+'">');
   h+=fld('Attendance register maintained and verified on site? *',radios('e_reg',['Yes','No'],''));
   h+=fld('IEP updated / verified for all attendees? *',radios('e_iep',['Yes','No'],''));
-  h+=fld('Total distinct CWSN attended this week *','<input type="number" id="e_cw" min="0" step="1" inputmode="numeric">');
-  h+='<div id="e_dc" style="display:none">'+fld('Did every operating day have at least 10 CWSN? *',radios('e_dm',['Yes','No'],''))+
-      fld('Day Care contingency used this week (Rs.)','<input type="number" id="e_ct" min="0" max="'+CAP_CONT+'" step="1" inputmode="numeric" value="0">','Maximum Rs. 500 per month, for up to 10 months.')+'</div>';
+  h+=fld('Number of CWSN attended on this day *','<input type="number" id="e_cw" min="0" step="1" inputmode="numeric">');
+  h+='<div id="e_dc" style="display:none">'+fld('Day Care contingency used on this day (Rs.)','<input type="number" id="e_ct" min="0" max="'+CAP_CONT+'" step="1" inputmode="numeric" value="0">','Maximum Rs. 500 per month, for up to 10 months.')+'</div>';
   h+=fld('Formal assessment completed BEFORE therapy started? *',radios('e_pre',['Yes','No'],''),'Therapy cannot be recorded without a prior formal assessment.');
-  h+=fld('Therapy domains delivered this week *',checks('e_dom',DOMAINS));
-  h+=fld('Number of therapy sessions conducted this week *','<input type="number" id="e_ses" min="0" step="1" inputmode="numeric">');
+  h+=fld('Therapy domains delivered on this day *',checks('e_dom',DOMAINS));
+  h+=fld('Number of therapy sessions conducted on this day *','<input type="number" id="e_ses" min="0" step="1" inputmode="numeric">');
   h+=fld('Name of assigned therapist / specialist','<span id="e_thbox"><input type="text" id="e_th"></span>');
   h+=fld('Specialization','<select id="e_sp">'+opts(DOMAINS.concat(['Other']),'','-- Select --')+'</select>');
-  h+=fld('Working days engaged this week','<input type="number" id="e_td" min="0" max="6" step="1" inputmode="numeric" value="0" oninput="calcTot()">');
-  h+=fld('Daily honorarium claimed (Rs.)','<input type="number" id="e_hr" min="0" max="'+CAP_DAY+'" step="1" inputmode="numeric" value="0" oninput="calcTot()">','Maximum Rs. 1,500 per day.');
-  h+='<div class="fld"><b>Total honorarium: <span id="e_tot">Rs. 0</span></b></div>';
+  h+=fld('Honorarium claimed for this day (Rs.)','<input type="number" id="e_hr" min="0" max="'+CAP_DAY+'" step="1" inputmode="numeric" value="0" oninput="calcTot()">','Maximum Rs. 1,500 per day.');
+  h+='<div class="fld"><b>Honorarium for this day: <span id="e_tot">Rs. 0</span></b></div>';
   if(secure())h+=fld('Therapy session photographs * (1 to 5)','<button class="btn" onclick="openCam()">Take live photo</button><div class="hint">Photos must be taken live with this camera at the centre. Gallery uploads are not allowed. Each photo is stamped with place and time and checked by the server.</div><div id="e_thumbs" class="thumbs"></div>');
   else h+=fld('Therapy session photographs * (1 to 5)','<input type="file" id="e_ph_in" accept="image/*" multiple onchange="addPhotos(this)"><div class="hint">Tap and choose Camera. Each photo gets a date-time stamp. Up to 10 MB each.</div><div id="e_thumbs" class="thumbs"></div>');
   h+='<div class="fld"><button class="btn g big" id="e_go" onclick="submitEntry()">Submit Entry</button> <button class="btn o" onclick="showTab(\'entry\')">Clear form</button></div>';
   return h;
 }
 function modeChg(){refreshCentres();var d=$('e_dc');if(d)d.style.display=isDC(rv('e_mode'))?'block':'none'}
-function myCentres(b,m){return CFG.centres.filter(function(c){if(c.block!==b||c.mode!==m)return false;if(secure()&&S.role==='field'&&c.assigned&&c.assigned.length&&c.assigned.indexOf(S.id)<0)return false;return true})}
+function myCentres(b,m){return CFG.centres.filter(function(c){return c.block===b&&c.mode===m})}
 function findCentre(b,n){var h=null;CFG.centres.forEach(function(c){if(c.block===b&&c.name===n)h=c});return h}
 function refreshCentres(){
   var b=$('e_blk').value,m=rv('e_mode'),sel=$('e_ctr');
@@ -481,10 +481,10 @@ function refreshCentres(){
   var list=myCentres(b,m);
   sel.innerHTML='<option value="">-- Select centre --</option>'+list.map(function(c){return '<option value="'+esc(c.name)+'" data-code="'+esc(c.code||'')+'">'+esc(c.name)+(c.code?' ('+esc(c.code)+')':'')+'</option>'}).join('')+(secure()?'':'<option value="__new">Not in list - type name</option>');
   if(!list.length&&!secure())sel.value='__new';
-  if(!list.length&&secure())sel.innerHTML='<option value="">No centre registered for you here. Ask the District Office.</option>';
+  if(!list.length&&secure())sel.innerHTML='<option value="">No centre is registered here. Ask the District Office.</option>';
   ctrChg();
 }
-function ctrChg(){$('e_new').style.display=$('e_ctr').value==='__new'?'block':'none';fillTherapists();geoUi()}
+function ctrChg(){$('e_new').style.display=$('e_ctr').value==='__new'?'block':'none';fillTherapists();tsInfo();geoUi()}
 function fillTherapists(){
   var bx=$('e_thbox');if(!bx)return;
   var b=$('e_blk').value,cn=$('e_ctr').value,c=cn&&cn!=='__new'?findCentre(b,cn):null;
@@ -497,7 +497,27 @@ function thChg(){
   var sp=specFor(o?o.getAttribute('data-d'):'');if(sp&&s.value!=='__other')$('e_sp').value=sp;
 }
 function thVal(){var e=$('e_th');return e.value==='__other'?($('e_th2').value||'').trim():e.value.trim()}
-function calcTot(){$('e_tot').textContent=inr(num($('e_td').value)*num($('e_hr').value))}
+function calcTot(){$('e_tot').textContent=inr(num($('e_hr').value))}
+function dayName(d){return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(d+'T00:00:00').getDay()]}
+function weekStart(d){var t=new Date(d+'T00:00:00Z'),w=(t.getUTCDay()+6)%7;t.setUTCDate(t.getUTCDate()-w);return t.toISOString().slice(0,10)}
+function tsStatus(b,cn,we){
+  var wk=weekStart(we),days={},owner='',ownerName='';
+  TSL.forEach(function(x){if(x.block===b&&x.centre===cn&&x.week===wk){x.days.forEach(function(d){days[d]=1});if(x.owner&&!owner){owner=x.owner;ownerName=x.ownerName}}});
+  REC.forEach(function(r){if(r.block===b&&r.centre===cn&&r.status!=='Rejected'&&r.status!=='Returned'&&r.weekEnding&&weekStart(r.weekEnding)===wk){days[r.weekEnding]=1;if(secure()&&r._pending&&!owner&&r.userId===S.id){owner=S.id;ownerName=S.name}}});
+  var n=Object.keys(days).length;
+  return {n:n,days:Object.keys(days).sort(),ownerName:ownerName,locked:secure()&&S.role==='field'&&!!owner&&owner!==S.id,dup:!!days[we],full:n>=3&&!days[we]};
+}
+function tsInfo(){
+  var box=$('e_lock');if(!box)return;
+  var we=$('e_we').value,b=$('e_blk').value,cn=$('e_ctr').value;
+  if(!we||!b||!cn||cn==='__new'){box.innerHTML='';return}
+  var s=tsStatus(b,cn,we),h='';
+  if(s.locked)h='<div class="err"><b>Locked this week.</b> '+esc(s.ownerName)+' is reporting this centre this week. Only one IE Official can report a centre in a week. Choose another centre or another week.</div>';
+  else if(s.dup)h='<div class="err">This centre already has a report for '+esc(we)+'.</div>';
+  else if(s.full)h='<div class="err">The maximum of 3 reporting days a week is already reached for this centre ('+esc(s.days.join(', '))+').</div>';
+  else h='<div class="info">Week of '+esc(weekStart(we))+': <b>'+s.n+' of 3</b> reporting days used'+(s.days.length?' ('+esc(s.days.join(', '))+')':'')+(s.ownerName&&secure()?'. Reported by '+esc(s.ownerName):'')+'.</div>';
+  box.innerHTML=h;
+}
 function addPhotos(inp){
   var files=[].slice.call(inp.files);inp.value='';
   var room=5-PH.length;if(files.length>room){alert('Maximum 5 photos per entry.');files=files.slice(0,Math.max(room,0))}
@@ -524,30 +544,27 @@ function submitEntry(){
   var er=[],we=$('e_we').value,blk=$('e_blk').value,mode=rv('e_mode'),ctr=$('e_ctr').value,cname='',ccode='';
   if(ctr==='__new'){cname=$('e_cname').value.trim();ccode=$('e_ccode').value.trim()}
   else if(ctr){cname=ctr;var o=$('e_ctr').options[$('e_ctr').selectedIndex];ccode=o?o.getAttribute('data-code')||'':''}
-  var days=parseInt($('e_days').value,10),opd=cv('e_opd'),off=cv('e_off'),pn=$('e_pn').value.trim(),ph=$('e_ph').value.trim();
-  var reg=rv('e_reg'),iep=rv('e_iep'),cw=$('e_cw').value,dm=rv('e_dm'),pre=rv('e_pre'),dom=cv('e_dom'),ses=$('e_ses').value;
-  var th=thVal(),sp=$('e_sp').value,td=num($('e_td').value),hr=num($('e_hr').value),ct=num($('e_ct')?$('e_ct').value:0),dc=isDC(mode);
-  if(!we)er.push('Select the week ending date.');else if(we>today())er.push('Week ending date cannot be in the future.');
+  var off=cv('e_off'),pn=$('e_pn').value.trim(),ph=$('e_ph').value.trim();
+  var reg=rv('e_reg'),iep=rv('e_iep'),cw=$('e_cw').value,pre=rv('e_pre'),dom=cv('e_dom'),ses=$('e_ses').value;
+  var th=thVal(),sp=$('e_sp').value,hr=num($('e_hr').value),ct=num($('e_ct')?$('e_ct').value:0),dc=isDC(mode);
+  if(!we)er.push('Select the reporting day.');else if(we>today())er.push('The reporting day cannot be in the future.');else if(we<daysAgo(7))er.push('The reporting day cannot be more than 7 days back.');
   if(!blk)er.push('Select the block.');if(!mode)er.push('Select the service delivery mode.');if(!cname)er.push('Select or type the centre name.');
-  if(!opd.length)er.push('Tick the designated operating days.');
-  if(isNaN(days)||days<1||days>6)er.push('Days functioned must be from 1 to 6.');
+  if(blk&&cname&&we){var ts=tsStatus(blk,cname,we);if(ts.locked)er.push('This centre is locked this week: '+ts.ownerName+' is reporting it. Only one IE Official can report a centre in a week.');else if(ts.dup)er.push('This centre already has a report for '+we+'.');else if(ts.full)er.push('The maximum of 3 reporting days a week is already reached for this centre ('+ts.days.join(', ')+').')}
   if(!off.length)er.push('Tick the officials present.');if(!pn)er.push('Enter the name of the officer / special educator.');
   if(!/^[6-9][0-9]{9}$/.test(ph))er.push('Enter a valid 10-digit mobile number.');
   if(!reg)er.push('Answer: attendance register maintained?');if(!iep)er.push('Answer: IEP updated?');
-  if(cw===''||isNaN(parseInt(cw,10))||parseInt(cw,10)<0)er.push('Enter the total CWSN attended.');
-  if(dc&&!dm)er.push('Answer: at least 10 CWSN every operating day?');
+  if(cw===''||isNaN(parseInt(cw,10))||parseInt(cw,10)<0)er.push('Enter the number of CWSN attended on this day.');
   if(!pre)er.push('Answer: formal assessment completed before therapy?');
   else if(pre==='No')er.push('Therapy cannot be recorded without a prior formal assessment. Complete the assessment first.');
   if(!dom.length)er.push('Tick at least one therapy domain.');
   if(ses===''||isNaN(parseInt(ses,10)))er.push('Enter the number of therapy sessions.');
-  if((td>0||hr>0)&&!th)er.push('Enter the therapist name (honorarium is being claimed).');
-  if(td<0||td>6)er.push('Therapist working days must be from 0 to 6.');
+  if(hr>0&&!th)er.push('Enter the therapist name (honorarium is being claimed).');
   if(hr>CAP_DAY)er.push('Amount cannot exceed Rs. 1,500 per guidelines.');
   if(ct>CAP_CONT)er.push('Contingency cannot exceed Rs. 500 per month.');
   if(!PH.length)er.push('Add at least one therapy session photograph.');
   if(er.length){$('errs').innerHTML='<div class="err"><b>Please correct:</b><br>- '+er.map(esc).join('<br>- ')+'</div>';window.scrollTo(0,0);return}
   var build=function(fix){
-    var rec={timestamp:new Date().toISOString(),id:uid(),weekEnding:we,block:blk,mode:mode,centre:cname,centreCode:ccode,operatingDays:opd,daysFunctioned:days,present:off,personName:pn,phone:ph,registerOk:reg,iepOk:iep,cwsn:parseInt(cw,10),dailyMinMet:dc?dm:'NA',preAssessment:'Yes',domains:dom,therapist:th,specialization:sp,therapistDays:td,dailyHonorarium:hr,totalHonorarium:td*hr,contingency:dc?ct:0,sessions:parseInt(ses,10),photoLinks:[],submittedBy:S.name,status:'Pending',verifiedBy:'',verifiedAt:'',remark:'',flags:'',photoHashes:[],secFlags:'',userId:S.id||'',photoCount:PH.length,localPhotos:!S.url,
+    var rec={timestamp:new Date().toISOString(),id:uid(),weekEnding:we,block:blk,mode:mode,centre:cname,centreCode:ccode,operatingDays:[dayName(we)],daysFunctioned:1,present:off,personName:pn,phone:ph,registerOk:reg,iepOk:iep,cwsn:parseInt(cw,10),dailyMinMet:dc?(parseInt(cw,10)>=MIN_CWSN?'Yes':'No'):'NA',preAssessment:'Yes',domains:dom,therapist:th,specialization:sp,therapistDays:1,dailyHonorarium:hr,totalHonorarium:hr,contingency:dc?ct:0,sessions:parseInt(ses,10),photoLinks:[],submittedBy:S.name,status:'Pending',verifiedBy:'',verifiedAt:'',remark:'',flags:'',photoHashes:[],secFlags:'',userId:S.id||'',photoCount:PH.length,localPhotos:!S.url,
       capturedAt:fix?fix.ts:'',lat:fix?fix.lat:'',lng:fix?fix.lng:'',gpsAcc:fix?Math.round(fix.acc):'',distanceM:'',deviceId:secure()?DEV:''};
     var cen=findCentre(blk,cname);if(fix&&cen&&cen.lat&&mode.indexOf('Home')<0)rec.distanceM=Math.round(haversine(fix.lat,fix.lng,cen.lat,cen.lng));
     var n=norm(rec),c=buildCtx(scope().concat([n])),fl=flagsOf(n,c);
@@ -575,7 +592,7 @@ function viewMine(){
   RESFN=function(){
     var c=buildCtx(scope()),rows=REC.filter(isMine).sort(byDate);
     rows.forEach(function(r){r._f=r.status==='Rejected'?[]:flagsOf(r,c);r._s=[]});
-    return '<button class="btn sm" onclick="refreshBtn()">Refresh</button>'+grid(COLS(['we','mode','ctr','days','cw','aud','st','up','mact']),rows);
+    return '<button class="btn sm" onclick="refreshBtn()">Refresh</button>'+grid(COLS(['we','mode','ctr','cw','aud','st','up','mact']),rows);
   };
   return '<h2>Therapeutic Services - My Entries</h2><div id="res"></div>';
 }
@@ -594,7 +611,6 @@ function buildCtx(all){
 }
 function flagsOf(r,c){
   var f=[],dc=isDC(r.mode),ck=r.block+'|'+r.centre,m=r.weekEnding.slice(0,7);
-  if(dc&&r.daysFunctioned<MIN_DAYS)f.push('Under 3 days/week');
   if(dc&&(r.cwsn<MIN_CWSN||r.dailyMinMet==='No'))f.push('Under 10 CWSN/day');
   if(r.dailyHonorarium>CAP_DAY)f.push('Honorarium above Rs. 1,500/day');
   if(r.iepOk==='No')f.push('IEP not updated');
@@ -603,7 +619,7 @@ function flagsOf(r,c){
   if(!(r.photoCount>0))f.push('No photo uploaded');
   if(r.contingency>0&&c.cm[ck+'|'+m]>CAP_CONT)f.push('Contingency above Rs. 500 this month');
   if(r.contingency>0&&c.cmon[ck]&&Object.keys(c.cmon[ck]).length>MAX_CONT_MONTHS)f.push('Contingency beyond 10 months');
-  if(c.dup[ck+'|'+r.weekEnding]>1)f.push('Duplicate entry (same centre and week)');
+  if(c.dup[ck+'|'+r.weekEnding]>1)f.push('Duplicate entry (same centre and day)');
   return f;
 }
 function scope(){var a=REC.filter(function(r){return r.status!=='Rejected'});return S.block?a.filter(function(r){return r.block===S.block}):a}
@@ -642,10 +658,10 @@ function bar(o){
   var h='<div class="filters noprint"><input type="text" id="f_q" style="max-width:none" placeholder="Search centre, block, therapist, person..." value="'+esc(F.q)+'" oninput="F.q=this.value;drawRes()"><div class="fgrid">';
   if(!S.block)h+=fsel('Block','block',CFG.blocks,'All blocks');
   h+=fsel('Mode','mode',['BRR','Day Care','HBE'],'All modes');
-  h+='<div><label>From (week ending)</label><input type="date" id="f_from" value="'+F.from+'" onchange="F.from=this.value;drawRes()"></div><div><label>To</label><input type="date" id="f_to" value="'+F.to+'" onchange="F.to=this.value;drawRes()"></div>';
+  h+='<div><label>From (reporting day)</label><input type="date" id="f_from" value="'+F.from+'" onchange="F.from=this.value;drawRes()"></div><div><label>To</label><input type="date" id="f_to" value="'+F.to+'" onchange="F.to=this.value;drawRes()"></div>';
   if(!o.nostatus)h+=fsel('Status','status',['Pending','Verified','Returned'],'Any status');
   h+='</div><div style="margin-top:6px"><button class="btn sm" onclick="setRange(\'7\')">Last 7 days</button><button class="btn sm" onclick="setRange(\'m\')">This month</button><button class="btn sm" onclick="setRange(\'30\')">Last 30 days</button><button class="btn sm" onclick="setRange(\'all\')">All time</button></div>';
-  if(!o.nochips){h+='<div>';[['all','All'],['flagged','Flagged'],['ok','Compliant']].concat(secure()&&canVerify()?[['sec','Security flags']]:[]).concat([['Day Care','Day Care'],['BRR','BRR'],['HBE','HBE'],['Pending','Pending'],['Returned','Returned']]).forEach(function(c){h+='<span class="chip'+(F.chip===c[0]?' on':'')+'" onclick="F.chip=\''+c[0]+'\';showTab(TAB)">'+c[1]+'</span>'});h+='</div>'}
+  if(!o.nochips){h+='<div>';[['all','All'],['flagged','Flagged'],['ok','Compliant']].concat(secure()&&canVerify()?[['sec','Security flags']]:[]).concat([['Day Care','Day Care'],['BRR','BRR'],['HBE','HBE'],['Pending','Pending approval'],['Returned','Returned']]).forEach(function(c){h+='<span class="chip'+(F.chip===c[0]?' on':'')+'" onclick="F.chip=\''+c[0]+'\';showTab(TAB)">'+c[1]+'</span>'});h+='</div>'}
   return h+'</div>';
 }
 function setRange(k){
@@ -669,7 +685,7 @@ function actBtns(r){
   var h='';
   if(!canVerify()&&!isAdmin())return '';
   if(r._pending)return '<span class="note">Not uploaded yet</span>';
-  if(r.status!=='Verified')h+='<button class="btn g sm" onclick="setSt(\''+r.id+'\',\'Verified\')">Verify</button> ';
+  if(r.status!=='Verified')h+='<button class="btn g sm" onclick="setSt(\''+r.id+'\',\'Verified\')">Approve</button> ';
   if(r.status!=='Returned')h+='<button class="btn o sm" onclick="setSt(\''+r.id+'\',\'Returned\')">Return</button> ';
   if(isAdmin())h+='<button class="btn o sm" onclick="delRec(\''+r.id+'\')">Delete</button>';
   return h;
@@ -677,7 +693,7 @@ function actBtns(r){
 function mapLink(a,b){return '<a href="https://www.google.com/maps?q='+a+','+b+'" target="_blank" rel="noopener">'+Number(a).toFixed(5)+', '+Number(b).toFixed(5)+'</a>'}
 function COLS(keys){
   var A={
-    we:{h:'Week ending',f:function(r){return esc(r.weekEnding)}},
+    we:{h:'Reporting day',f:function(r){return esc(r.weekEnding)}},
     blk:{h:'Block',f:function(r){return esc(r.block)}},
     mode:{h:'Mode',f:function(r){return modeShort(r.mode)}},
     ctr:{h:'Centre',f:function(r){return esc(r.centre)+(r.centreCode?' ('+esc(r.centreCode)+')':'')}},
@@ -688,7 +704,7 @@ function COLS(keys){
     ses:{h:'Sessions',f:function(r){return r.sessions}},
     amt:{h:'Amount',f:function(r){return inr(r.totalHonorarium+r.contingency)}},
     aud:{h:'Audit status',f:flagHtml},
-    st:{h:'Status',f:function(r){return esc(r.status)+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
+    st:{h:'Status',f:function(r){return esc(stLbl(r.status))+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
     ph:{h:'Photos',f:photoCell},
     up:{h:'Upload',f:function(r){return r._pending?'<span class="bad">Waiting</span>':'Done'}},
     sec:{h:'Security checks',f:function(r){return r._s&&r._s.length?'<span class="bad">CHECK</span><br>'+r._s.map(esc).join('<br>'):'<span class="ok">OK</span>'}},
@@ -709,7 +725,7 @@ function grid(cs,rows){
   return '<div class="count">'+rows.length+' entries'+(rows.length>cap?' (showing first '+cap+'; narrow the filters or export Excel)':'')+'</div>'+t+'</div>';
 }
 function viewList(kind){
-  var keys={grid:['we','blk','mode','ctr','days','cw','ther','sup','ses','amt','aud','st','ph','act'],alerts:['we','blk','mode','ctr','aud','sup','st','ph','act'],review:['we','mode','ctr','days','cw','ther','sup','aud','st','ph','act']}[kind].filter(function(k){return k!=='act'||canVerify()});
+  var keys={grid:['we','blk','mode','ctr','cw','ther','sup','ses','amt','aud','st','ph','act'],alerts:['we','blk','mode','ctr','aud','sup','st','ph','act'],review:['we','mode','ctr','cw','ther','sup','aud','st','ph','act']}[kind].filter(function(k){return k!=='act'||canVerify()});
   if(secure()&&canVerify())keys.splice(keys.indexOf('st'),0,'by','loc','sec');
   RESFN=function(){
     var all=prep(),rows=filt(all).sort(byDate),h='';
@@ -717,7 +733,7 @@ function viewList(kind){
     return h+grid(COLS(keys),rows);
   };
   var title={grid:'Centre Activity - all entries',alerts:'Compliance Alerts',review:'Block Review - '+esc(S.block)}[kind];
-  var intro=kind==='review'?'<p class="note">Check each entry against the photos and the attendance register. Tap <b>Verify</b> or <b>Return</b> (with a reason). Review every Thursday.</p>':'';
+  var intro=kind==='review'?'<p class="note">Check each entry against the photos and the attendance register. Tap <b>Approve</b> or <b>Return</b> (with a reason). Review every Thursday.</p>':'';
   return '<h2>'+title+'</h2>'+intro+bar()+'<div id="res"></div>';
 }
 function setSt(id,st){
@@ -749,7 +765,7 @@ function viewDash(){
     var h='<div class="stats">'+
       stat('Active centres (reported)',t.centres,reg?'of '+reg+' registered':'')+
       stat('Zero-activity centres',z.length,'no entry in period',z.length>0)+
-      stat('Entries',t.entries,rows.filter(function(r){return r.status==='Pending'}).length+' pending verification')+
+      stat('Entries',t.entries,rows.filter(function(r){return r.status==='Pending'}).length+' pending BEEO approval')+
       stat('CWSN attended',t.cwsn,'sum of weekly counts')+
       stat('Therapy sessions',t.ses)+
       stat('Honorarium',inr(t.hon))+
@@ -778,7 +794,7 @@ function viewPhotos(){
       '<button class="btn sm" onclick="pickSample()">Pick 5 random entries to audit</button>'+(F.sample?'<button class="btn o sm" onclick="F.sample=null;drawRes()">Show all</button>':'')+'</p>';
     if(!rows.length)return h+'<p class="note">No entries with photos.</p>';
     rows.slice(0,100).forEach(function(r){
-      h+='<div class="card'+(r._f.length?' flag':'')+'"><b>'+esc(r.centre)+'</b> ('+esc(r.block)+', '+modeShort(r.mode)+') - week ending '+esc(r.weekEnding)+'<br>Therapist: '+esc(r.therapist||'-')+' &middot; CWSN reported: <b>'+r.cwsn+'</b> &middot; Status: '+esc(r.status)+'<br>Photos: '+photoCell(r)+'<div class="thumbs">'+r.photoLinks.map(function(u){var m=/\/d\/([^\/]+)/.exec(u);return m?'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="photo" src="https://drive.google.com/thumbnail?id='+m[1]+'&sz=w200" onerror="this.style.display=\'none\'"></a>':''}).join('')+'</div><div class="noprint">'+actBtns(r)+'</div></div>';
+      h+='<div class="card'+(r._f.length?' flag':'')+'"><b>'+esc(r.centre)+'</b> ('+esc(r.block)+', '+modeShort(r.mode)+') - reporting day '+esc(r.weekEnding)+'<br>Therapist: '+esc(r.therapist||'-')+' &middot; CWSN reported: <b>'+r.cwsn+'</b> &middot; Status: '+esc(r.status)+'<br>Photos: '+photoCell(r)+'<div class="thumbs">'+r.photoLinks.map(function(u){var m=/\/d\/([^\/]+)/.exec(u);return m?'<a href="'+esc(u)+'" target="_blank" rel="noopener"><img loading="lazy" alt="photo" src="https://drive.google.com/thumbnail?id='+m[1]+'&sz=w200" onerror="this.style.display=\'none\'"></a>':''}).join('')+'</div><div class="noprint">'+actBtns(r)+'</div></div>';
     });
     return h+(rows.length>100?'<p class="note">Showing first 100.</p>':'');
   };
@@ -804,7 +820,7 @@ function viewReport(){
     var row=function(b){return '<tr><td>'+esc(b.key)+'</td><td>'+b.centres+'</td><td>'+b.entries+'</td><td>'+b.cwsn+'</td><td>'+b.ses+'</td><td>'+b.hon+'</td><td>'+b.cont+'</td><td>'+b.total+'</td><td>'+b.fl+'</td></tr>'};
     var tot='<tr class="tot"><td>TOTAL</td><td>'+t.centres+'</td><td>'+t.entries+'</td><td>'+t.cwsn+'</td><td>'+t.ses+'</td><td>'+t.hon+'</td><td>'+t.cont+'</td><td>'+t.total+'</td><td>'+t.fl+'</td></tr>';
     var head=['Block','Centres reported','Entries','CWSN','Sessions','Honorarium Rs.','Contingency Rs.','Total Rs.','Flagged'];
-    var h='<div class="printonly"><img src="'+esc(CFG.logo||LOGO_DATA)+'" style="height:60px"><h2 style="text-align:center">Therapeutic Services for Children with Special Needs<br>District Progress Report - '+esc(CFG.district)+' District</h2><p>Period (week ending): '+esc(periodText())+' &nbsp; | &nbsp; Generated: '+today()+(F.block?' &nbsp; | &nbsp; Block: '+esc(F.block):'')+'</p></div>';
+    var h='<div class="printonly"><img src="'+esc(CFG.logo||LOGO_DATA)+'" style="height:60px"><h2 style="text-align:center">Therapeutic Services for Children with Special Needs<br>District Progress Report - '+esc(CFG.district)+' District</h2><p>Period: '+esc(periodText())+' &nbsp; | &nbsp; Generated: '+today()+(F.block?' &nbsp; | &nbsp; Block: '+esc(F.block):'')+'</p></div>';
     h+='<div class="noprint"><button class="btn g" onclick="exportXlsx()">Download Excel</button><button class="btn" onclick="window.print()">Print / Save as PDF</button><button class="btn o" onclick="copySummary()">Copy summary text</button></div>';
     h+='<h3>A. Block-wise summary</h3>'+tbl(head,d.blocks.map(row).concat([tot]),[1,2,3,4,5,6,7,8]);
     h+='<h3>B. Service mode summary</h3>'+tbl(['Mode'].concat(head.slice(1)),d.modes.map(row),[1,2,3,4,5,6,7,8]);
@@ -812,14 +828,14 @@ function viewReport(){
     h+='<h3>D. Compliance exceptions</h3>'+(d.fc.length?tbl(['Exception','Entries'],d.fc.map(function(x){return '<tr><td>'+esc(x[0])+'</td><td>'+x[1]+'</td></tr>'}),[1]):'<p>No exceptions.</p>');
     h+='<h3>E. Zero-activity centres: '+d.z.length+'</h3>'+(d.z.length?'<p>'+d.z.map(function(c){return esc(c.name)+' ('+esc(c.block)+')'}).join('; ')+'</p>':'');
     var ver=d.rows.filter(function(r){return r.status==='Verified'}).length;
-    h+='<h3>F. Verification</h3><p>Entries verified: '+ver+' of '+d.rows.length+'.</p>';
+    h+='<h3>F. BEEO approval</h3><p>Entries approved by the BEEO: '+ver+' of '+d.rows.length+'.</p>';
     h+='<div class="printonly"><br><br><p>Prepared by: ____________________ &nbsp;&nbsp;&nbsp;&nbsp; District Mission Coordinator, Samagra Shiksha, '+esc(CFG.district)+'</p></div>';
     return h;
   };
-  return '<h2>Higher Authority Report</h2><p class="note">Choose the period and block, then download or print. Includes all statuses; verify entries first for a clean report.</p>'+bar({nostatus:1,nochips:1})+'<div id="res"></div>';
+  return '<h2>Higher Authority Report</h2><p class="note">Choose the period and block, then download or print. Includes all statuses; get entries approved by the BEEO first for a clean report.</p>'+bar({nostatus:1,nochips:1})+'<div id="res"></div>';
 }
 function copySummary(){
-  var d=reportData(),t=d.t,s='IE Monitoring System - '+CFG.district+' District\nPeriod (week ending): '+periodText()+'\nCentres reported: '+t.centres+' | Entries: '+t.entries+'\nCWSN attended: '+t.cwsn+' | Sessions: '+t.ses+'\nHonorarium: '+inr(t.hon)+' | Contingency: '+inr(t.cont)+' | Total: '+inr(t.total)+'\nEntries with violations: '+t.fl+' | Zero-activity centres: '+d.z.length+'\n\nBlock-wise (centres / CWSN / sessions / Rs.):\n'+d.blocks.map(function(b){return b.key+': '+b.centres+' / '+b.cwsn+' / '+b.ses+' / '+b.total}).join('\n');
+  var d=reportData(),t=d.t,s='IE Monitoring System - '+CFG.district+' District\nPeriod: '+periodText()+'\nCentres reported: '+t.centres+' | Entries: '+t.entries+'\nCWSN attended: '+t.cwsn+' | Sessions: '+t.ses+'\nHonorarium: '+inr(t.hon)+' | Contingency: '+inr(t.cont)+' | Total: '+inr(t.total)+'\nEntries with violations: '+t.fl+' | Zero-activity centres: '+d.z.length+'\n\nBlock-wise (centres / CWSN / sessions / Rs.):\n'+d.blocks.map(function(b){return b.key+': '+b.centres+' / '+b.cwsn+' / '+b.ses+' / '+b.total}).join('\n');
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(s).then(function(){flash('Summary copied. Paste it into WhatsApp or the reporting form.')},function(){prompt('Copy this text:',s)});else prompt('Copy this text:',s);
 }
 function exportXlsx(){
@@ -827,10 +843,10 @@ function exportXlsx(){
   var d=reportData(),t=d.t,wb=XLSX.utils.book_new();
   var head=['Block','Centres reported','Entries','CWSN','Sessions','Honorarium Rs.','Contingency Rs.','Total Rs.','Flagged entries'];
   var line=function(b){return [b.key,b.centres,b.entries,b.cwsn,b.ses,b.hon,b.cont,b.total,b.fl]};
-  var top=[['Therapeutic Services for CWSN - '+CFG.district+' District'],['Period (week ending): '+periodText()],[]];
+  var top=[['Therapeutic Services for CWSN - '+CFG.district+' District'],['Period: '+periodText()],[]];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(top.concat([head],d.blocks.map(line),[['TOTAL',t.centres,t.entries,t.cwsn,t.ses,t.hon,t.cont,t.total,t.fl]])),'Summary_By_Block');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Mode'].concat(head.slice(1))].concat(d.modes.map(line))),'By_Mode');
-  var eh=['Week ending','Block','Mode','Centre','Code','Operating days','Days functioned','Officials present','Person name','Phone','Register','IEP','CWSN','10+ CWSN daily','Pre-assessment','Domains','Therapist','Specialization','Therapist days','Daily Rs.','Total honorarium Rs.','Contingency Rs.','Sessions','Photo links','Submitted by','Status','Remark','Audit flags','Security flags','Latitude','Longitude','GPS accuracy m','Distance from centre m','User ID','Phone ID'];
+  var eh=['Reporting day','Block','Mode','Centre','Code','Operating days','Days functioned','Officials present','Person name','Phone','Register','IEP','CWSN','10+ CWSN daily','Pre-assessment','Domains','Therapist','Specialization','Therapist days','Daily Rs.','Total honorarium Rs.','Contingency Rs.','Sessions','Photo links','Submitted by','Status','Remark','Audit flags','Security flags','Latitude','Longitude','GPS accuracy m','Distance from centre m','User ID','Phone ID'];
   var er=function(r){return [r.weekEnding,r.block,r.mode,r.centre,r.centreCode,r.operatingDays.join(', '),r.daysFunctioned,r.present.join(', '),r.personName,r.phone,r.registerOk,r.iepOk,r.cwsn,r.dailyMinMet,r.preAssessment,r.domains.join(', '),r.therapist,r.specialization,r.therapistDays,r.dailyHonorarium,r.totalHonorarium,r.contingency,r.sessions,r.photoLinks.join(' '),r.submittedBy,r.status,r.remark,r._f.join('; '),r.secFlags||'',r.lat,r.lng,r.gpsAcc,r.distanceM,r.userId,String(r.deviceId).slice(0,8)]};
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([eh].concat(d.rows.map(er))),'Entries');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([eh].concat(d.rows.filter(function(r){return r._f.length}).map(er))),'Alerts');
@@ -920,13 +936,13 @@ function loadSample(){
 // ---------- HELP ----------
 function viewHelp(){
   var h='<h2>Help</h2>';
-  h+='<p>This system has <b>two parts</b>:</p><ul><li><b>Daily Activity</b> - the IE Official records each day: school visits, home visits (Home Based Education), Day Care / BRR attendance and other official work. At month end the IE Official sends the Monthly Report.</li><li><b>Therapeutic Services</b> - the weekly report of each Day Care Centre, BRR and Home-Based centre.</li></ul>';
-  if(S.role==='field')h+='<h3>Every day: Daily Activity</h3><ol><li>Tap <b>Daily Activity</b>, then <b>New Activity</b>.</li><li>Allow Location and Camera when the phone asks.</li><li>Choose what you did and fill in the few boxes.</li><li>For a school visit or centre, take the photos <b>at that school or centre</b>. A photo taken elsewhere is not accepted.</li><li>Tap <b>Save Activity</b>. See your day under <b>Today</b>, and all days in <b>My Log</b>.</li></ol><h3>End of month: Monthly Report</h3><ol><li>From the 25th, open <b>Daily Activity</b>, then <b>Monthly Report</b>.</li><li>Check the totals, write a short summary and tap <b>Submit monthly report</b>.</li><li>After submitting, the month is locked unless the BEEO returns it to you.</li></ol><h3>Every week: Therapeutic Services</h3><ol><li>Tap <b>Therapeutic Services</b>, then <b>New Entry</b>.</li><li>Stand at the centre. Wait for the green location box.</li><li>Choose the week ending date, block, mode and centre. Your name and mobile are filled in.</li><li>Choose the therapist, fill in the numbers and tick the boxes.</li><li>Tap <b>Take live photo</b> (1 to 5 photos), then <b>Submit Entry</b>.</li></ol><h3>On your phone</h3><ul><li>Open the link in Chrome (Android) or Safari (iPhone). Use the browser menu and choose <b>Add to Home screen</b> to get an app icon.</li><li>No internet? What you save stays on your phone and uploads by itself when the internet returns. If something is rejected, it is shown in red under <b>My Log</b> or <b>My Entries</b> with the reason.</li></ul>';
-  if(S.role==='block')h+='<h3>For the BEEO</h3><ul><li><b>Daily Activity &gt; Activity Review</b>: check the daily activities of your IE Officials (photos, place). Use <b>Verify</b>, or <b>Return</b> with a reason. <b>Verify all clean</b> verifies every entry that has no warning.</li><li><b>Daily Activity &gt; Monthly Reports</b>: see who has sent the month, then verify or return each report.</li><li><b>Therapeutic Services</b>: Block Review, New Entry, My Entries, Centre Activity, Compliance Alerts, Photo Verification, Higher Authority Report and Centre Locations.</li></ul>';
+  h+='<p>This system has <b>two parts</b>:</p><ul><li><b>Daily Activity</b> - the IE Official records each day: school visits, home visits (Home Based Education), Day Care Centre / BRR visits and other official work. At month end the IE Official sends the Monthly Report.</li><li><b>Therapeutic Services</b> - the daily report of the outside therapist / specialist (honorarium based) at each Day Care Centre, BRR and Home-Based centre. A centre can report up to 3 days a week, and only one IE Official reports a centre in a week.</li></ul>';
+  if(S.role==='field')h+='<h3>Every day: Daily Activity</h3><ol><li>Tap <b>Daily Activity</b>, then <b>New Activity</b>.</li><li>Allow Location and Camera when the phone asks.</li><li>Choose what you did (School Visit, Home Visit, Day Care Centre/BRR visit or Other Official Work) and fill in the few boxes.</li><li>For a school visit or centre, take the photos <b>at that school or centre</b>. A photo taken elsewhere is not accepted.</li><li>Tap <b>Save Activity</b>. See your day under <b>Today</b>, and all days in <b>My Log</b>.</li></ol><h3>End of month: Monthly Report</h3><ol><li>From the 25th, open <b>Daily Activity</b>, then <b>Monthly Report</b>.</li><li>Check the totals, write a short summary and tap <b>Submit monthly report</b>.</li><li>After submitting, the month is locked unless the BEEO returns it to you.</li></ol><h3>Each day the therapist / specialist works: Therapeutic Services</h3><ol><li>Tap <b>Therapeutic Services</b>, then <b>New Entry</b>.</li><li>Stand at the centre. Wait for the green location box.</li><li>Choose the reporting day, block, mode and centre. Your name and mobile are filled in. The screen shows how many of the 3 days are used this week. If another IE Official has already started that centre this week, it is locked for you.</li><li>Choose the therapist, fill in the numbers and tick the boxes.</li><li>Tap <b>Take live photo</b> (1 to 5 photos), then <b>Submit Entry</b>.</li><li>Your BEEO approves or returns the entry. See the result in <b>My Entries</b>.</li></ol><h3>On your phone</h3><ul><li>Open the link in Chrome (Android) or Safari (iPhone). Use the browser menu and choose <b>Add to Home screen</b> to get an app icon.</li><li>No internet? What you save stays on your phone and uploads by itself when the internet returns. If something is rejected, it is shown in red under <b>My Log</b> or <b>My Entries</b> with the reason.</li></ul>';
+  if(S.role==='block')h+='<h3>For the BEEO</h3><ul><li><b>Daily Activity &gt; Activity Review</b>: check the daily activities of your IE Officials (photos, place). Use <b>Approve</b>, or <b>Return</b> with a reason. <b>Approve all clean</b> approves every entry that has no warning.</li><li><b>Daily Activity &gt; Monthly Reports</b>: see who has sent the month, then approve or return each report.</li><li><b>Therapeutic Services</b>: Block Review (approve or return each daily report), New Entry, My Entries, Centre Activity, Compliance Alerts, Photo Verification, Higher Authority Report and Centre Locations.</li></ul>';
   if(S.role==='district')h+='<h3>For the District Office</h3><ul><li><b>Dashboard</b>: the IE Officials\' daily activity and monthly reports, then the Therapeutic Services summary.</li><li><b>Daily Activity</b>: Activity Log (all blocks) and Monthly Reports (district consolidation, Excel and print).</li><li><b>Therapeutic Services</b>: Centre Activity, Compliance Alerts, Photo Verification, Higher Authority Report, Centre Locations.</li><li><b>Security &amp; Audit</b>: users, phones, warnings and the full access log.</li></ul>';
-  h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> records daily activity, the monthly report and the weekly Therapeutic Services entry for the centres assigned to them.</li><li><b>BEEO:</b> reviews their block, verifies or returns, and sets centre locations.</li><li><b>District Authority:</b> sees all blocks, manages users and phones, settings and the security log.</li></ul>';
+  h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> records daily activity, the monthly report and the Therapeutic Services daily reports for the centres of their block (maximum 3 days a week for a centre, one IE Official per centre per week).</li><li><b>BEEO:</b> approves or returns the Daily Activity, Monthly Reports and Therapeutic Services entries of their block, and sets centre locations.</li><li><b>District Authority:</b> sees all blocks, manages users and phones, settings and the security log.</li></ul>';
   h+='<h3>Security you should know about</h3><ul><li>Your login is personal: your mobile number and your own 6-digit PIN. Never share the PIN.</li><li>Five wrong PINs lock the account for 15 minutes.</li><li>Your account works on your registered phone only. A new phone needs District Office approval.</li><li>Photos must be taken live in the app, at the school or centre.</li><li>Every login, upload and rejected attempt is recorded for the District Authority.</li></ul>';
-  if(S.role!=='district')h+='<h3>Rules the app checks (Therapeutic Services)</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>Day Care Centres must run at least 3 days a week and have at least 10 CWSN per day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
+  if(S.role!=='district')h+='<h3>Rules the app checks (Therapeutic Services)</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>A centre can report at most 3 days a week, one report per day, and only one IE Official can report a centre in a week (the server blocks the rest).</li><li>Day Care Centres should have at least 10 CWSN on the day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
   if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it creates the IE Official logins) and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
   return h;
 }
@@ -1122,15 +1138,15 @@ function exportAudit(){
   XLSX.writeFile(wb,'CWSN_Access_Log_'+today()+'.xlsx');
 }
 // ============ DAILY ACTIVITY / MONTHLY CONSOLIDATION / MASTER IMPORT ============
-var ACTS=['School Visit','Home Visit (HBE)','Centre Attendance (Day Care / BRR)','Other Official Work'];
+var ACTS=['School Visit','Home Visit (HBE)','Day Care Centre/BRR visit','Other Official Work'],OLD_CTR='Centre Attendance (Day Care / BRR)';
 var A_SCH=ACTS[0],A_HOME=ACTS[1],A_CTR=ACTS[2],A_OTH=ACTS[3];
-var ACTSHORT={};ACTSHORT[A_SCH]='School visit';ACTSHORT[A_HOME]='Home visit (HBE)';ACTSHORT[A_CTR]='Centre attendance';ACTSHORT[A_OTH]='Other official work';
+var ACTSHORT={};ACTSHORT[A_SCH]='School visit';ACTSHORT[A_HOME]='Home visit (HBE)';ACTSHORT[A_CTR]='Day Care / BRR visit';ACTSHORT[A_OTH]='Other official work';
 var PURP={};
-PURP[A_SCH]=['Identification / screening of CWSN','Assessment','IEP preparation / review','Teacher / school orientation','Aids, appliances & accessibility','Follow-up of enrolled CWSN','Other'];
-PURP[A_HOME]=['Home-based teaching','Therapy / exercises at home','IEP review','Parent counselling','Assessment','Follow-up','Other'];
-PURP[A_CTR]=['Session supervision / support','Attendance & register check','Assessment of new CWSN','Parent interaction','Other'];
-PURP[A_OTH]=['Meeting / review','Training / orientation','Awareness / community camp','Assessment camp','Reporting / data entry','Material / TLM preparation','Other'];
-var DREC=load('cwsn_drec',[]),DOUT=load('cwsn_dout',[]),MREC=load('cwsn_mrec',[]),SCH=load('cwsn_sch',[]),STAFF=[];
+PURP[A_SCH]=['Identification / screening of CWSN','Assessment','Therapy / exercises','IEP preparation / review','Teacher / school orientation','Aids, appliances & accessibility','Follow-up of enrolled CWSN','Other'];
+PURP[A_HOME]=['Home-based teaching','Therapy / exercises','IEP review','Parent counselling','Assessment','Follow-up','Other'];
+PURP[A_CTR]=['Session supervision / support','Therapy / exercises','Attendance & register check','Assessment of new CWSN','Parent interaction','Other'];
+PURP[A_OTH]=['Meeting / review','Training / orientation','Awareness / community camp','Assessment camp','Therapy / exercises','Reporting / data entry','Material / TLM preparation','Other'];
+var TSL=load('cwsn_tsl',[]),DREC=load('cwsn_drec',[]),DOUT=load('cwsn_dout',[]),MREC=load('cwsn_mrec',[]),SCH=load('cwsn_sch',[]),STAFF=[];
 var D={q:'',type:'',user:'',status:'',month:today().slice(0,7),block:''};
 var M={month:''};
 var DSYNC=false,MCLOSE=25;
@@ -1140,13 +1156,14 @@ function duid(){return 'D'+Date.now().toString(36)+Math.random().toString(36).sl
 function normD(r){
   var o={};
   ['timestamp','id','date','block','userId','officialName','designation','type','refCode','refName','place','child','purpose','notes','status','verifiedBy','verifiedAt','remark','deviceId','secFlags'].forEach(function(k){o[k]=r[k]==null?'':String(r[k])});
-  o.date=o.date.slice(0,10);o.status=o.status||'Pending';
+  o.date=o.date.slice(0,10);o.status=o.status||'Pending';if(o.type===OLD_CTR)o.type=A_CTR;
   ['photoLinks','photoHashes','photoGeo'].forEach(function(k){var v=r[k];o[k]=Array.isArray(v)?v:(v?String(v).split(' | '):[])});
   o.cwsn=num(r.cwsn);o.hours=num(r.hours);
   ['capturedAt','lat','lng','gpsAcc','distanceM'].forEach(function(k){o[k]=(r[k]===''||r[k]==null)?'':Number(r[k])});
   o.photoCount=o.photoLinks.length||num(r.photoCount);o.localPhotos=!!r.localPhotos;o._pending=!!r._pending;
   return o;
 }
+function refreshLocks(){return api('tslocks').then(function(j){TSL=j.rows;save('cwsn_tsl',TSL)})}
 function refreshExtra(light){
   if(!S.url)return Promise.resolve();
   var ps=[
@@ -1154,12 +1171,14 @@ function refreshExtra(light){
     api('mlist').then(function(j){MREC=j.rows;save('cwsn_mrec',MREC)}),
     ];
   if(!light)ps.push(api('schools').then(function(j){SCH=j.rows;save('cwsn_sch',SCH)}));
+  if(S.role!=='district')ps.push(refreshLocks());
   if(S.role!=='field')ps.push(api('staff').then(function(j){STAFF=j.rows}));
   return Promise.all(ps.map(function(p){return p.catch(function(e){if(e.auth)throw e})}));
 }
 
 // when a person opens an activity / monthly / alerts tab, pull the latest data in the background
 function softRefresh(t){
+  if(t==='entry'&&S.url&&NEWTAB&&S.role!=='district'){refreshLocks().then(function(){if(TAB==='entry')tsInfo()}).catch(function(){});return}
   if(!S.url||!NEWTAB||['dlog','dreview','dall','monthly','security','dash'].indexOf(t)<0)return;
   refreshExtra(true).then(function(){
     if(TAB!==t)return;
@@ -1359,7 +1378,7 @@ function dAct(r){
   if(r.status==='Rejected')return '<button class="btn o sm" onclick="dDiscard(\''+r.id+'\')">Discard</button>';
   if(!canVerify())return '';
   var h='';
-  if(r.status!=='Verified')h+='<button class="btn g sm" onclick="setDSt([\''+r.id+'\'],\'Verified\')">Verify</button> ';
+  if(r.status!=='Verified')h+='<button class="btn g sm" onclick="setDSt([\''+r.id+'\'],\'Verified\')">Approve</button> ';
   if(r.status!=='Returned')h+='<button class="btn o sm" onclick="setDSt([\''+r.id+'\'],\'Returned\')">Return</button> ';
   if(isAdmin())h+='<button class="btn o sm" onclick="delD(\''+r.id+'\')">Delete</button>';
   return h;
@@ -1377,7 +1396,7 @@ function DCOLS(keys){
     ph:{h:'Photos',f:photoCell},
     loc:{h:'Location',f:dLoc},
     sec:COLS(['sec'])[0],
-    st:{h:'Status',f:function(r){return r.status==='Rejected'?'<span class="bad">REJECTED</span><br>'+esc(r.remark):esc(r.status)+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
+    st:{h:'Status',f:function(r){return r.status==='Rejected'?'<span class="bad">REJECTED</span><br>'+esc(r.remark):esc(stLbl(r.status))+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
     up:COLS(['up'])[0],
     dact:{h:'Action',a:1,f:dAct}
   };
@@ -1390,10 +1409,10 @@ function viewDlog(kind){
   RESFN=function(){
     var rows=prepD(dFilter(dScope(kind))),cnt=function(t){return rows.filter(function(r){return r.type===t}).length};
     var hrs=0;rows.forEach(function(r){hrs+=r.hours});
-    var h='<div class="stats">'+stat('Activities',rows.length)+stat('School visits',cnt(A_SCH))+stat('Home visits (HBE)',cnt(A_HOME))+stat('Centre attendance',cnt(A_CTR))+stat('Other work',cnt(A_OTH))+stat('Hours',Math.round(hrs*10)/10)+(kind!=='dlog'&&secure()?stat('Security flags',rows.filter(function(r){return r._s.length}).length,'',rows.some(function(r){return r._s.length})):'')+'</div>';
+    var h='<div class="stats">'+stat('Activities',rows.length)+stat('School visits',cnt(A_SCH))+stat('Home visits (HBE)',cnt(A_HOME))+stat('Day Care / BRR visits',cnt(A_CTR))+stat('Other work',cnt(A_OTH))+stat('Hours',Math.round(hrs*10)/10)+(kind!=='dlog'&&secure()?stat('Security flags',rows.filter(function(r){return r._s.length}).length,'',rows.some(function(r){return r._s.length})):'')+'</div>';
     return h+grid(DCOLS(keys),rows);
   };
-  var intro=kind==='dreview'?'<p class="note">Check each activity against its photos and location. Use <b>Verify</b>, or <b>Return</b> with a reason. "Verify all clean" verifies every pending activity shown that has no security flags.</p>':'';
+  var intro=kind==='dreview'?'<p class="note">Check each activity against its photos and location. Use <b>Approve</b>, or <b>Return</b> with a reason. "Approve all clean" approves every pending activity shown that has no security flags.</p>':'';
   return '<h2>'+title+'</h2>'+intro+dBar(kind)+'<div id="res"></div>';
 }
 function dBar(kind){
@@ -1408,7 +1427,7 @@ function dBar(kind){
     h+='<div><label>Status</label><select onchange="D.status=this.value;drawRes()">'+opts(['Pending','Verified','Returned'],D.status,'Any status')+'</select></div>';
   }
   h+='</div><div style="margin-top:6px"><button class="btn sm" onclick="D.month=\'\';showTab(TAB)">All months</button>';
-  if(kind!=='dlog')h+=' <button class="btn g sm" onclick="exportDaily(\''+kind+'\')">Download Excel</button> <button class="btn sm" onclick="bulkVerify(\''+kind+'\')">Verify all clean</button>';
+  if(kind!=='dlog')h+=' <button class="btn g sm" onclick="exportDaily(\''+kind+'\')">Download Excel</button> <button class="btn sm" onclick="bulkVerify(\''+kind+'\')">Approve all clean</button>';
   return h+' <button class="btn sm" onclick="window.print()">Print</button></div></div>';
 }
 function dDiscard(id){if(!confirm('Remove this rejected activity from your phone? You can enter it again correctly.'))return;DREC=DREC.filter(function(x){return x.id!==id});DOUT=DOUT.filter(function(x){return x!==id});idbDel(id);saveDrec();saveDout();banner();drawRes()}
@@ -1421,7 +1440,7 @@ function setDSt(ids,st,noPrompt){
 function bulkVerify(kind){
   var rows=prepD(dFilter(dScope(kind))).filter(function(r){return r.status==='Pending'&&!r._s.length&&!r._pending});
   if(!rows.length)return alert('No pending activities without security flags in the current view.');
-  if(!confirm('Verify '+rows.length+' pending activities that have no security flags?'))return;
+  if(!confirm('Approve '+rows.length+' pending activities that have no security flags?'))return;
   setDSt(rows.map(function(r){return r.id}),'Verified');
 }
 function delD(id){
@@ -1468,8 +1487,8 @@ function mField(){
   else if(DOUT.length)why='Upload the '+DOUT.length+' activit'+(DOUT.length>1?'ies':'y')+' waiting on your phone first (tap Refresh data).';
   var h=mHeadPrint('Monthly Activity Report - IE Official',monthName(m)+' - '+S.name+(S.designation?' ('+S.designation+')':'')+' - '+S.block+' Block');
   h+='<h2 class="noprint">Monthly Report</h2><p class="note noprint">Your daily activities are consolidated automatically. Add a short summary and submit it for the BEEO and the District Office. The numbers are calculated by the server from your logs.</p>'+monthPick();
-  if(sub){var c=sub.status==='Verified'?'okmsg':(sub.status==='Returned'?'err':'info');h+='<div class="'+c+' noprint"><b>Status: '+esc(sub.status)+'</b>'+(sub.remark?' - '+esc(sub.remark):'')+(sub.verifiedBy?' (by '+esc(sub.verifiedBy)+')':'')+'</div>'}
-  h+='<div class="stats">'+stat('Active days',t.activeDays)+stat('School visits',t.schoolVisits,t.uniqueSchools+' different schools')+stat('Home visits (HBE)',t.homeVisits,t.uniqueChildren+' different children')+stat('Centre attendance days',t.centreDays)+stat('Other official work',t.otherActivities)+stat('Hours',t.totalHours)+stat('CWSN covered',t.cwsnCovered)+stat('Photos',t.photos)+stat('Logs with security flags',t.flaggedLogs,'',t.flaggedLogs>0)+'</div>';
+  if(sub){var c=sub.status==='Verified'?'okmsg':(sub.status==='Returned'?'err':'info');h+='<div class="'+c+' noprint"><b>Status: '+esc(stLbl(sub.status))+'</b>'+(sub.remark?' - '+esc(sub.remark):'')+(sub.verifiedBy?' (by '+esc(sub.verifiedBy)+')':'')+'</div>'}
+  h+='<div class="stats">'+stat('Active days',t.activeDays)+stat('School visits',t.schoolVisits,t.uniqueSchools+' different schools')+stat('Home visits (HBE)',t.homeVisits,t.uniqueChildren+' different children')+stat('Day Care / BRR visit days',t.centreDays)+stat('Other official work',t.otherActivities)+stat('Hours',t.totalHours)+stat('CWSN covered',t.cwsnCovered)+stat('Photos',t.photos)+stat('Logs with security flags',t.flaggedLogs,'',t.flaggedLogs>0)+'</div>';
   var rows=prepD(DREC.filter(function(r){return r.userId===S.id&&r.date.slice(0,7)===m&&r.status!=='Rejected'}).sort(function(a,b){return a.date<b.date?-1:1}));
   h+='<h3>Day-wise activities</h3>'+grid(DCOLS(['date','type','what','purp','cw','hrs','st']),rows);
   h+=fld('Summary of the month - key work and achievements *',sub&&sub.status!=='Returned'?'<div class="card">'+esc(sub.summary)+'</div>':'<textarea id="m_sum" rows="4" maxlength="1500">'+esc(sub?sub.summary:'')+'</textarea>');
@@ -1502,22 +1521,22 @@ function mRows(){
 function mReview(){
   var m=M.month,rows=mRows(),title=isAdmin()?'Monthly Reports - District consolidation':'Monthly Reports - '+S.block+' Block';
   var h=mHeadPrint('Monthly Activity Consolidation - IE Officials',monthName(m)+' - '+(isAdmin()?CFG.district+' District':S.block+' Block'));
-  h+='<h2 class="noprint">'+esc(title)+'</h2><p class="note noprint">Each IE Official consolidates the month; you verify or return it. The district total counts submitted and verified reports.</p>';
+  h+='<h2 class="noprint">'+esc(title)+'</h2><p class="note noprint">Each IE Official consolidates the month; you approve or return it. The district total counts submitted and approved reports.</p>';
   h+='<div class="filters noprint"><div class="fgrid"><div><label>Month</label><input type="month" max="'+curMonth()+'" value="'+esc(m)+'" onchange="M.month=this.value||defMonth();showTab(TAB)"></div>'+(!S.block?'<div><label>Block</label><select onchange="D.block=this.value;showTab(TAB)">'+opts(CFG.blocks,D.block,'All blocks')+'</select></div>':'')+'</div><div style="margin-top:6px"><button class="btn g sm" onclick="exportMonthly()">Download Excel</button> <button class="btn sm" onclick="window.print()">Print</button></div></div>';
   var tot={activeDays:0,schoolVisits:0,uniqueSchools:0,homeVisits:0,uniqueChildren:0,centreDays:0,otherActivities:0,totalHours:0,cwsnCovered:0,flaggedLogs:0},nsub=0,body=[],blkT={};
   rows.forEach(function(x){
     var s=x.sub,st=s?s.status:'Not submitted',b='';
     if(s&&s.status!=='Returned'){nsub++;Object.keys(tot).forEach(function(k){tot[k]+=Number(s[k])||0});var bt=blkT[s.block]=blkT[s.block]||{n:0,schoolVisits:0,homeVisits:0,centreDays:0,otherActivities:0,totalHours:0,cwsnCovered:0};bt.n++;['schoolVisits','homeVisits','centreDays','otherActivities','totalHours','cwsnCovered'].forEach(function(k){bt[k]+=Number(s[k])||0})}
-    if(s&&canVerify()){b='<button class="btn sm" onclick="mDetail(\''+esc(s.id)+'\')">View</button> ';if(s.status==='Submitted')b+='<button class="btn g sm" onclick="mSt(\''+esc(s.id)+'\',\'Verified\')">Verify</button> ';if(s.status!=='Returned')b+='<button class="btn o sm" onclick="mSt(\''+esc(s.id)+'\',\'Returned\')">Return</button>'}
+    if(s&&canVerify()){b='<button class="btn sm" onclick="mDetail(\''+esc(s.id)+'\')">View</button> ';if(s.status==='Submitted')b+='<button class="btn g sm" onclick="mSt(\''+esc(s.id)+'\',\'Verified\')">Approve</button> ';if(s.status!=='Returned')b+='<button class="btn o sm" onclick="mSt(\''+esc(s.id)+'\',\'Returned\')">Return</button>'}
     var cls=!s?' class="flag"':(s.status==='Returned'?' class="flag"':'');
     var c=s&&s.status!=='Returned'?s:null;
     body.push('<tr'+cls+'><td>'+esc(x.p.block)+'</td><td>'+esc(x.p.name)+(x.p.designation?'<br><span class="note">'+esc(x.p.designation)+'</span>':'')+'</td>'+
       (c?'<td class="r">'+c.activeDays+'</td><td class="r">'+c.schoolVisits+' ('+c.uniqueSchools+')</td><td class="r">'+c.homeVisits+' ('+c.uniqueChildren+')</td><td class="r">'+c.centreDays+'</td><td class="r">'+c.otherActivities+'</td><td class="r">'+c.totalHours+'</td><td class="r">'+c.cwsnCovered+'</td><td class="r">'+(c.flaggedLogs?'<span class="bad">'+c.flaggedLogs+'</span>':'0')+'</td>':'<td colspan="8" class="note">'+(s?'Returned for correction: '+esc(s.remark):'Not submitted. '+x.live.logs+' activit'+(x.live.logs===1?'y':'ies')+' logged so far.')+'</td>')+
-      '<td>'+esc(st)+(s&&s.verifiedBy?'<br><span class="note">by '+esc(s.verifiedBy)+'</span>':'')+'</td><td class="noprint">'+b+'</td></tr>');
+      '<td>'+esc(stLbl(st))+(s&&s.verifiedBy?'<br><span class="note">by '+esc(s.verifiedBy)+'</span>':'')+'</td><td class="noprint">'+b+'</td></tr>');
   });
-  h+='<div class="stats">'+stat('IE Officials',rows.length)+stat('Reports submitted',nsub,'of '+rows.length,nsub<rows.length)+stat('School visits',tot.schoolVisits)+stat('Home visits (HBE)',tot.homeVisits)+stat('Centre attendance days',tot.centreDays)+stat('Hours',Math.round(tot.totalHours*10)/10)+stat('CWSN covered',tot.cwsnCovered)+'</div>';
-  h+=rows.length?'<div class="scroll"><table class="tbl"><tr><th>Block</th><th>IE Official</th><th class="r">Active days</th><th class="r">School visits (unique)</th><th class="r">Home visits (children)</th><th class="r">Centre days</th><th class="r">Other work</th><th class="r">Hours</th><th class="r">CWSN covered</th><th class="r">Flagged</th><th>Status</th><th class="noprint"></th></tr>'+body.join('')+
-    '<tr style="font-weight:bold"><td colspan="2">TOTAL (submitted + verified)</td><td class="r">'+tot.activeDays+'</td><td class="r">'+tot.schoolVisits+' ('+tot.uniqueSchools+')</td><td class="r">'+tot.homeVisits+' ('+tot.uniqueChildren+')</td><td class="r">'+tot.centreDays+'</td><td class="r">'+tot.otherActivities+'</td><td class="r">'+Math.round(tot.totalHours*10)/10+'</td><td class="r">'+tot.cwsnCovered+'</td><td class="r">'+tot.flaggedLogs+'</td><td colspan="2"></td></tr></table></div>':'<p class="note">No IE Officials found. Add them under Security & Audit > Users.</p>';
+  h+='<div class="stats">'+stat('IE Officials',rows.length)+stat('Reports submitted',nsub,'of '+rows.length,nsub<rows.length)+stat('School visits',tot.schoolVisits)+stat('Home visits (HBE)',tot.homeVisits)+stat('Day Care / BRR visit days',tot.centreDays)+stat('Hours',Math.round(tot.totalHours*10)/10)+stat('CWSN covered',tot.cwsnCovered)+'</div>';
+  h+=rows.length?'<div class="scroll"><table class="tbl"><tr><th>Block</th><th>IE Official</th><th class="r">Active days</th><th class="r">School visits (unique)</th><th class="r">Home visits (children)</th><th class="r">Day Care / BRR days</th><th class="r">Other work</th><th class="r">Hours</th><th class="r">CWSN covered</th><th class="r">Flagged</th><th>Status</th><th class="noprint"></th></tr>'+body.join('')+
+    '<tr style="font-weight:bold"><td colspan="2">TOTAL (submitted + approved)</td><td class="r">'+tot.activeDays+'</td><td class="r">'+tot.schoolVisits+' ('+tot.uniqueSchools+')</td><td class="r">'+tot.homeVisits+' ('+tot.uniqueChildren+')</td><td class="r">'+tot.centreDays+'</td><td class="r">'+tot.otherActivities+'</td><td class="r">'+Math.round(tot.totalHours*10)/10+'</td><td class="r">'+tot.cwsnCovered+'</td><td class="r">'+tot.flaggedLogs+'</td><td colspan="2"></td></tr></table></div>':'<p class="note">No IE Officials found. Add them under Security & Audit > Users.</p>';
   // school coverage
   if(SCH.length){
     var cov={};SCH.forEach(function(s){if(S.block&&s.block!==S.block)return;if(D.block&&s.block!==D.block)return;if(s.cwsn>0){var c=cov[s.block]=cov[s.block]||{tot:0,vis:0};c.tot++}});
@@ -1526,7 +1545,7 @@ function mReview(){
     var ks=Object.keys(cov).sort();
     if(ks.length)h+='<h3>Coverage of schools with CWSN ('+monthName(m)+')</h3>'+tbl(['Block','Schools with CWSN','Visited this month','Not yet visited'],ks.map(function(k){return '<tr><td>'+esc(k)+'</td><td class="r">'+cov[k].tot+'</td><td class="r">'+cov[k].vis+'</td><td class="r">'+(cov[k].tot-cov[k].vis)+'</td></tr>'}),[1,2,3]);
   }
-  if(isAdmin()&&Object.keys(blkT).length)h+='<h3>Block-wise totals</h3>'+tbl(['Block','Reports','School visits','Home visits','Centre days','Other work','Hours','CWSN covered'],Object.keys(blkT).sort().map(function(k){var b=blkT[k];return '<tr><td>'+esc(k)+'</td><td class="r">'+b.n+'</td><td class="r">'+b.schoolVisits+'</td><td class="r">'+b.homeVisits+'</td><td class="r">'+b.centreDays+'</td><td class="r">'+b.otherActivities+'</td><td class="r">'+Math.round(b.totalHours*10)/10+'</td><td class="r">'+b.cwsnCovered+'</td></tr>'}),[1,2,3,4,5,6,7]);
+  if(isAdmin()&&Object.keys(blkT).length)h+='<h3>Block-wise totals</h3>'+tbl(['Block','Reports','School visits','Home visits','Day Care / BRR days','Other work','Hours','CWSN covered'],Object.keys(blkT).sort().map(function(k){var b=blkT[k];return '<tr><td>'+esc(k)+'</td><td class="r">'+b.n+'</td><td class="r">'+b.schoolVisits+'</td><td class="r">'+b.homeVisits+'</td><td class="r">'+b.centreDays+'</td><td class="r">'+b.otherActivities+'</td><td class="r">'+Math.round(b.totalHours*10)/10+'</td><td class="r">'+b.cwsnCovered+'</td></tr>'}),[1,2,3,4,5,6,7]);
   return h;
 }
 function mSt(id,st){
@@ -1544,7 +1563,7 @@ function mDetail(id){
 function exportMonthly(){
   if(typeof XLSX==='undefined')return alert('The Excel library could not load. Connect to the internet and reload.');
   var rows=mRows(),wb=XLSX.utils.book_new(),tot=[0,0,0,0,0,0,0,0,0];
-  var data=[['Monthly consolidation - '+CFG.district+' District - '+monthName(M.month)],[],['Block','IE Official','Designation','Active days','School visits','Unique schools','Home visits','Unique children','Centre days','Other work','Hours','CWSN covered','Flagged logs','Status','Summary','Challenges']];
+  var data=[['Monthly consolidation - '+CFG.district+' District - '+monthName(M.month)],[],['Block','IE Official','Designation','Active days','School visits','Unique schools','Home visits','Unique children','Day Care / BRR days','Other work','Hours','CWSN covered','Flagged logs','Status','Summary','Challenges']];
   rows.forEach(function(x){var s=x.sub;if(s){if(s.status!=='Returned')[s.activeDays,s.schoolVisits,s.uniqueSchools,s.homeVisits,s.uniqueChildren,s.centreDays,s.otherActivities,s.totalHours,s.cwsnCovered].forEach(function(v,i){tot[i]+=Number(v)||0});data.push([x.p.block,x.p.name,x.p.designation,s.activeDays,s.schoolVisits,s.uniqueSchools,s.homeVisits,s.uniqueChildren,s.centreDays,s.otherActivities,s.totalHours,s.cwsnCovered,s.flaggedLogs,s.status,s.summary,s.challenges])}else data.push([x.p.block,x.p.name,x.p.designation,'','','','','','','','','','','Not submitted','',''])});
   data.push(['TOTAL','','',tot[0],tot[1],tot[2],tot[3],tot[4],tot[5],tot[6],Math.round(tot[7]*10)/10,tot[8]]);
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'Monthly_Consolidated');
@@ -1656,10 +1675,10 @@ function dashIE(){
   var subs=MREC.filter(function(r){return r.month===rm&&r.status!=='Returned'}),ver=subs.filter(function(r){return r.status==='Verified'}).length;
   var fl=mo.filter(function(r){return r.secFlags}).length,nl=ppl.filter(function(p){return tdU[p.id]}).length;
   var h='<h3>IE Officials - Daily Activity and Monthly Report</h3><div class="stats">'+stat('IE Officials',ppl.length)+stat('Logged activity today',nl,'of '+ppl.length+' IE Officials')+stat('Activities today',td.length)+
-    stat('School visits',cnt(mo,A_SCH),monthName(cm))+stat('Home visits (HBE)',cnt(mo,A_HOME),monthName(cm))+stat('Centre attendance days',cdays(mo),monthName(cm))+stat('Other official work',cnt(mo,A_OTH),monthName(cm))+
-    stat('Monthly reports ('+monthName(rm)+')',subs.length,'of '+ppl.length+' submitted, '+ver+' verified',ppl.length>0&&subs.length<ppl.length)+stat('Activities with warnings',fl,monthName(cm)+' - see Security & Audit',fl>0)+'</div>';
+    stat('School visits',cnt(mo,A_SCH),monthName(cm))+stat('Home visits (HBE)',cnt(mo,A_HOME),monthName(cm))+stat('Day Care / BRR visit days',cdays(mo),monthName(cm))+stat('Other official work',cnt(mo,A_OTH),monthName(cm))+
+    stat('Monthly reports ('+monthName(rm)+')',subs.length,'of '+ppl.length+' submitted, '+ver+' approved',ppl.length>0&&subs.length<ppl.length)+stat('Activities with warnings',fl,monthName(cm)+' - see Security & Audit',fl>0)+'</div>';
   var blocks=CFG.blocks.filter(function(b){return ppl.some(function(p){return p.block===b})||mo.some(function(r){return r.block===b})});
-  if(blocks.length)h+=tbl(['Block','IE Officials','Logged today','Activities ('+monthName(cm)+')','School visits','Home visits','Centre days','Reports ('+monthName(rm)+')'],blocks.map(function(b){
+  if(blocks.length)h+=tbl(['Block','IE Officials','Logged today','Activities ('+monthName(cm)+')','School visits','Home visits','Day Care / BRR days','Reports ('+monthName(rm)+')'],blocks.map(function(b){
     var pb=ppl.filter(function(p){return p.block===b}),mb=mo.filter(function(r){return r.block===b});
     return '<tr><td>'+esc(b)+'</td><td class="r">'+pb.length+'</td><td class="r">'+pb.filter(function(p){return tdU[p.id]}).length+'</td><td class="r">'+mb.length+'</td><td class="r">'+cnt(mb,A_SCH)+'</td><td class="r">'+cnt(mb,A_HOME)+'</td><td class="r">'+cdays(mb)+'</td><td class="r">'+subs.filter(function(s){return s.block===b}).length+'</td></tr>'}),[1,2,3,4,5,6,7]);
   else h+='<p class="note">No IE Official activity yet. Create the IE Official logins in Centres &amp; Settings (master workbook upload).</p>';
