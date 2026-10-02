@@ -232,8 +232,8 @@ function idbDel(k){return idb().then(function(db){return new Promise(function(re
 
 // ---------- server ----------
 function ctx(){var c={now:Date.now()};if(GEO.fix&&Date.now()-GEO.fix.ts<=120000){c.lat=GEO.fix.lat;c.lng=GEO.fix.lng;c.acc=GEO.fix.acc;c.ts=GEO.fix.ts}return c}
-var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',repissue:'Preparing the report...',replist:'Loading reports...',repget:'Opening the report...',repupload:'Uploading the signed copy...',repscan:'Loading the scanned copy...',repverify:'Checking the report against the entries...',repdecide:'Saving...',repcancel:'Saving...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
-var BUSYREAD={replist:1,repget:1,tslocks:1,session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
+var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',sync:'Loading data from the server...',repissue:'Preparing the report...',replist:'Loading reports...',repget:'Opening the report...',repupload:'Uploading the signed copy...',repscan:'Loading the scanned copy...',repverify:'Checking the report against the entries...',repdecide:'Saving...',repcancel:'Saving...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
+var BUSYREAD={sync:1,replist:1,repget:1,tslocks:1,session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
 var BUSYQ=[],BUSYID=0,BUSYTMR=null;
 function busyStart(msg,blk){var id=++BUSYID;BUSYQ.push({id:id,msg:msg,blk:blk,t:Date.now()});if(blk)busyDraw();else setTimeout(busyDraw,450);if(!BUSYTMR)BUSYTMR=setInterval(busyDraw,1000);return id}
 function busyEnd(id){BUSYQ=BUSYQ.filter(function(b){return b.id!==id});busyDraw();if(!BUSYQ.length&&BUSYTMR){clearInterval(BUSYTMR);BUSYTMR=null}}
@@ -258,12 +258,12 @@ function api(action,payload,tryNo){
   .then(function(r){clearTimeout(t);status=r.status;return r.text()})
   .then(function(tx){
     var j;try{j=JSON.parse(tx)}catch(x){var e=new Error('The server did not answer properly (code '+status+'). '+(htmlSnippet(tx)?'Message from Google: '+htmlSnippet(tx)+'. ':'')+'Please try again. If it keeps happening, tell the District Office.');e.html=true;throw e}
-    if(!j.ok){var e2=new Error(j.error||'Server error');e2.server=true;e2.auth=!!j.auth;if(e2.auth&&action!=='login')endSession(e2.message);throw e2}
+    if(!j.ok){var e2=new Error(j.error||'Server error');e2.retry=!!j.retry;e2.server=!j.retry;e2.auth=!!j.auth;if(e2.auth&&action!=='login')endSession(e2.message);throw e2}
     return j;
   })
   .then(function(j){busyEnd(bid);return j},function(e){
     busyEnd(bid);clearTimeout(t);
-    if(e&&e.html&&tryNo<2&&BUSYREAD[action]&&action!=='logout')return new Promise(function(res){setTimeout(res,1800)}).then(function(){return api(action,payload,tryNo+1)});
+    if(e&&(e.html||e.retry)&&tryNo<2&&BUSYREAD[action]&&action!=='logout')return new Promise(function(res){setTimeout(res,1800)}).then(function(){return api(action,payload,tryNo+1)});
     throw e;
   });
 }
@@ -277,13 +277,61 @@ function norm(r){
   return o;
 }
 function mergeCfg(c){if(!c)return;CFG.district=c.district||CFG.district;if(c.blocks&&c.blocks.length)CFG.blocks=c.blocks;CFG.centres=c.centres||[];CFG.budget=c.budget||0;CFG.radius=c.radius||150;CFG.therapists=c.therapists||[];CFG.blockCodes=c.blockCodes||{};CFG.schoolRadius=c.schoolRadius||200;CFG.strictSchools=!!c.strictSchools;saveCfg()}
-function refreshData(){
-  if(!S.url)return Promise.resolve();
+// ---------- one-call sync: show what is on the phone at once, refresh quietly in the background ----------
+var SYNC={t:0,p:null,sch:0},STALE_MS=15000,HOLD_MS=(typeof window.__HOLD==='number')?window.__HOLD:10000,INFLIGHT={},SYNCERR='',HOLDTMR=null;
+function applySync(j){
+  var keep=REC.filter(function(r){return r._pending||r.status==='Rejected'});REC=j.rows.map(norm).concat(keep);mergeCfg(j.config);saveRec();
+  var keepD=DREC.filter(function(r){return r._pending||r.status==='Rejected'});DREC=(j.daily||[]).map(normD).concat(keepD);saveDrec();
+  MREC=j.months||[];save('cwsn_mrec',MREC);
+  if(j.locks){TSL=j.locks;save('cwsn_tsl',TSL)}
+  if(j.reports){REPS=j.reports;save('cwsn_reps',REPS)}
+  if(j.staff)STAFF=j.staff;
+  if(j.schools){SCH=j.schools;save('cwsn_sch',SCH)}
+  SYNC.t=Date.now();updStamp();
+}
+function legacySync(){
   return api('list').then(function(j){
     var keep=REC.filter(function(r){return r._pending||r.status==='Rejected'});
     REC=j.rows.map(norm).concat(keep);mergeCfg(j.config);saveRec();
-  }).then(function(){return refreshExtra()});
+  }).then(function(){return refreshExtra()}).then(function(){SYNC.t=Date.now()});
 }
+function syncAll(force,withSchools){
+  if(!S.url||!S.token)return Promise.resolve();
+  if(SYNC.p)return SYNC.p;
+  if(!force&&Date.now()-SYNC.t<STALE_MS)return Promise.resolve();
+  var needSch=!!withSchools||!SCH.length||Date.now()-SYNC.sch>3600000;
+  SYNC.p=api('sync',{schools:needSch}).then(function(j){applySync(j);if(needSch&&j.schools)SYNC.sch=Date.now();return j},function(e){
+    if(e&&e.server&&/unknown action/i.test(e.message))return legacySync();
+    throw e;
+  }).then(function(r){SYNC.p=null;return r},function(e){SYNC.p=null;throw e});
+  return SYNC.p;
+}
+function updTxt(){return SYNC.t?'Updated '+new Date(SYNC.t).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}
+function updStamp(){var e=$('upd');if(e)e.textContent=updTxt()}
+function refreshData(){return syncAll(true,true)}
+function cancelPending(id){
+  if(INFLIGHT[id])return flash('This entry is already being sent and can no longer be cancelled.','warn');
+  REC=REC.filter(function(x){return x.id!==id});OUT=OUT.filter(function(x){return x!==id});
+  DREC=DREC.filter(function(x){return x.id!==id});DOUT=DOUT.filter(function(x){return x!==id});
+  try{idbDel(id)}catch(e){}if(typeof MEMPH!=='undefined')delete MEMPH[id];
+  saveRec();saveOut();saveDrec();saveDout();banner();if(RESFN&&$('res'))drawRes();
+  flash('Entry cancelled. Nothing was sent.','info');
+}
+function cancelForm(kind){
+  if(!confirm('Cancel this entry? Nothing will be saved or sent.'))return;
+  if(typeof CAM!=='undefined'&&CAM.stream)closeCam();
+  PH=[];
+  var back=kind==='daily'?'dlog':'mine';
+  if(tabsFor().every(function(x){return x[0]!==back}))back=tabsFor()[0][0];
+  showTab(back);flash('Entry cancelled. Nothing was saved.','info');
+}
+function autoTick(){
+  if(!S.url||!S.token||document.hidden)return;
+  if((OUT.length||DOUT.length)&&!SYNCING&&!DSYNC)return syncOutbox();
+  if(Date.now()-SYNC.t>60000&&!SYNC.p)syncAll(false).then(function(){if(RESFN&&$('res'))drawRes()}).catch(function(){});
+}
+setInterval(autoTick,30000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)autoTick()});
 function syncOutbox(){return syncWeekly().then(function(){return syncDaily()})}
 function syncWeekly(){
   if(!S.url||!S.token||!OUT.length||SYNCING)return Promise.resolve();
@@ -292,19 +340,22 @@ function syncWeekly(){
     if(failMsg)return;
     var r=REC.filter(function(x){return x.id===id})[0];
     if(!r){OUT=OUT.filter(function(i){return i!==id});return}
+    if(r.holdUntil&&r.holdUntil>Date.now())return;
+    INFLIGHT[id]=1;
     return idbGet(id).then(function(ph){
       var rec={};KEYS.forEach(function(k){rec[k]=r[k]});
       var sec={lat:r.lat,lng:r.lng,acc:r.gpsAcc,fixTs:r.capturedAt,capturedAt:r.capturedAt};
       return api('submit',{record:rec,sec:sec,offline:(Date.now()-num(r.capturedAt))>120000,photos:(ph||[]).map(function(p,i){return {name:(r.weekEnding+'_'+r.centre+'_'+(i+1)).replace(/[^A-Za-z0-9_-]+/g,'_')+'.jpg',mime:'image/jpeg',data:p.data.split(',')[1],sha:p.sha,dh:p.dh,lat:p.lat,lng:p.lng,acc:p.acc,ts:p.ts}})});
     }).then(function(j){
-      var n=norm(j.record);REC=REC.map(function(x){return x.id===id?n:x});
+      delete INFLIGHT[id];var n=norm(j.record);REC=REC.map(function(x){return x.id===id?n:x});
       OUT=OUT.filter(function(i){return i!==id});idbDel(id);sent++;
     }).catch(function(e){
+      delete INFLIGHT[id];
       if(e.server&&!e.auth){r.status='Rejected';r.remark=e.message;r._pending=false;OUT=OUT.filter(function(i){return i!==id});rej++}
       else failMsg=e.message||'network';
     });
   })},Promise.resolve()).then(function(){
-    SYNCING=false;saveRec();saveOut();banner();
+    SYNCING=false;if(failMsg)SYNCERR=failMsg;else if(sent)SYNCERR='';saveRec();saveOut();banner();
     if((sent||rej)&&typeof refreshLocks==='function')refreshLocks().catch(function(){});
     if(sent)flash('Uploaded '+sent+' entr'+(sent>1?'ies':'y')+' to the district server.');
     if(rej)flash(rej+' entr'+(rej>1?'ies were':'y was')+' NOT ACCEPTED by the server. Open Therapeutic Services, then My Entries, to see the reason.','err');
@@ -431,16 +482,22 @@ function showTab(t){
 function drawHdr(){
   var logo=CFG.logo||LOGO_DATA;
   $('hdr').innerHTML='<div class="hrow"><img class="logoimg" alt="Samagra Shiksha" src="'+esc(logo)+'" onerror="logoFail(this)"><div class="ht"><b>IE Monitoring System</b><br><span class="sub">Office of the District Mission Coordinator, Samagra Shiksha - '+esc(CFG.district)+'</span></div><div class="hu">'+
-  (S.role?esc(roleName(S.role))+(S.role!=='district'?': '+esc(S.name)+' ('+esc(S.block||'All blocks')+')':'')+'<br><button class="btn sm" onclick="refreshBtn()">Refresh data</button> '+(secure()?'<button class="btn sm" onclick="showChangePin(false)">Change PIN</button> ':'')+'<button class="btn o sm" onclick="logout()">Logout</button>':'')+'</div></div>';
+  (S.role?esc(roleName(S.role))+(S.role!=='district'?': '+esc(S.name)+' ('+esc(S.block||'All blocks')+')':'')+'<br><button class="btn sm" onclick="refreshBtn()">Refresh data</button> <span class=\"note\" id=\"upd\">'+updTxt()+'</span> '+(secure()?'<button class="btn sm" onclick="showChangePin(false)">Change PIN</button> ':'')+'<button class="btn o sm" onclick="logout()">Logout</button>':'')+'</div></div>';
   $('foot').innerHTML='';
 }
 function logoFail(el){var d=document.createElement('div');d.className='logo';d.textContent='SS';el.parentNode.replaceChild(d,el)}
 function banner(){
-  var h='';
-  var pend=OUT.length+DOUT.length;
-  if(pend)h+='<div class="warn" style="margin:0"><b>'+pend+' entr'+(pend>1?'ies are':'y is')+' saved on this device and waiting to upload.</b> <button class="btn g sm" onclick="syncOutbox()">Send now</button></div>';
-  else if(!S.url&&S.role)h+='<div class="info" style="margin:0">Demo mode: data is kept only on this device and there is no security. Connect the server for real use (see Help).</div>';
+  var h='',now=Date.now();
+  var held=REC.concat(DREC).filter(function(r){return r._pending&&r.holdUntil&&r.holdUntil>now});
+  held.forEach(function(r){h+='<div class="warn" style="margin:0 0 4px 0"><b>Saved:</b> '+esc(r.centre?'Therapeutic Services - '+r.centre+' ('+r.weekEnding+')':(ACTSHORT[r.type]||'Activity')+' ('+(r.date||'')+')')+'. Sending in '+Math.max(1,Math.ceil((r.holdUntil-now)/1000))+' s. <button class="btn o sm" onclick="cancelPending(\''+r.id+'\')">Cancel entry</button></div>'});
+  var waiting=OUT.length+DOUT.length-held.length;
+  if(waiting>0)h+='<div class="warn" style="margin:0"><b>'+waiting+' entr'+(waiting>1?'ies are':'y is')+' saved on this device and waiting to upload.</b>'+(SYNCERR?' Last try: '+esc(SYNCERR)+'. It will try again by itself.':'')+' <button class="btn g sm" onclick="syncOutbox()">Send now</button></div>';
+  else if(!held.length&&!S.url&&S.role)h+='<div class="info" style="margin:0">Demo mode: data is kept only on this device and there is no security. Connect the server for real use (see Help).</div>';
   $('banner').innerHTML=h;
+  if(held.length&&!HOLDTMR)HOLDTMR=setInterval(function(){
+    banner();
+    if(!REC.concat(DREC).some(function(r){return r._pending&&r.holdUntil&&r.holdUntil>Date.now()})){clearInterval(HOLDTMR);HOLDTMR=null;syncOutbox()}
+  },1000);
 }
 function flash(m,type){var e=$('msg');if(!e)return;e.innerHTML='<div class="'+(type==='err'?'err':type==='warn'?'warn':type==='info'?'info':'okmsg')+'">'+esc(m)+'</div>';if(type!=='info')window.scrollTo(0,0)}
 
@@ -479,7 +536,7 @@ function viewEntry(){
   h+='<div class="fld"><b>Honorarium for this day: <span id="e_tot">Rs. 0</span></b></div>';
   if(secure())h+=fld('Therapy session photographs * (1 to 5)','<button class="btn" onclick="openCam()">Take live photo</button><div class="hint">Photos must be taken live with this camera at the centre. Gallery uploads are not allowed. Each photo is stamped with place and time and checked by the server.</div><div id="e_thumbs" class="thumbs"></div>');
   else h+=fld('Therapy session photographs * (1 to 5)','<input type="file" id="e_ph_in" accept="image/*" multiple onchange="addPhotos(this)"><div class="hint">Tap and choose Camera. Each photo gets a date-time stamp. Up to 10 MB each.</div><div id="e_thumbs" class="thumbs"></div>');
-  h+='<div class="fld"><button class="btn g big" id="e_go" onclick="submitEntry()">Submit Entry</button> <button class="btn o" onclick="showTab(\'entry\')">Clear form</button></div>';
+  h+='<div class="fld"><button class="btn g big" id="e_go" onclick="submitEntry()">Submit Entry</button> <button class="btn o" onclick="showTab(\'entry\')">Clear form</button> <button class="btn" onclick="cancelForm(\'entry\')">Cancel</button></div>';
   return h;
 }
 function modeChg(){refreshCentres();var d=$('e_dc');if(d)d.style.display=isDC(rv('e_mode'))?'block':'none'}
@@ -583,8 +640,8 @@ function submitEntry(){
     MEMPH[rec.id]=PH.slice();
     idbSet(rec.id,PH.slice()).catch(function(){}).then(function(){
       if(!S.url){REC.push(n);saveRec();showTab('entry');flash('Entry saved on this device (demo mode).');return}
-      n._pending=true;REC.push(n);OUT.push(rec.id);saveRec();saveOut();banner();showTab('entry');
-      flash('Entry saved. Uploading to the district server...');syncOutbox();
+      n._pending=true;n.holdUntil=Date.now()+HOLD_MS;REC.push(n);OUT.push(rec.id);saveRec();saveOut();banner();showTab('entry');
+      flash('Entry saved. It will be sent in '+Math.round(HOLD_MS/1000)+' seconds. Made a mistake? Tap Cancel entry in the yellow box at the top.');setTimeout(syncOutbox,HOLD_MS+300);
     });
   };
   if(!secure())return build(null);
@@ -714,13 +771,13 @@ function COLS(keys){
     ses:{h:'Sessions',f:function(r){return r.sessions}},
     amt:{h:'Amount',f:function(r){return inr(r.totalHonorarium+r.contingency)}},
     aud:{h:'Audit status',f:flagHtml},
-    st:{h:'Status',f:function(r){return esc(stLbl(r.status))+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
+    st:{h:'Status',f:function(r){return (r._pending?'<span class="note">Not sent yet</span><br>':'')+esc(stLbl(r.status))+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
     ph:{h:'Photos',f:photoCell},
     up:{h:'Upload',f:function(r){return r._pending?'<span class="bad">Waiting</span>':'Done'}},
     sec:{h:'Security checks',f:function(r){return r._s&&r._s.length?'<span class="bad">CHECK</span><br>'+r._s.map(esc).join('<br>'):'<span class="ok">OK</span>'}},
     loc:{h:'Location',f:function(r){return r.lat===''||r.lat==null?'-':(r.distanceM!==''?r.distanceM+' m from centre':'no fence (home visit / not set)')+'<br>'+mapLink(r.lat,r.lng)+' +-'+r.gpsAcc+' m'}},
     by:{h:'Submitted by',f:function(r){return esc(r.submittedBy)+'<br><span class="note">ID '+esc(r.userId)+'<br>Phone '+esc(String(r.deviceId).slice(0,8))+'<br>'+esc(String(r.timestamp).slice(0,16).replace('T',' '))+'</span>'}},
-    mact:{h:'Action',a:1,f:function(r){return r.status==='Rejected'?'<button class="btn o sm" onclick="discard(\''+r.id+'\')">Discard</button>':''}},
+    mact:{h:'Action',a:1,f:function(r){return r.status==='Rejected'?'<button class="btn o sm" onclick="discard(\''+r.id+'\')">Discard</button>':(r._pending?(INFLIGHT[r.id]?'<span class="note">Sending...</span>':'<button class="btn o sm" onclick="cancelPending(\''+r.id+'\')">Cancel entry</button>'):'')}},
     act:{h:'Action',a:1,f:actBtns}
   };
   return keys.map(function(k){return A[k]});
@@ -1001,11 +1058,13 @@ function openCam(){
   if(PH.length>=5)return alert('Maximum 5 photos per entry.');
   if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return alert('This browser cannot open the camera. Use Chrome or Safari on the secure (https) link.');
   navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:false}).then(function(s){
-    CAM.stream=s;var o=$('ov');o.style.display='block';
-    o.innerHTML='<video id="cam_v" autoplay playsinline muted></video><div style="margin:8px 0"><button class="btn g big" onclick="snap()">Capture photo</button> <button class="btn o big" onclick="closeCam()">Done</button></div><div id="cam_m" class="note">Point the camera at the therapy session and tap Capture. Photos taken: '+PH.length+'</div>';
-    $('cam_v').srcObject=s;
+    CAM.stream=s;CAM.snap=PH.slice();var o=$('ov');o.style.display='block';
+    o.innerHTML='<video id="cam_v" autoplay playsinline muted></video><div style="margin:8px 0"><button class="btn g big" onclick="snap()">Capture photo</button> <button class="btn big" onclick="closeCam()">Done</button> <button class="btn o big" onclick="cancelCam()">Cancel</button></div><div id="cam_th" class="thumbs"></div><div id="cam_m" class="note">Point the camera at the therapy session and tap Capture. Photos taken: '+PH.length+'</div>';
+    $('cam_v').srcObject=s;drawCamTh();
   }).catch(function(){alert('Camera permission is needed to take photos. Allow camera access for this site and try again.')});
 }
+function cancelCam(){if(CAM.snap)PH=CAM.snap.slice();CAM.snap=null;closeCam()}
+function drawCamTh(){var e=$('cam_th');if(e)e.innerHTML=PH.map(function(p,i){return '<span class="th"><img src="'+p.data+'"><button onclick="PH.splice('+i+',1);drawCamTh();drawPh();var m=$(\'cam_m\');if(m)m.textContent=\'Photo removed. Photos kept: \'+PH.length">X</button></span>'}).join('')}
 function closeCam(){if(CAM.stream){CAM.stream.getTracks().forEach(function(t){t.stop()});CAM.stream=null}var o=$('ov');o.style.display='none';o.innerHTML='';drawPh()}
 function dHash(src){var c=document.createElement('canvas');c.width=9;c.height=8;var x=c.getContext('2d');x.drawImage(src,0,0,9,8);var d=x.getImageData(0,0,9,8).data,g=[];for(var i=0;i<72;i++)g.push(d[i*4]*0.3+d[i*4+1]*0.59+d[i*4+2]*0.11);var bits='';for(var y=0;y<8;y++)for(var k=0;k<8;k++)bits+=g[y*9+k]>g[y*9+k+1]?'1':'0';var h='';for(var j=0;j<64;j+=4)h+=parseInt(bits.substr(j,4),2).toString(16);return h}
 function sha256(dataUrl){var b=atob(dataUrl.split(',')[1]),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return crypto.subtle.digest('SHA-256',u).then(function(h){return [].slice.call(new Uint8Array(h)).map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('')})}
@@ -1024,8 +1083,8 @@ function snap(){
     x.fillStyle='#000';x.font='bold '+fs+'px Arial';x.fillText(l1,8,c.height-fs-8);x.fillText(l2,8,c.height-6);
     var data=c.toDataURL('image/jpeg',0.7);
     return sha256(data).then(function(sha){
-      PH.push({data:data,sha:sha,dh:dh,lat:f.lat,lng:f.lng,acc:f.acc,ts:Date.now()});drawPh();
-      m.textContent='Photo '+PH.length+' saved.';if(PH.length>=5)closeCam();
+      PH.push({data:data,sha:sha,dh:dh,lat:f.lat,lng:f.lng,acc:f.acc,ts:Date.now()});drawPh();drawCamTh();
+      m.textContent='Photo '+PH.length+' kept. Tap X on a photo to remove it, Done to finish, or Cancel to discard the photos taken now.';if(PH.length>=5)closeCam();
     });
   }).catch(function(e){m.textContent=e.message||'Could not capture'});
 }
@@ -1188,15 +1247,19 @@ function refreshExtra(light){
 }
 
 // when a person opens an activity / monthly / alerts tab, pull the latest data in the background
+var LIVE_TABS=['dlog','dreview','dall','monthly','security','dash','breport','rverify','review','mine','grid','alerts','photos','report','locs'];
+function redrawAfterSync(t){
+  if(TAB!==t)return;
+  if(RESFN&&$('res')){drawRes();if($('ie_dash'))$('ie_dash').innerHTML=dashIE();return}
+  if(t==='security'){if(SEC.tab==='alerts')drawRes();return}
+  if(t==='monthly'){var s=$('m_sum'),c=$('m_chal');if((s&&s.value)||(c&&c.value))return;$('main').innerHTML='<div id="msg"></div>'+VIEWS.monthly()}
+}
+// Screens open instantly from what is already on the phone. Only if that is older than 45 seconds is ONE quiet refresh done.
 function softRefresh(t){
-  if(t==='entry'&&S.url&&NEWTAB&&S.role!=='district'){refreshLocks().then(function(){if(TAB==='entry')tsInfo()}).catch(function(){});return}
-  if(!S.url||!NEWTAB||['dlog','dreview','dall','monthly','security','dash','breport','rverify'].indexOf(t)<0)return;
-  refreshExtra(true).then(function(){
-    if(TAB!==t)return;
-    if(RESFN&&$('res')){drawRes();if($('ie_dash'))$('ie_dash').innerHTML=dashIE();return}
-    if(t==='security'){if(SEC.tab==='alerts')drawRes();return}
-    if(t==='monthly'){var s=$('m_sum'),c=$('m_chal');if((s&&s.value)||(c&&c.value))return;$('main').innerHTML='<div id="msg"></div>'+VIEWS.monthly()}
-  }).catch(function(){});
+  if(!S.url||!NEWTAB)return;
+  if(t==='entry'&&S.role!=='district'){if(Date.now()-SYNC.t>20000)refreshLocks().then(function(){if(TAB==='entry')tsInfo()}).catch(function(){});return}
+  if(LIVE_TABS.indexOf(t)<0||Date.now()-SYNC.t<STALE_MS)return;
+  syncAll(false).then(function(){redrawAfterSync(t)}).catch(function(){});
 }
 // ---------- background upload of daily activities ----------
 function syncDaily(){
@@ -1206,18 +1269,21 @@ function syncDaily(){
     if(failMsg)return;
     var r=DREC.filter(function(x){return x.id===id})[0];
     if(!r){DOUT=DOUT.filter(function(i){return i!==id});return}
+    if(r.holdUntil&&r.holdUntil>Date.now())return;
+    INFLIGHT[id]=1;
     return idbGet(id).then(function(ph){
       var rec={};['id','date','block','type','refCode','refName','place','child','purpose','cwsn','hours','notes'].forEach(function(k){rec[k]=r[k]});
       var sec={lat:r.lat,lng:r.lng,acc:r.gpsAcc,fixTs:r.capturedAt,capturedAt:r.capturedAt};
       return api('dsubmit',{record:rec,sec:sec,offline:(Date.now()-num(r.capturedAt))>120000,photos:(ph||[]).map(function(p,i){return {name:(r.date+'_'+ACTSHORT[r.type]+'_'+(i+1)).replace(/[^A-Za-z0-9_-]+/g,'_')+'.jpg',mime:'image/jpeg',data:p.data.split(',')[1],sha:p.sha,dh:p.dh,lat:p.lat,lng:p.lng,acc:p.acc,ts:p.ts}})});
     }).then(function(j){
-      var n=normD(j.record);DREC=DREC.map(function(x){return x.id===id?n:x});DOUT=DOUT.filter(function(i){return i!==id});idbDel(id);sent++;
+      delete INFLIGHT[id];var n=normD(j.record);DREC=DREC.map(function(x){return x.id===id?n:x});DOUT=DOUT.filter(function(i){return i!==id});idbDel(id);sent++;
     }).catch(function(e){
+      delete INFLIGHT[id];
       if(e.server&&!e.auth){r.status='Rejected';r.remark=e.message;r._pending=false;DOUT=DOUT.filter(function(i){return i!==id});rej++}
       else failMsg=e.message||'network';
     });
   })},Promise.resolve()).then(function(){
-    DSYNC=false;saveDrec();saveDout();banner();
+    DSYNC=false;if(failMsg)SYNCERR=failMsg;else if(sent)SYNCERR='';saveDrec();saveDout();banner();
     if(sent)flash('Uploaded '+sent+' daily activit'+(sent>1?'ies':'y')+' to the district server.');
     if(rej)flash(rej+' daily activit'+(rej>1?'ies were':'y was')+' NOT ACCEPTED by the server. Open My Activity Log to see the reason.','err');
     if((sent||rej)&&RESFN)drawRes();
@@ -1232,7 +1298,7 @@ function viewDaily(){
   h+=fld('Date of activity *','<input type="date" id="d_date" min="'+daysAgo(7)+'" max="'+today()+'" value="'+today()+'">','Activities up to 7 days old can be added.');
   h+=fld('What did you do? *','<div class="tiles">'+radios('d_type',ACTS,'','onchange="dTypeChg()"')+'</div>');
   h+='<div id="d_body"></div>';
-  h+='<div class="fld"><button class="btn g big" id="d_go" onclick="submitDaily()">Save Activity</button> <button class="btn o" onclick="showTab(\'daily\')">Clear form</button></div>';
+  h+='<div class="fld"><button class="btn g big" id="d_go" onclick="submitDaily()">Save Activity</button> <button class="btn o" onclick="showTab(\'daily\')">Clear form</button> <button class="btn" onclick="cancelForm(\'daily\')">Cancel</button></div>';
   return h+dToday();
 }
 function dToday(){
@@ -1343,8 +1409,8 @@ function submitDaily(){
     $('d_go').disabled=true;
     idbSet(rec.id,PH.slice()).catch(function(){}).then(function(){
       if(!S.url){DREC.push(n);saveDrec();showTab('daily');flash('Activity saved on this device (demo mode).');return}
-      n._pending=true;DREC.push(n);DOUT.push(rec.id);saveDrec();saveDout();banner();showTab('daily');
-      flash('Activity saved. Uploading to the district server...');syncDaily();
+      n._pending=true;n.holdUntil=Date.now()+HOLD_MS;DREC.push(n);DOUT.push(rec.id);saveDrec();saveDout();banner();showTab('daily');
+      flash('Activity saved. It will be sent in '+Math.round(HOLD_MS/1000)+' seconds. Made a mistake? Tap Cancel entry in the yellow box at the top.');setTimeout(syncOutbox,HOLD_MS+300);
     });
   };
   if(!secure())return build(null);
@@ -1385,7 +1451,7 @@ function dLoc(r){
   return (r.distanceM!==''?'Photo '+r.distanceM+' m from '+(r.type===A_SCH?'school':'centre')+'<br>':'')+mapLink(r.lat,r.lng)+' +-'+r.gpsAcc+' m';
 }
 function dAct(r){
-  if(r._pending)return '<span class="note">Not uploaded yet</span>';
+  if(r._pending)return INFLIGHT[r.id]?'<span class="note">Sending...</span>':(dMine(r)?'<button class="btn o sm" onclick="cancelPending(\''+r.id+'\')">Cancel entry</button>':'<span class="note">Not uploaded yet</span>');
   if(r.status==='Rejected')return '<button class="btn o sm" onclick="dDiscard(\''+r.id+'\')">Discard</button>';
   if(!canVerify())return '';
   var h='';
@@ -1407,7 +1473,7 @@ function DCOLS(keys){
     ph:{h:'Photos',f:photoCell},
     loc:{h:'Location',f:dLoc},
     sec:COLS(['sec'])[0],
-    st:{h:'Status',f:function(r){return r.status==='Rejected'?'<span class="bad">NOT ACCEPTED</span><br>'+esc(r.remark):esc(stLbl(r.status))+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
+    st:{h:'Status',f:function(r){return r._pending?'<span class="note">Not sent yet</span>':r.status==='Rejected'?'<span class="bad">NOT ACCEPTED</span><br>'+esc(r.remark):esc(stLbl(r.status))+(r.remark?'<br><span class="note">'+esc(r.remark)+'</span>':'')}},
     up:COLS(['up'])[0],
     dact:{h:'Action',a:1,f:dAct}
   };
