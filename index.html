@@ -153,8 +153,10 @@ body.docmode #repov{display:block}
  .tbl tr:nth-child(even) td{background:#fff}
 }
 </style>
+<style id="pgsz"></style>
 </head>
 <body>
+<div id="phead" class="printonly"></div>
 <div id="hdr"></div>
 <div id="tabs"></div>
 <div id="subtabs"></div>
@@ -232,7 +234,7 @@ function idbDel(k){return idb().then(function(db){return new Promise(function(re
 
 // ---------- server ----------
 function ctx(){var c={now:Date.now()};if(GEO.fix&&Date.now()-GEO.fix.ts<=120000){c.lat=GEO.fix.lat;c.lng=GEO.fix.lng;c.acc=GEO.fix.acc;c.ts=GEO.fix.ts}return c}
-var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',masterSave:'Writing the master data to the Google Sheet...',masterUsers:'Creating logins from the Sheet...',cfgReload:'Reading the Google Sheet...',saveConfig:'Saving to the Google Sheet...',sync:'Loading data from the server...',repissue:'Preparing the report...',replist:'Loading reports...',repget:'Opening the report...',repupload:'Uploading the signed copy...',repscan:'Loading the scanned copy...',repverify:'Checking the report against the entries...',repdecide:'Saving...',repcancel:'Saving...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
+var BUSYMSG={login:'Logging in...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',masterSave:'Writing the master data to the Google Sheet...',masterDump:'Reading the master data from the Google Sheet...',masterUsers:'Creating logins from the Sheet...',cfgReload:'Reading the Google Sheet...',saveConfig:'Saving to the Google Sheet...',sync:'Loading data from the server...',repissue:'Preparing the report...',replist:'Loading reports...',repget:'Opening the report...',repupload:'Uploading the signed copy...',repscan:'Loading the scanned copy...',repverify:'Checking the report against the entries...',repdecide:'Saving...',repcancel:'Saving...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
 var BUSYREAD={sync:1,replist:1,repget:1,tslocks:1,session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
 var BUSYQ=[],BUSYID=0,BUSYTMR=null;
 function busyStart(msg,blk){var id=++BUSYID;BUSYQ.push({id:id,msg:msg,blk:blk,t:Date.now()});if(blk)busyDraw();else setTimeout(busyDraw,450);if(!BUSYTMR)BUSYTMR=setInterval(busyDraw,1000);return id}
@@ -471,11 +473,13 @@ var NEWTAB=false;
 function showTab(t){
   NEWTAB=(TAB!==t);TAB=t;RESFN=null;if(NEWTAB){if(t!=='photos')F.sample=null;F.q='';F.status='';F.chip=(t==='alerts')?'flagged':'all'}
   drawNav(t);
+  GRIDS=[];
   $('main').innerHTML='<div id="msg"></div>'+VIEWS[t]();
   if(secure()&&(t==='entry'||t==='locs'||t==='daily'||t==='breport'))startGeo();else stopGeo();
   if(t==='entry')refreshCentres();
   if(t==='entry'||t==='locs'||t==='daily'||t==='breport')geoUi();
   if(RESFN)drawRes();
+  addExportBar(t);
   window.scrollTo(0,0);
   softRefresh(t);
 }
@@ -735,7 +739,7 @@ function setRange(k){
   if(k==='7'){F.from=daysAgo(6);F.to=today()}else if(k==='30'){F.from=daysAgo(29);F.to=today()}else if(k==='m'){F.from=monthStart();F.to=today()}else{F.from='';F.to=''}
   $('f_from').value=F.from;$('f_to').value=F.to;drawRes();
 }
-function drawRes(){if(RESFN&&$('res'))$('res').innerHTML=RESFN();else if(TAB==='security')secDraw()}
+function drawRes(){GRIDS=[];if(RESFN&&$('res'))$('res').innerHTML=RESFN();else if(TAB==='security')secDraw()}
 function flagHtml(r){if(r.status==='Rejected')return '<span class="bad">NOT ACCEPTED</span><br>'+esc(r.remark);return r._f.length?'<span class="bad">FLAG</span><br>'+r._f.map(esc).join('<br>'):'<span class="ok">COMPLIANT</span>'}
 function photoCell(r){
   if(r.photoLinks.length)return r.photoLinks.map(function(u,i){return '<a href="'+esc(u)+'" target="_blank" rel="noopener">Photo '+(i+1)+'</a>'}).join(' ');
@@ -784,6 +788,7 @@ function COLS(keys){
 }
 function grid(cs,rows){
   if(!rows.length)return '<p class="note">No entries found.</p>';
+  GRIDS.push({cs:cs,rows:rows});
   var cap=300,shown=rows.slice(0,cap);
   var t='<div class="tbl-wrap scroll"><table class="tbl"><tr>'+cs.map(function(c){return '<th'+(c.a?' class="act"':'')+'>'+c.h+'</th>'}).join('')+'</tr>';
   shown.forEach(function(r){t+='<tr'+((r._f&&r._f.length)||(r._s&&r._s.length)?' class="flag"':'')+'>'+cs.map(function(c){return '<td'+(c.a?' class="act"':'')+'>'+c.f(r)+'</td>'}).join('')+'</tr>'});
@@ -888,7 +893,7 @@ function viewReport(){
     var tot='<tr class="tot"><td>TOTAL</td><td>'+t.centres+'</td><td>'+t.entries+'</td><td>'+t.cwsn+'</td><td>'+t.ses+'</td><td>'+t.hon+'</td><td>'+t.cont+'</td><td>'+t.total+'</td><td>'+t.fl+'</td></tr>';
     var head=['Block','Centres reported','Entries','CWSN','Sessions','Honorarium Rs.','Contingency Rs.','Total Rs.','Flagged'];
     var h='<div class="printonly"><img src="'+esc(CFG.logo||LOGO_DATA)+'" style="height:60px"><h2 style="text-align:center">Therapeutic Services for Children with Special Needs<br>District Progress Report - '+esc(CFG.district)+' District</h2><p>Period: '+esc(periodText())+' &nbsp; | &nbsp; Generated: '+today()+(F.block?' &nbsp; | &nbsp; Block: '+esc(F.block):'')+'</p></div>';
-    h+='<div class="noprint"><button class="btn g" onclick="exportXlsx()">Download Excel</button><button class="btn" onclick="window.print()">Print / Save as PDF</button><button class="btn o" onclick="copySummary()">Copy summary text</button></div>';
+    h+='<div class="noprint"><button class="btn g" onclick="exportXlsx()">Download Excel</button><button class="btn" onclick="printScreen()">Print / Save as PDF</button><button class="btn o" onclick="copySummary()">Copy summary text</button></div>';
     h+='<h3>A. Block-wise summary</h3>'+tbl(head,d.blocks.map(row).concat([tot]),[1,2,3,4,5,6,7,8]);
     h+='<h3>B. Service mode summary</h3>'+tbl(['Mode'].concat(head.slice(1)),d.modes.map(row),[1,2,3,4,5,6,7,8]);
     h+='<h3>C. Budget</h3><p>Expenditure in this period: <b>'+inr(t.total)+'</b>'+(bud?'. Overall expenditure to date: <b>'+inr(totals(d.all).total)+'</b> of sanctioned <b>'+inr(bud)+'</b>.':'.')+'</p>';
@@ -930,12 +935,12 @@ function viewSetup(){
      fld('Blocks (one per line)','<textarea id="s_blk" rows="7">'+esc(CFG.blocks.join('\n'))+'</textarea>','These are the rows of the Block tab in the Google Sheet. Saving here updates that tab.')+'<button class="btn g" onclick="saveSetup()">Save district settings</button>'+fld('Logo (Samagra Shiksha)','<input type="file" accept="image/*" onchange="setLogo(this)"> <button class="btn o sm" onclick="CFG.logo=\'\';saveCfg();drawHdr();showTab(\'setup\')">Remove logo</button>');
   h+='<h3>Centres ('+CFG.centres.length+')</h3><div class="info">Register every BRR, Day Care Centre and HBE cluster here. IE Officials pick from this list, and centres with no entry appear as zero-activity.</div>';
   h+='<div class="fgrid noprint"><div><label>Block</label><select id="c_b">'+opts(CFG.blocks,'','-- Block --')+'</select></div><div><label>Mode</label><select id="c_m">'+opts(MODES,'','-- Mode --')+'</select></div><div><label>Centre name</label><input type="text" id="c_n"></div><div><label>Code</label><input type="text" id="c_c"></div><div><label>IE Official mobile (optional)</label><input type="tel" id="c_ie" placeholder="10-digit, comma for more"></div></div><button class="btn" onclick="addCentre()">Add centre</button>';
-  h+='<div class="fld"><label class="t">Or import from Excel / CSV (columns: Block, Mode, Centre, Code, IE Mobile, Latitude, Longitude, Radius - the last four are optional)</label><input type="file" accept=".xlsx,.xls,.csv" onchange="importCentres(this)"></div>';
   h+=CFG.centres.length?tbl(['Block','Mode','Centre','Code','IE Official(s)','Location',''],CFG.centres.map(function(c,i){return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.code||'')+'</td><td>'+esc((c.assigned||[]).join(', ')||'-')+' <button class="btn sm" onclick="assignCentre('+i+')">Set</button></td><td>'+(c.lat?'Set':(c.mode.indexOf('Home')>-1?'n/a':'<span class="bad">Not set</span>'))+'</td><td><button class="btn o sm" onclick="delCentre('+i+')">Remove</button></td></tr>'})):'';
-  h+='<h3>Master data (blocks, centres, IE Officials, therapists)</h3><div class="info"><b>The master data lives in the Google Sheet</b>: the tabs <b>Block, Centre, IEOfficials, therapist</b> and <b>Settings</b>. Everything here is read from them and saved back to them. You can edit those tabs directly in Google Sheets (then tap <b>Reload from the Sheet</b>), or upload <b>CWSN_MONITORING_MASTER.xlsx</b> below: it is written into the same tabs, and a login is created for every IE Official (their mobile number).</div>'+(S.url?'<div class="fld"><input type="file" accept=".xlsx,.xls" onchange="importMaster(this)"></div><div class="fld"><button class="btn g" onclick="cfgReloadSheet()">Reload from the Sheet</button> <button class="btn" onclick="masterUsersFromSheet()">Create logins from the IEOfficials tab</button><div class="hint">Use these after you type changes directly in the Google Sheet. The app also picks up Sheet changes by itself within about a minute.</div></div>':'<p class="note">Connect the server to import the master workbook.</p>');
+  h+='<h3>Master data (blocks, centres, IE Officials, therapists)</h3><div class="info"><b>The master data lives in the Google Sheet</b>: the tabs <b>Block, Centre, IEOfficials, therapist</b> and <b>Settings</b>. Everything here is read from them and saved back to them. You can edit those tabs directly in Google Sheets (then tap <b>Reload from the Sheet</b>), or upload <b>CWSN_MONITORING_MASTER.xlsx</b> below: it is written into the same tabs, and a login is created for every IE Official (their mobile number).</div>'+(S.url?'<div class="fld"><b>Step 1.</b> <button class="btn sm" onclick="xlTemplateMaster()">Download blank format</button> <button class="btn sm" onclick="xlDownloadMaster()">Download current data</button><div class="hint">The format has instructions on its first sheet. "Current data" is the same format filled with what is in the Sheet now: edit it and upload it again.</div></div><div class="fld"><b>Step 2.</b> Choose your file (it is checked before anything is saved):<br><input type="file" accept=".xlsx,.xls" onchange="importMaster(this)"></div><div class="fld"><button class="btn g" onclick="cfgReloadSheet()">Reload from the Sheet</button> <button class="btn" onclick="masterUsersFromSheet()">Create logins from the IEOfficials tab</button><div class="hint">Use these after you type changes directly in the Google Sheet. The app also picks up Sheet changes by itself within about a minute.</div></div>':'<p class="note">Connect the server to import the master workbook.</p>');
+  h+='<h3>Logins in bulk (BEEO and IE Officials)</h3><div class="info">Create many logins at once from an Excel file with the columns Name, Mobile, Role (IE Official or BEEO), Block and Designation. A PIN is shown once for each new login.</div>'+(S.url?'<div class="fld"><button class="btn sm" onclick="loginTemplate()">Download blank format</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls" onchange="importLogins(this)"></div>':'<p class="note">Connect the server to create logins.</p>');
   var nl=SCH.filter(function(s){return s.lat!==''&&s.lat!=null}).length;
-  h+='<h3>Schools master (for school visits)</h3><div class="info">Upload the school list with latitude and longitude. IE Officials pick the school from this list, and school-visit photos must be taken within the radius below. Columns: Block (or Blk code), UDISE Code, School Name, Village, Latitude, Longitude, CWSN Count. <button class="btn sm" onclick="schoolTemplate()">Download blank template</button></div>';
-  h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(S.url?'<div class="fld"><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
+  h+='<h3>Schools master (for school visits)</h3><div class="info">Upload the school list with latitude and longitude. IE Officials pick the school from this list, and school-visit photos must be taken within the radius below. Columns: Block (or Blk code), UDISE Code, School Name, Village, Latitude, Longitude, CWSN Count.</div>';
+  h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(S.url?'<div class="fld"><button class="btn sm" onclick="schoolTemplate()">Download blank format</button> <button class="btn sm" onclick="schoolsCurrent()">Download current list</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
      fld('School photo geo-fence radius (metres)','<input type="number" id="s_srad" min="50" max="1000" value="'+(CFG.schoolRadius||200)+'">','School-visit photos must be taken within this distance of the school.')+
      '<label class="opt"><input type="checkbox" id="s_strict" '+(CFG.strictSchools?'checked':'')+'> Allow only schools from the master list (no typing a school name). Tick this once the school list is loaded.</label><br><button class="btn g" onclick="saveSetup()">Save settings</button>';
   if(!S.url){
@@ -1010,7 +1015,7 @@ function viewHelp(){
   h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> records daily activity, the monthly report and the Therapeutic Services daily reports for the centres of their block (maximum 3 days a week for a centre, one IE Official per centre per week).</li><li><b>BEEO:</b> approves or rejects the Daily Activity, Monthly Reports and Therapeutic Services entries of their block, then prepares the signed report for the District Office.</li><li><b>District Authority:</b> sees all blocks, manages users and phones, settings and the security log.</li></ul>';
   h+='<h3>Security you should know about</h3><ul><li>Your login is personal: your mobile number and your own 6-digit PIN. Never share the PIN.</li><li>Five wrong PINs lock the account for 15 minutes.</li><li>Your account works on your registered phone only. A new phone needs District Office approval.</li><li>Photos must be taken live in the app, at the school or centre.</li><li>Every login, upload and rejected attempt is recorded for the District Authority.</li></ul>';
   if(S.role!=='district')h+='<h3>Rules the app checks (Therapeutic Services)</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>A centre can report at most 3 days a week, one report per day, and only one IE Official can report a centre in a week (the server blocks the rest).</li><li>Day Care Centres should have at least 10 CWSN on the day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
-  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it is written into the Block, Centre, IEOfficials and therapist tabs of the Google Sheet and creates the IE Official logins), or edit those tabs in the Sheet and tap Reload from the Sheet and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
+  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it is written into the Block, Centre, IEOfficials and therapist tabs of the Google Sheet and creates the IE Official logins), or edit those tabs in the Sheet and tap Reload from the Sheet. Every upload has a blank format to download (with instructions), a Download current data button where it applies, and checks your file for mistakes before saving and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
   return h;
 }
 // ---------- GEO (live location) ----------
@@ -1119,7 +1124,7 @@ function secLoad(){
   var my=++SECLOAD;
   Promise.all([api('users'),api('audit'),refreshData()]).then(function(r){if(my!==SECLOAD)return;SEC.users=r[0].users;SEC.log=r[1].log;if(secDirty())return;secDraw()}).catch(function(e){var b=$('secbody');if(b&&!e.auth)b.innerHTML='<div class="err">'+esc(e.message||'Could not load')+'</div>'});
 }
-function secDraw(){var b=$('secbody');if(!b)return;b.innerHTML=SEC.tab==='users'?secUsers():(SEC.tab==='audit'?secAudit():secAlerts());if(SEC.tab==='audit')drawAudit()}
+function secDraw(){var b=$('secbody');if(!b)return;GRIDS=[];b.innerHTML=SEC.tab==='users'?secUsers():(SEC.tab==='audit'?secAudit():secAlerts());if(SEC.tab==='audit')drawAudit()}
 function secAlerts(){
   var now=Date.now(),day=86400000,recent=function(l,d){return now-new Date(l.time).getTime()<d},L=SEC.log,U=SEC.users;
   var failed=L.filter(function(l){return l.action==='login'&&l.result==='DENIED'&&recent(l,day)}).length;
@@ -1252,7 +1257,7 @@ function redrawAfterSync(t){
   if(TAB!==t)return;
   if(RESFN&&$('res')){drawRes();if($('ie_dash'))$('ie_dash').innerHTML=dashIE();return}
   if(t==='security'){if(SEC.tab==='alerts')drawRes();return}
-  if(t==='monthly'){var s=$('m_sum'),c=$('m_chal');if((s&&s.value)||(c&&c.value))return;$('main').innerHTML='<div id="msg"></div>'+VIEWS.monthly()}
+  if(t==='monthly'){var s=$('m_sum'),c=$('m_chal');if((s&&s.value)||(c&&c.value))return;$('main').innerHTML='<div id="msg"></div>'+VIEWS.monthly();addExportBar(t)}
 }
 // Screens open instantly from what is already on the phone. Only if that is older than 45 seconds is ONE quiet refresh done.
 function softRefresh(t){
@@ -1504,8 +1509,9 @@ function dBar(kind){
     h+='<div><label>Status</label><select onchange="D.status=this.value;drawRes()">'+opts(['Pending','Verified','Returned'],D.status,'Any status')+'</select></div>';
   }
   h+='</div><div style="margin-top:6px"><button class="btn sm" onclick="D.month=\'\';showTab(TAB)">All months</button>';
-  if(kind!=='dlog')h+=' <button class="btn g sm" onclick="exportDaily(\''+kind+'\')">Download Excel</button> <button class="btn sm" onclick="bulkVerify(\''+kind+'\')">Approve all clean</button>';
-  return h+' <button class="btn sm" onclick="window.print()">Print</button></div></div>';
+  h+=' <button class="btn g sm" onclick="exportDaily(\''+kind+'\')">Download Excel</button>';
+  if(kind!=='dlog')h+=' <button class="btn sm" onclick="bulkVerify(\''+kind+'\')">Approve all clean</button>';
+  return h+' <button class="btn sm" onclick="printScreen()">Print</button></div></div>';
 }
 function dDiscard(id){if(!confirm('Remove this rejected activity from your phone? You can enter it again correctly.'))return;DREC=DREC.filter(function(x){return x.id!==id});DOUT=DOUT.filter(function(x){return x!==id});idbDel(id);saveDrec();saveDout();banner();drawRes()}
 function setDSt(ids,st,noPrompt){
@@ -1570,7 +1576,7 @@ function mField(){
   h+='<h3>Day-wise activities</h3>'+grid(DCOLS(['date','type','what','purp','cw','hrs','st']),rows);
   h+=fld('Summary of the month - key work and achievements *',sub&&sub.status!=='Returned'?'<div class="card">'+esc(sub.summary)+'</div>':'<textarea id="m_sum" rows="4" maxlength="1500">'+esc(sub?sub.summary:'')+'</textarea>');
   h+=fld('Challenges / support needed',sub&&sub.status!=='Returned'?'<div class="card">'+esc(sub.challenges||'-')+'</div>':'<textarea id="m_chal" rows="3" maxlength="1500">'+esc(sub?sub.challenges:'')+'</textarea>');
-  h+='<div class="fld noprint">'+(why?'<div class="warn">'+esc(why)+'</div>':'')+'<button class="btn g big" '+(why?'disabled':'')+' onclick="submitMonthly()">Submit monthly report</button> <button class="btn" onclick="window.print()">Print</button></div>';
+  h+='<div class="fld noprint">'+(why?'<div class="warn">'+esc(why)+'</div>':'')+'<button class="btn g big" '+(why?'disabled':'')+' onclick="submitMonthly()">Submit monthly report</button> <button class="btn" onclick="printScreen()">Print</button></div>';
   h+='<div class="printonly"><br><br><table style="width:100%"><tr><td>Signature of IE Official</td><td style="text-align:right">Signature of BEEO</td></tr></table></div>';
   return h;
 }
@@ -1599,7 +1605,7 @@ function mReview(){
   var m=M.month,rows=mRows(),title=isAdmin()?'Monthly Reports - District consolidation':'Monthly Reports - '+S.block+' Block';
   var h=mHeadPrint('Monthly Activity Consolidation - IE Officials',monthName(m)+' - '+(isAdmin()?CFG.district+' District':S.block+' Block'));
   h+='<h2 class="noprint">'+esc(title)+'</h2><p class="note noprint">Each IE Official consolidates the month; you approve or return it. The district total counts submitted and approved reports.</p>';
-  h+='<div class="filters noprint"><div class="fgrid"><div><label>Month</label><input type="month" max="'+curMonth()+'" value="'+esc(m)+'" onchange="M.month=this.value||defMonth();showTab(TAB)"></div>'+(!S.block?'<div><label>Block</label><select onchange="D.block=this.value;showTab(TAB)">'+opts(CFG.blocks,D.block,'All blocks')+'</select></div>':'')+'</div><div style="margin-top:6px"><button class="btn g sm" onclick="exportMonthly()">Download Excel</button> <button class="btn sm" onclick="window.print()">Print</button></div></div>';
+  h+='<div class="filters noprint"><div class="fgrid"><div><label>Month</label><input type="month" max="'+curMonth()+'" value="'+esc(m)+'" onchange="M.month=this.value||defMonth();showTab(TAB)"></div>'+(!S.block?'<div><label>Block</label><select onchange="D.block=this.value;showTab(TAB)">'+opts(CFG.blocks,D.block,'All blocks')+'</select></div>':'')+'</div><div style="margin-top:6px"><button class="btn g sm" onclick="exportMonthly()">Download Excel</button> <button class="btn sm" onclick="printScreen()">Print</button></div></div>';
   var tot={activeDays:0,schoolVisits:0,uniqueSchools:0,homeVisits:0,uniqueChildren:0,centreDays:0,otherActivities:0,totalHours:0,cwsnCovered:0,flaggedLogs:0},nsub=0,body=[],blkT={};
   rows.forEach(function(x){
     var s=x.sub,st=s?s.status:'Not submitted',b='';
@@ -1662,6 +1668,9 @@ function importMaster(inp){
     var wb=XLSX.read(rd.result,{type:'array'}),warn=[];
     var bR=sheetRows(wb,'block'),cR=sheetRows(wb,'centre'),iR=sheetRows(wb,'ieofficials'),tR=sheetRows(wb,'therapist');
     if(!cR.length)return alert('The sheet "Centre" was not found or is empty. This does not look like the master workbook.');
+    var pr=masterProblems(bR,cR,iR,tR);
+    if(pr.errors.length)return alert('The file cannot be uploaded yet. Please correct these and upload again:\n\n- '+pr.errors.slice(0,15).join('\n- ')+(pr.errors.length>15?'\n... and '+(pr.errors.length-15)+' more':''));
+    pr.warnings.forEach(function(w){warn.push(w)});
     var byCode={},blocks=[],codes={};
     bR.forEach(function(r){var n=tc(gv(r,['blkname','blockname']));if(n){byCode[String(gv(r,['blkcode','blockcode']))]=n;if(blocks.indexOf(n)<0)blocks.push(n);codes[n]=String(gv(r,['blkcode','blockcode']))}});
     var bn=function(r){var n=tc(gv(r,['blkname','blockname']));if(!n)n=byCode[String(gv(r,['blkcode','blockcode']))]||'';if(n&&blocks.indexOf(n)<0){blocks.push(n)}return n};
@@ -1889,7 +1898,7 @@ function repDocHtml(rep,en,integrity){
 }
 function showRepDoc(rep,en,integrity){
   var ov=$('repov');if(!ov){ov=document.createElement('div');ov.id='repov';document.body.appendChild(ov)}
-  ov.innerHTML='<div class="noprint" style="margin-bottom:8px"><button class="btn g" onclick="window.print()">Print / Save as PDF</button> <button class="btn o" onclick="repDocClose()">Close</button> <span class="note">'+(S.role==='block'?'Print it, sign inside the box, scan or photograph it, then upload the signed copy.':'')+'</span></div>'+repDocHtml(rep,en,integrity);
+  ov.innerHTML='<div class="noprint" style="margin-bottom:8px"><button class="btn g" onclick="printScreen()">Print / Save as PDF</button> <button class="btn o" onclick="repDocClose()">Close</button> <span class="note">'+(S.role==='block'?'Print it, sign inside the box, scan or photograph it, then upload the signed copy.':'')+'</span></div>'+repDocHtml(rep,en,integrity);
   document.body.classList.add('docmode');window.scrollTo(0,0);
 }
 function repDocClose(){document.body.classList.remove('docmode');var ov=$('repov');if(ov)ov.innerHTML='';drawRes()}
@@ -2003,6 +2012,248 @@ function repStat(){
   var n=function(s){return REPS.filter(function(r){return r.status===s}).length};
   if(S.role==='district')return stat('Block reports to verify',n('Uploaded')+n('Failed'),'verified, waiting approval: '+n('Verified')+' - approved: '+n('Approved'),n('Uploaded')>0);
   return stat('Reports for signature',REPS.filter(function(r){return r.status!=='Cancelled'}).length,'approved by District: '+n('Approved')+' - in progress: '+(n('Issued')+n('Uploaded')+n('Verified')+n('Failed')+n('Rejected')));
+}
+// ============ EXCEL FORMATS, BULK UPLOAD CHECKS, EXPORT AND PRINT ============
+var GRIDS=[];
+function textOf(html){var d=document.createElement('div');d.innerHTML=String(html==null?'':html).replace(/<br\s*\/?>/gi,'\n');return d.textContent.replace(/\u00a0/g,' ').trim()}
+function xlOk(){if(typeof XLSX==='undefined'){alert('The Excel library could not load. Connect to the internet and reload the page.');return false}return true}
+function dstamp(){var d=new Date();return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())}
+function xlSheetName(s){return String(s||'Sheet').replace(/[\[\]:*?\/\\]/g,' ').trim().slice(0,31)||'Sheet'}
+function instrSheet(lines){
+  var ws=XLSX.utils.aoa_to_sheet(lines.map(function(l){return [l]}));
+  ws['!cols']=[{wch:120}];return ws;
+}
+function addAoa(wb,name,aoa,widths){
+  var ws=XLSX.utils.aoa_to_sheet(aoa);
+  if(widths)ws['!cols']=widths.map(function(w){return {wch:w}});
+  XLSX.utils.book_append_sheet(wb,ws,name);
+}
+
+// ---------- MASTER DATA: blank format and current data ----------
+var MASTER_HELP=[
+  'MASTER DATA FORMAT - how to use',
+  '',
+  '1. Keep the four sheets Block, Centre, IEOfficials and therapist, and keep the heading row (row 1) exactly as it is.',
+  '2. Delete the SAMPLE rows and type your own rows under the headings. You can add as many rows as you need (hundreds are fine).',
+  '3. Block: Blk code (a number) and Blk Name. Every block used in the other sheets must be listed here.',
+  '4. Centre: Centre Code must be different for every centre. Mode must be BRR (Block Resource Room), DCC (Day Care Centre) or HBE (Home-Based Education). Lat and Long (for example 26.7509 and 94.2037) are optional: you can also set them later at the centre with the phone.',
+  '5. IEOfficials: one row for each IE Official at each centre. PhoneNo must be a 10-digit mobile number starting with 6, 7, 8 or 9: it is the login ID. status: Active or Inactive.',
+  '6. therapist: the outside therapists / specialists of each centre. AssigendCentreCode must match a Centre Code. Status: Active or Inactive.',
+  '7. Save the file, then upload it in Centres & Settings > Master data. It is written into the same tabs of the Google Sheet and a login is created for every IE Official.',
+  '',
+  'Tip: tap "Download current data" in Centres & Settings to get this format filled with what is in the Sheet now. Edit it and upload it again.'
+];
+function xlTemplateMaster(){
+  if(!xlOk())return;
+  var wb=XLSX.utils.book_new(),SM='SAMPLE - delete this row';
+  XLSX.utils.book_append_sheet(wb,instrSheet(MASTER_HELP),'Instructions');
+  addAoa(wb,'Block',[['Blk code','Blk Name'],[181701,'Block name - '+SM],[181702,'Another block - '+SM]],[12,32]);
+  addAoa(wb,'Centre',[['Blk code','Blk Name','Centre Code','Centre Name','Mode','Lat','Long'],[181701,'Block name - '+SM,18170101,'Block Resource Room - '+SM,'BRR',26.7509,94.2037],[181701,'Block name - '+SM,18170102,'Day Care Centre - '+SM,'DCC','',''],[181702,'Another block - '+SM,18170201,'Home Based Education - '+SM,'HBE','','']],[12,28,14,40,8,10,10]);
+  addAoa(wb,'IEOfficials',[['Blk code','Blk Name','Centre Code','Centre Name','NameIEOfficial','Designation','PhoneNo','status'],[181701,'Block name - '+SM,18170101,'Block Resource Room - '+SM,'Name of IE Official - '+SM,'RP-IE','9000000001','Active']],[12,28,14,40,28,18,14,10]);
+  addAoa(wb,'therapist',[['Blk code','Blk Name','NameTh','Qualification','Domain','Mobile','AssigendCentreCode','AssigendCentreName','Status'],[181701,'Block name - '+SM,'Therapist name - '+SM,'BASLP','Speech & Communication','9000000002',18170102,'Day Care Centre - '+SM,'Active']],[12,28,28,18,32,14,20,40,10]);
+  XLSX.writeFile(wb,'Master_Data_Format.xlsx');
+}
+function xlDownloadMaster(){
+  if(!xlOk())return;
+  api('masterDump').then(function(j){
+    var wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,instrSheet(MASTER_HELP),'Instructions');
+    ['Block','Centre','IEOfficials','therapist'].forEach(function(n){addAoa(wb,n,j.tabs[n]||[[]])});
+    XLSX.writeFile(wb,'Master_Data_current_'+dstamp()+'.xlsx');
+  }).catch(function(e){flash(e.message,'err')});
+}
+
+// ---------- SCHOOLS: blank format and current list ----------
+var SCHOOL_HELP=[
+  'SCHOOL LIST FORMAT - how to use',
+  '',
+  '1. Keep the sheet named School and the heading row (row 1) exactly as it is.',
+  '2. Delete the SAMPLE row and type one row for each school. Thousands of rows are fine.',
+  '3. Blk Name must be one of your blocks (as in the Block sheet of the master data). Blk code can be used instead of the name.',
+  '4. UDISE Code must be different for every school.',
+  '5. Latitude and Longitude (for example 26.7509 and 94.2037): school-visit photos are checked against this point. Without it the school is accepted but every visit is flagged.',
+  '6. CWSN Count is optional (the number of CWSN in the school).',
+  '7. Save the file and upload it in Centres & Settings > Schools master. Uploading REPLACES the whole list, so include every school.',
+  '',
+  'Tip: tap "Download current list" to get this format filled with the schools loaded now.'
+];
+function schoolTemplate(){
+  if(!xlOk())return;
+  var wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,instrSheet(SCHOOL_HELP),'Instructions');
+  addAoa(wb,'School',[['Blk code','Blk Name','UDISE Code','School Name','Village / Cluster','Latitude','Longitude','CWSN Count'],[181703,'Block name - SAMPLE - delete this row','18170300000','Sample School - SAMPLE - delete this row','Sample Village',26.7509,94.2037,3]],[10,28,16,40,22,11,11,11]);
+  XLSX.writeFile(wb,'School_List_Format.xlsx');
+}
+function schoolsCurrent(){
+  if(!xlOk())return;
+  if(!SCH.length)return alert('No schools are loaded yet. Download the blank format instead.');
+  var cod=CFG.blockCodes||{},wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,instrSheet(SCHOOL_HELP),'Instructions');
+  addAoa(wb,'School',[['Blk code','Blk Name','UDISE Code','School Name','Village / Cluster','Latitude','Longitude','CWSN Count']].concat(SCH.map(function(s){return [cod[s.block]||'',s.block,s.udise,s.name,s.village||'',s.lat===''||s.lat==null?'':s.lat,s.lng===''||s.lng==null?'':s.lng,s.cwsn||0]})),[10,28,16,40,22,11,11,11]);
+  XLSX.writeFile(wb,'School_List_current_'+dstamp()+'.xlsx');
+}
+
+// ---------- LOGINS IN BULK (BEEO and IE Officials) ----------
+var LOGIN_HELP=[
+  'LOGINS FORMAT - how to use',
+  '',
+  '1. Keep the sheet named Logins and the heading row (row 1) exactly as it is.',
+  '2. Delete the SAMPLE rows and type one row for each person who needs a login.',
+  '3. Mobile: 10 digits starting with 6, 7, 8 or 9. It is the login ID.',
+  '4. Role: IE Official or BEEO.',
+  '5. Block: must be one of your blocks (as in the Block sheet of the master data).',
+  '6. Designation is optional (for example RP-IE, ARP-IE, Special Educator).',
+  '7. Upload it in Centres & Settings > Logins in bulk. A PIN is shown ONCE for every new login: write it down and give it to the person privately.',
+  '8. A mobile number that already has a login is updated (name, role, block) and gets no new PIN.',
+  '',
+  'Note: IE Officials in the master data (IEOfficials sheet) get their logins when you upload that file. Use this format for BEEOs and for extra people.'
+];
+function loginTemplate(){
+  if(!xlOk())return;
+  var wb=XLSX.utils.book_new(),b=(CFG.blocks&&CFG.blocks[0])||'Block name';
+  XLSX.utils.book_append_sheet(wb,instrSheet(LOGIN_HELP),'Instructions');
+  addAoa(wb,'Logins',[['Name','Mobile','Role','Block','Designation'],['Name of BEEO - SAMPLE - delete this row','9000000003','BEEO',b,''],['Name of IE Official - SAMPLE - delete this row','9000000004','IE Official',b,'RP-IE']],[40,14,14,22,20]);
+  XLSX.writeFile(wb,'Logins_Format.xlsx');
+}
+function importLogins(inp){
+  var f=inp.files[0];if(!f)return;inp.value='';
+  if(!xlOk())return;
+  var rd=new FileReader();
+  rd.onload=function(){try{
+    var wb=XLSX.read(rd.result,{type:'array'}),nm=null;
+    wb.SheetNames.forEach(function(s){if(!nm&&nk(s)==='logins')nm=s});
+    if(!nm)wb.SheetNames.forEach(function(s){if(!nm&&nk(s)!=='instructions')nm=s});
+    var rows=XLSX.utils.sheet_to_json(wb.Sheets[nm],{defval:''}),items=[],er=[],seen={},nb=0,ni=0,blocks={};
+    (CFG.blocks||[]).forEach(function(b){blocks[nk(b)]=b});
+    if(!rows.length)return alert('The sheet "'+nm+'" has no rows. Use the Logins format.');
+    var keys=Object.keys(rows[0]).map(nk);
+    if(keys.indexOf('mobile')<0||keys.indexOf('name')<0)return alert('The heading row must have the columns Name, Mobile, Role, Block (see the Logins format).');
+    rows.forEach(function(r,i){
+      var n=i+2,all=JSON.stringify(r),blank=true;
+      for(var kk in r){if(String(r[kk]).trim()!=='')blank=false}
+      if(blank)return;
+      var name=String(gv(r,['name'])).trim(),mob=String(gv(r,['mobile','phone'])).replace(/\D/g,'').slice(-10),role=String(gv(r,['role'])).trim(),blk=String(gv(r,['block','blkname'])).trim();
+      if(!name&&!mob&&!role&&!blk)return;
+      if(all.toLowerCase().indexOf('delete this row')>-1){er.push('Row '+n+': this is still a SAMPLE row. Delete it.');return}
+      if(!name){er.push('Row '+n+': Name is missing.');return}
+      if(!/^[6-9][0-9]{9}$/.test(mob)){er.push('Row '+n+' ('+name+'): Mobile must be 10 digits starting with 6-9.');return}
+      if(seen[mob]){er.push('Row '+n+' ('+name+'): mobile '+mob+' is used twice in this file.');return}
+      var rl=/beeo|block/i.test(role)?'block':(/ie|field|official|rp|arp|aarp|special/i.test(role)?'field':'');
+      if(!rl){er.push('Row '+n+' ('+name+'): Role must be "IE Official" or "BEEO".');return}
+      var b=blocks[nk(blk)];
+      if(!b){er.push('Row '+n+' ('+name+'): Block "'+blk+'" is not in the block list.');return}
+      seen[mob]=1;if(rl==='block')nb++;else ni++;
+      items.push({name:name,mobile:mob,role:rl,block:b,designation:String(gv(r,['designation'])).trim()});
+    });
+    if(!items.length)return alert('No usable rows.\n\n'+er.slice(0,12).join('\n'));
+    var msg='Create '+items.length+' login(s)?\n\nIE Officials: '+ni+'\nBEEOs: '+nb+'\n\nA mobile number that already has a login is updated and gets no new PIN. New logins get a PIN, shown once.'+(er.length?'\n\n'+er.length+' row(s) will be SKIPPED:\n- '+er.slice(0,10).join('\n- ')+(er.length>10?'\n... and '+(er.length-10)+' more':''):'');
+    if(!confirm(msg))return;
+    api('userSave',{items:items}).then(function(j){
+      var made=j.results.filter(function(x){return x.pin}),bad=j.results.filter(function(x){return x.error});
+      SEC.pins=(SEC.pins||[]).concat(made);SEC.tab='users';showTab('security');
+      flash(made.length+' new login(s) created, '+j.results.filter(function(x){return x.updated}).length+' updated.'+(bad.length?' Not saved: '+bad.map(function(e){return (e.name||e.id)+' ('+e.error+')'}).join('; '):''),bad.length?'err':undefined);
+    }).catch(function(e){flash(e.message,'err')});
+  }catch(e){alert('Could not read this file: '+e.message)}};
+  rd.readAsArrayBuffer(f);
+}
+
+// ---------- problems found BEFORE a master upload (row numbers refer to the Excel rows) ----------
+function masterProblems(bR,cR,iR,tR){
+  var er=[],wr=[],has=function(rows,alts){if(!rows.length)return true;var ks=Object.keys(rows[0]).map(nk);return alts.some(function(a){return ks.some(function(k){return k===a||k.indexOf(a)===0})})};
+  var smp=function(rows,label){rows.forEach(function(r,i){if(JSON.stringify(r).toLowerCase().indexOf('delete this row')>-1)er.push(label+' row '+(i+2)+' is still a SAMPLE row from the format. Delete it.')})};
+  if(!has(bR,['blkname','blockname']))er.push('Block sheet: the column "Blk Name" is missing in the heading row.');
+  if(!has(cR,['centrename']))er.push('Centre sheet: the column "Centre Name" is missing in the heading row.');
+  if(!has(cR,['mode']))er.push('Centre sheet: the column "Mode" is missing in the heading row.');
+  if(!has(cR,['centrecode']))er.push('Centre sheet: the column "Centre Code" is missing in the heading row.');
+  if(!has(cR,['blkname','blockname','blkcode','blockcode']))er.push('Centre sheet: the column "Blk Name" is missing in the heading row.');
+  if(!has(iR,['phoneno','phone','mobile']))er.push('IEOfficials sheet: the column "PhoneNo" is missing in the heading row.');
+  if(!has(iR,['centrecode']))er.push('IEOfficials sheet: the column "Centre Code" is missing in the heading row.');
+  if(!has(tR,['nameth','name']))er.push('therapist sheet: the column "NameTh" is missing in the heading row.');
+  smp(bR,'Block sheet');smp(cR,'Centre sheet');smp(iR,'IEOfficials sheet');smp(tR,'therapist sheet');
+  var codes={},bnames={},bcodes={};
+  bR.forEach(function(r){var n=tc(gv(r,['blkname','blockname']));if(n)bnames[nk(n)]=1;var c=String(gv(r,['blkcode','blockcode'])).trim();if(c)bcodes[c]=1});
+  cR.forEach(function(r,i){
+    var n=i+2,cc=String(gv(r,['centrecode'])).trim(),nm=String(gv(r,['centrename'])).trim(),md=String(gv(r,['mode'])).trim();
+    if(!nm){er.push('Centre sheet row '+n+': Centre Name is missing.');return}
+    if(!cc)er.push('Centre sheet row '+n+' ('+nm+'): Centre Code is missing.');
+    else if(codes[cc])er.push('Centre sheet row '+n+' ('+nm+'): Centre Code '+cc+' is already used in row '+codes[cc]+'.');
+    else codes[cc]=n;
+    if(!/brr|resource|dcc|day|hbe|home/i.test(md))er.push('Centre sheet row '+n+' ('+nm+'): Mode "'+md+'" must be BRR, DCC or HBE.');
+    var bn=tc(gv(r,['blkname','blockname'])),bc=String(gv(r,['blkcode','blockcode'])).trim();
+    if(bR.length&&((bn&&!bnames[nk(bn)])||(!bn&&bc&&!bcodes[bc])))wr.push('Centre sheet row '+n+' ('+nm+'): the block "'+(bn||bc)+'" is not in the Block sheet. It will be added.');
+    var la=String(gv(r,['lat','latitude'])).trim(),lo=String(gv(r,['long','lng','longitude'])).trim();
+    if(la||lo){var a=parseFloat(la),b=parseFloat(lo);if(!isFinite(a)||!isFinite(b))wr.push('Centre sheet row '+n+' ('+nm+'): Lat / Long are not numbers.');else if(a<6||a>38||b<68||b>98)wr.push('Centre sheet row '+n+' ('+nm+'): Lat / Long ('+a+', '+b+') are outside India.')}
+  });
+  iR.forEach(function(r,i){
+    var n=i+2,ph=String(gv(r,['phoneno','phone','mobile'])).replace(/\D/g,'').slice(-10),nm=String(gv(r,['nameieofficial','name'])).trim(),cc=String(gv(r,['centrecode'])).trim();
+    if(!isActiveTxt(gv(r,['status'])))return;
+    if(!/^[6-9][0-9]{9}$/.test(ph))wr.push('IEOfficials sheet row '+n+' ('+(nm||'no name')+'): PhoneNo is not a valid 10-digit mobile. This person gets no login.');
+    else if(!nm)wr.push('IEOfficials sheet row '+n+': NameIEOfficial is missing. This person gets no login.');
+    if(cc&&!codes[cc])wr.push('IEOfficials sheet row '+n+' ('+nm+'): Centre Code '+cc+' is not in the Centre sheet.');
+  });
+  tR.forEach(function(r,i){
+    var n=i+2,cc=String(gv(r,['assigendcentrecode','assignedcentrecode','centrecode'])).trim();
+    if(isActiveTxt(gv(r,['status']))&&cc&&!codes[cc])wr.push('therapist sheet row '+n+': Centre Code '+cc+' is not in the Centre sheet.');
+  });
+  return {errors:er,warnings:wr};
+}
+function isActiveTxt(v){var s=String(v||'Active').toLowerCase();return s.indexOf('active')>-1&&s.indexOf('inactive')<0}
+
+// ---------- EXCEL and PRINT for every screen ----------
+function screenTitle(){
+  var h=[].slice.call(document.querySelectorAll('#main h2')).filter(function(x){return !x.closest('.printonly')})[0];
+  return h?textOf(h.innerHTML):'IE Monitoring System';
+}
+function numify(v){return /^-?\d{1,9}(\.\d+)?$/.test(v)?Number(v):v}
+function exportScreen(){
+  if(!xlOk())return;
+  var wb=XLSX.utils.book_new(),title=screenTitle(),used={};
+  var uniq=function(n){n=xlSheetName(n);var b=n,k=2;while(used[n.toLowerCase()]){n=xlSheetName(b.slice(0,28)+' '+k++)}used[n.toLowerCase()]=1;return n};
+  var head=[[title],['Printed '+ist(new Date().toISOString())+' by '+(S.name||roleName(S.role))],[]];
+  var st=[].slice.call(document.querySelectorAll('#main .stat')).map(function(e){var q=function(c){var x=e.querySelector(c);return x?textOf(x.innerHTML):''};return [q('.lb'),numify(q('.n')),q('.nt')]});
+  if(st.length)addAoa(wb,uniq('Summary'),head.concat([['Item','Value','Note']],st),[40,16,50]);
+  GRIDS.forEach(function(g,i){
+    var cols=g.cs.filter(function(c){return !c.a}),aoa=[cols.map(function(c){return textOf(c.h)})];
+    g.rows.forEach(function(r){aoa.push(cols.map(function(c){var v='';try{v=textOf(c.f(r))}catch(e){}return numify(v)}))});
+    addAoa(wb,uniq(GRIDS.length===1?title:'Table '+(i+1)),aoa);
+  });
+  [].slice.call(document.querySelectorAll('#main div.scroll:not(.tbl-wrap) table.tbl')).forEach(function(t,i){
+    if(t.closest('.printonly'))return;
+    var c=t.cloneNode(true);[].slice.call(c.querySelectorAll('.noprint,.act,button')).forEach(function(x){x.remove()});
+    var prev=t.parentNode.previousElementSibling,nm=prev&&/^H[2-4]$/.test(prev.tagName)?textOf(prev.innerHTML):'Table '+(i+1);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.table_to_sheet(c,{raw:true}),uniq(nm));
+  });
+  if(!wb.SheetNames.length)return alert('There is nothing to put in Excel on this screen.');
+  XLSX.writeFile(wb,xlSheetName(title).replace(/\s+/g,'_')+'_'+dstamp()+'.xlsx');
+}
+function filterSummary(){
+  var out=[];
+  [].slice.call(document.querySelectorAll('#main .filters .fgrid > div')).forEach(function(d){
+    var l=d.querySelector('label'),c=d.querySelector('select,input');if(!l||!c)return;
+    var v=c.tagName==='SELECT'?(c.options[c.selectedIndex]?c.options[c.selectedIndex].text:''):c.value;
+    if(v&&!/^(All|Any)/i.test(v))out.push(textOf(l.innerHTML)+': '+v);
+  });
+  var q=document.querySelector('#main .filters input[type=text]');if(q&&q.value)out.push('Search: '+q.value);
+  return out.join(' | ');
+}
+function fillPrintHead(){
+  var ph=$('phead');if(!ph)return;
+  var own=document.querySelector('#main .printonly')||document.body.classList.contains('docmode');
+  var maxc=0;[].slice.call(document.querySelectorAll('#main table.tbl')).forEach(function(t){var n=t.rows[0]?t.rows[0].cells.length:0;if(n>maxc)maxc=n});
+  var pg=$('pgsz');if(pg)pg.textContent='@page{size:A4 '+(!document.body.classList.contains('docmode')&&maxc>6?'landscape':'portrait')+';margin:10mm}';
+  if(own||!S.role){ph.innerHTML='';return}
+  var fs=filterSummary();
+  ph.innerHTML='<div style="display:flex;align-items:center;gap:10px;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px"><img src="'+esc(CFG.logo||LOGO_DATA)+'" style="height:46px"><div><b>'+esc(CFG.district)+' District - IE Monitoring System (Xomonnoy-Dristi)</b><br>Office of the District Mission Coordinator, Samagra Shiksha</div></div><h3 style="margin:4px 0">'+esc(screenTitle())+'</h3><div style="font-size:10px;margin-bottom:6px">Printed on '+esc(ist(new Date().toISOString()))+' by '+esc(S.name||roleName(S.role))+' ('+esc(roleName(S.role))+(S.block?', '+esc(S.block)+' Block':'')+')'+(fs?'<br>Filters: '+esc(fs):'')+'</div>';
+}
+window.addEventListener('beforeprint',fillPrintHead);
+function printScreen(){fillPrintHead();window.print()}
+var EXPORT_TABS={dash:1,grid:1,alerts:1,photos:1,review:1,mine:1,breport:1,rverify:1,security:1,setup:1,locs:1,help:0};
+function addExportBar(t){
+  var old=$('expbar');if(old)old.parentNode.removeChild(old);
+  var ex=EXPORT_TABS[t];
+  if(ex===undefined){if(t==='monthly'&&S.role==='field')ex=1;else return}
+  var h2=document.querySelector('#main h2');if(!h2||h2.closest('.printonly'))return;
+  h2.insertAdjacentHTML('afterend','<div id="expbar" class="noprint" style="margin:4px 0 8px 0">'+(ex?'<button class="btn g sm" onclick="exportScreen()">Download Excel</button> ':'')+'<button class="btn sm" onclick="printScreen()">Print / Save as PDF</button></div>');
 }
 // ---------- INIT ----------
 (function(){
