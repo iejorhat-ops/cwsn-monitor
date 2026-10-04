@@ -495,6 +495,7 @@ function showTab(t){
   if(t==='entry'||t==='locs'||t==='daily'||t==='breport')geoUi();
   if(RESFN)drawRes();
   addExportBar(t);
+  if(t==='setup')setupLoginCheck();
   window.scrollTo(0,0);
   softRefresh(t);
 }
@@ -950,7 +951,8 @@ function viewSetup(){
      fld('Blocks (one per line)','<textarea id="s_blk" rows="7">'+esc(CFG.blocks.join('\n'))+'</textarea>','These are the rows of the Block tab in the Google Sheet. Saving here updates that tab.')+'<button class="btn g" onclick="saveSetup()">Save district settings</button>';
   h+='<h3>Centres ('+CFG.centres.length+')</h3><div class="info">Register every Resource Cum Day Care Centre (RCDC) and Home-Based Education (HBE) cluster here. IE Officials pick from this list, and centres with no entry appear as zero-activity.</div>';
   h+='<div class="fgrid noprint"><div><label>Block</label><select id="c_b">'+opts(CFG.blocks,'','-- Block --')+'</select></div><div><label>Mode</label><select id="c_m">'+opts(MODES,'','-- Mode --')+'</select></div><div><label>Centre name</label><input type="text" id="c_n"></div><div><label>Code</label><input type="text" id="c_c"></div><div><label>IE Official mobile (optional)</label><input type="tel" id="c_ie" placeholder="10-digit, comma for more"></div></div><button class="btn" onclick="addCentre()">Add centre</button>';
-  h+=CFG.centres.length?tbl(['Block','Mode','Centre','Code','IE Official(s)','Location',''],CFG.centres.map(function(c,i){return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.code||'')+'</td><td>'+esc((c.assigned||[]).join(', ')||'-')+' <button class="btn sm" onclick="assignCentre('+i+')">Set</button></td><td>'+(c.lat?'Set':(c.mode.indexOf('Home')>-1?'n/a':'<span class="bad">Not set</span>'))+'</td><td><button class="btn o sm" onclick="delCentre('+i+')">Remove</button></td></tr>'})):'';
+  h+='<div id="loginwarn"></div>';
+  h+=CFG.centres.length?tbl(['Block','Mode','Centre','Code','IE Official(s)','Location',''],CFG.centres.map(function(c,i){return '<tr><td>'+esc(c.block)+'</td><td>'+modeShort(c.mode)+'</td><td>'+esc(c.name)+'</td><td>'+esc(c.code||'')+'</td><td>'+phonesHtml(c.assigned)+' <button class="btn sm" onclick="assignCentre('+i+')">Set</button></td><td>'+(c.lat?'Set':(c.mode.indexOf('Home')>-1?'n/a':'<span class="bad">Not set</span>'))+'</td><td><button class="btn o sm" onclick="delCentre('+i+')">Remove</button></td></tr>'})):'';
   h+='<h3>Master data (blocks, centres, IE Officials, therapists)</h3><div class="info"><b>The master data lives in the Google Sheet</b>: the tabs <b>Block, Centre, IEOfficials, therapist</b> and <b>Settings</b>. Everything here is read from them and saved back to them. You can edit those tabs directly in Google Sheets (then tap <b>Reload from the Sheet</b>), or upload <b>CWSN_MONITORING_MASTER.xlsx</b> below: it is written into the same tabs, and a login is created for every IE Official (their mobile number).</div>'+(S.url?'<div class="fld"><b>Step 1.</b> <button class="btn sm" onclick="xlTemplateMaster()">Download blank format</button> <button class="btn sm" onclick="xlDownloadMaster()">Download current data</button><div class="hint">The format has instructions on its first sheet. "Current data" is the same format filled with what is in the Sheet now: edit it and upload it again.</div></div><div class="fld"><b>Step 2.</b> Choose your file (it is checked before anything is saved):<br><input type="file" accept=".xlsx,.xls" onchange="importMaster(this)"></div><div class="fld"><button class="btn g" onclick="cfgReloadSheet()">Reload from the Sheet</button> <button class="btn" onclick="masterUsersFromSheet()">Create logins from the IEOfficials tab</button> <button class="btn" onclick="sheetTidy()">Tidy the Google Sheet</button><div class="hint">Use these after you type changes directly in the Google Sheet. The app also picks up Sheet changes by itself within about a minute. <b>Tidy the Google Sheet</b> updates old Mode letters to RCDC / HBE, adds drop-down lists, colours and orders the tabs, adds a README tab and hides the old Config tab. Nothing is deleted and it is safe to repeat.</div></div>':'<p class="note">Connect the server to import the master workbook.</p>');
   h+='<h3>Logins in bulk (BEEO and IE Officials)</h3><div class="info">Create many logins at once from an Excel file with the columns Name, Mobile, Role (IE Official or BEEO), Block and Designation. A PIN is shown once for each new login.</div>'+(S.url?'<div class="fld"><button class="btn sm" onclick="loginTemplate()">Download blank format</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls" onchange="importLogins(this)"></div>':'<p class="note">Connect the server to create logins.</p>');
   var nl=SCH.filter(function(s){return s.lat!==''&&s.lat!=null}).length;
@@ -2292,7 +2294,7 @@ function addExportBar(t){
 function addPins(list,title){
   list=(list||[]).filter(function(p){return p&&p.pin});
   if(!list.length)return;
-  SEC.pins=(SEC.pins||[]).concat(list);
+  SEC.pins=(SEC.pins||[]).concat(list);SEC.usersT=0;
   pinModal(list,title);
 }
 function pinModal(list,title){
@@ -2318,6 +2320,29 @@ function sheetTidy(){
     alert('The Google Sheet is tidy:\n\n- '+j.done.join('\n- '));
     return cfgReloadSheet();
   }).catch(function(e){flash(e.message,'err')});
+}
+
+// ---------- which IE Official phone numbers have a login? (a number in the Sheet is NOT a login until it is created) ----------
+function phonesHtml(a){
+  a=a||[];if(!a.length)return '-';
+  return a.map(function(p){return '<span class="phn" data-ph="'+esc(p)+'">'+esc(p)+'</span>'}).join(', ');
+}
+function markLogins(){
+  if(!S.url||!SEC.users||!SEC.users.length)return;
+  var have={},miss=0,off=0;SEC.users.forEach(function(u){have[u.id]=u});
+  [].forEach.call(document.querySelectorAll('#main .phn'),function(e){
+    var p=e.getAttribute('data-ph'),u=have[p],old=e.querySelector('.nl');if(old)e.removeChild(old);
+    e.classList.remove('bad');
+    if(!u){e.classList.add('bad');e.insertAdjacentHTML('beforeend',' <b class="nl">(no login)</b>');miss++}
+    else if(u.status&&u.status!=='Active'){e.classList.add('bad');e.insertAdjacentHTML('beforeend',' <b class="nl">(disabled)</b>');off++}
+  });
+  var w=$('loginwarn');if(!w)return;
+  w.innerHTML=miss?'<div class="warn"><b>'+miss+' IE Official phone number(s) below have no login yet</b> (shown in red). A phone number in the Sheet is not a login: the person cannot log in until the login is created. <button class="btn g sm" onclick="masterUsersFromSheet()">Create the missing logins now</button> The PIN is shown once.</div>':(off?'<div class="warn">'+off+' login(s) below are disabled. Enable them under Security &amp; Audit &gt; Users &amp; Phones.</div>':(document.querySelector('#main .phn')?'<div class="okmsg">Every IE Official phone number below has an active login.</div>':''));
+}
+function setupLoginCheck(){
+  markLogins();
+  if(!S.url||S.role!=='district')return;
+  if(!(SEC.users&&SEC.users.length)||Date.now()-(SEC.usersT||0)>3000)api('users',{},0,'',null,true).then(function(j){SEC.users=j.users;SEC.usersT=Date.now();if(TAB==='setup')markLogins()}).catch(function(){});
 }
 // ---------- INIT ----------
 (function(){
