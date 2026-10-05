@@ -465,7 +465,7 @@ function navFor(){
   var locs=secure()?[['locs','Centre Locations']]:[];
   var dash={id:'dash',label:'Dashboard',tabs:[['dash','Dashboard']]};
   if(S.role==='field')return [ie([['daily','New Activity'],['dlog','My Log'],['monthly','Monthly Report']]),ts([['entry','New Entry'],['mine','My Entries']]),help];
-  if(S.role==='block')return [dash,ie([['dreview','Activity Review'],['monthly','Monthly Reports']]),ts([['review','Block Review']].concat(locs)),{id:'brep',label:'Report for Signature',tabs:[['breport','Report for Signature']]},help];
+  if(S.role==='block')return [dash,ie([['dreview','Activity Review']]),ts([['review','Block Review']]),{id:'brep',label:'Report for Signature',tabs:[['breport','Report for Signature']]},help];
   var d=[dash,ie([['dall','Activity Log'],['monthly','Monthly Reports']]),
     ts((secure()?[]:[['entry','New Entry']]).concat([['grid','Centre Activity'],['alerts','Compliance Alerts'],['photos','Photo Verification'],['report','Higher Authority Report']],locs))];
   if(secure())d.push({id:'rv',label:'Report Approval',tabs:[['rverify','Report Approval']]});
@@ -1027,12 +1027,12 @@ function viewHelp(){
   var h='<h2>Help</h2>';
   h+='<p>This system has <b>two parts</b>:</p><ul><li><b>Daily Activity</b> - the IE Official records each day: school visits, home visits (Home Based Education), Resource Cum Day Care Centre visits and other official work. At month end the IE Official sends the Monthly Report.</li><li><b>Therapeutic Services</b> - the daily report of the outside therapist / specialist (honorarium based) at each Resource Cum Day Care Centre and Home-Based centre. A centre can report up to 3 days a week, and only one IE Official reports a centre in a week.</li></ul>';
   if(S.role==='field')h+='<h3>Every day: Daily Activity</h3><ol><li>Tap <b>Daily Activity</b>, then <b>New Activity</b>.</li><li>Allow Location and Camera when the phone asks.</li><li>Choose what you did (School Visit, Home Visit, Resource Cum Day Care Centre visit or Other Official Work) and fill in the few boxes.</li><li>For a school visit or centre, take the photos <b>at that school or centre</b>. A photo taken elsewhere is not accepted.</li><li>Tap <b>Save Activity</b>. See your day under <b>Today</b>, and all days in <b>My Log</b>.</li></ol><h3>End of month: Monthly Report</h3><ol><li>From the 25th, open <b>Daily Activity</b>, then <b>Monthly Report</b>.</li><li>Check the totals, write a short summary and tap <b>Submit monthly report</b>.</li><li>After submitting, the month is locked unless the BEEO returns it to you.</li></ol><h3>Each day the therapist / specialist works: Therapeutic Services</h3><ol><li>Tap <b>Therapeutic Services</b>, then <b>New Entry</b>.</li><li>Stand at the centre. Wait for the green location box.</li><li>Choose the reporting day, block, mode and centre. Your name and mobile are filled in. The screen shows how many of the 3 days are used this week. If another IE Official has already started that centre this week, it is locked for you.</li><li>Choose the therapist, fill in the numbers and tick the boxes.</li><li>Tap <b>Take live photo</b> (1 to 5 photos), then <b>Submit Entry</b>.</li><li>Your BEEO approves or rejects the entry. See the result in <b>My Entries</b>.</li></ol><h3>On your phone</h3><ul><li>Open the link in Chrome (Android) or Safari (iPhone). Use the browser menu and choose <b>Add to Home screen</b> to get an app icon.</li><li>No internet? What you save stays on your phone and uploads by itself when the internet returns. If something is rejected, it is shown in red under <b>My Log</b> or <b>My Entries</b> with the reason.</li></ul>';
-  if(S.role==='block')h+='<h3>For the BEEO</h3><ul><li><b>Dashboard</b>: your block at a glance - the daily activity and monthly reports of your IE Officials, and Therapeutic Services.</li><li><b>Daily Activity &gt; Activity Review</b> and <b>Therapeutic Services &gt; Block Review</b>: check each entry against its photos and location. Tap <b>Approve</b> or <b>Reject</b> (with a reason). Entries you have not touched stay <b>Pending</b>. <b>Approve all clean</b> approves every entry that has no warning.</li><li><b>Daily Activity &gt; Monthly Reports</b>: approve or reject each IE Official\'s monthly report.</li><li><b>Report for Signature</b>: when the entries are approved, choose the period and tap <b>Prepare report for signature</b>. Print it, <b>sign inside the signature box</b>, scan or photograph the page, and upload the signed copy. The report carries your location, date, time and a QR code, and its entries are locked. The District Office then verifies it automatically and gives the final approval.</li></ul>';
+  if(S.role==='block')h+='<h3>For the BEEO</h3><ul><li><b>Dashboard</b>: your block at a glance - the daily activity and Therapeutic Services of your IE Officials. It has Download Excel and Print / Save as PDF.</li><li><b>Daily Activity &gt; Activity Review</b> and <b>Therapeutic Services &gt; Block Review</b>: check each entry against its photos and location. Tap <b>Approve</b> or <b>Reject</b> (with a reason). Entries you have not touched stay <b>Pending</b>. <b>Approve all clean</b> approves every entry that has no warning.</li><li><b>Report for Signature</b>: the <b>monthly report of your block</b>. Choose the month. You see <b>A. Daily Activities - Monthly Report</b> (one line for each IE Official, and you approve or reject each IE Official\'s monthly report here) and <b>B. Therapeutic Services - Monthly Report</b> (one line for each centre), with the <b>day-wise data below for reference</b>. When the entries are approved, tap <b>Prepare report for signature</b>. Print it, <b>sign inside the signature box</b>, scan or photograph the page, and upload the signed copy. The report carries your location, date, time and a QR code, and its entries are locked. The District Office then verifies it and gives the final approval.</li><li>Every screen has <b>Download Excel</b> and <b>Print / Save as PDF</b>.</li></ul>';
   if(S.role==='district')h+='<h3>For the District Office</h3><ul><li><b>Dashboard</b>: the IE Officials\' daily activity and monthly reports, then the Therapeutic Services summary.</li><li><b>Daily Activity</b>: Activity Log (all blocks) and Monthly Reports (district consolidation, Excel and print).</li><li><b>Therapeutic Services</b>: Centre Activity, Compliance Alerts, Photo Verification, Higher Authority Report, Centre Locations.</li><li><b>Report Approval</b>: the BEEO approves entries by hand, then uploads a signed hard copy. Tap <b>Verify the document / report</b>: the system reads the QR code and the signature box on the scan and checks the geo-tags, time stamps and every entry. Only a report that passes can be approved.</li><li><b>Security &amp; Audit</b>: users, phones, warnings and the full access log.</li></ul>';
   h+='<h3>Who can do what</h3><ul><li><b>IE Official:</b> records daily activity, the monthly report and the Therapeutic Services daily reports for the centres of their block (maximum 3 days a week for a centre, one IE Official per centre per week).</li><li><b>BEEO:</b> approves or rejects the Daily Activity, Monthly Reports and Therapeutic Services entries of their block, then prepares the signed report for the District Office.</li><li><b>District Authority:</b> sees all blocks, manages users and phones, settings and the security log.</li></ul>';
   h+='<h3>Security you should know about</h3><ul><li>Your login is personal: your mobile number and your own 6-digit PIN. Never share the PIN.</li><li>Five wrong PINs lock the account for 15 minutes.</li><li>Your account works on your registered phone only. A new phone needs District Office approval.</li><li>Photos must be taken live in the app, at the school or centre.</li><li>Every login, upload and rejected attempt is recorded for the District Authority.</li></ul>';
   if(S.role!=='district')h+='<h3>Rules the app checks (Therapeutic Services)</h3><ul><li>Therapy cannot be recorded without a prior formal assessment (entry is blocked).</li><li>Daily honorarium cannot exceed Rs. 1,500. Contingency cannot exceed Rs. 500 per month (entry is blocked).</li><li>A centre can report at most 3 days a week, one report per day, and only one IE Official can report a centre in a week (the server blocks the rest).</li><li>Resource Cum Day Care Centres should have at least 10 CWSN on the day (entry is saved but flagged).</li><li>Missing IEP, missing attendance register and duplicate entries are flagged.</li></ul>';
-  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it is written into the Block, Centre, IEOfficials and therapist tabs of the Google Sheet and creates the IE Official logins), or edit those tabs in the Sheet and tap Reload from the Sheet. Every upload has a blank format to download (with instructions), a Download current data button where it applies, and checks your file for mistakes before saving and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: a BEEO or the District Authority stands at each centre and taps Set location here.</li></ol>';
+  if(S.role==='district')h+='<h3>Setting up (District Office)</h3><ol><li>Deploy the secure Code.gs backend and put its URL in DEFAULT_URL (see the top of Code.gs).</li><li>Log in as ADMIN with the PIN shown in the Apps Script Execution log, then set your own PIN.</li><li>Centres &amp; Settings: upload the master workbook (it is written into the Block, Centre, IEOfficials and therapist tabs of the Google Sheet and creates the IE Official logins), or edit those tabs in the Sheet and tap Reload from the Sheet. Every upload has a blank format to download (with instructions), a Download current data button where it applies, and checks your file for mistakes before saving and the schools master with latitude and longitude.</li><li>Security &amp; Audit, Users: add the BEEOs, then give each person their PIN privately.</li><li>Therapeutic Services &gt; Centre Locations: the District Authority sets the location of each centre (type Lat / Long in the Centre tab or Excel, or stand at the centre and tap Set location here).</li></ol>';
   return h;
 }
 // ---------- GEO (live location) ----------
@@ -1066,7 +1066,7 @@ function geoUi(){
         if(m.indexOf('Home')>-1)t+='<br>Home-based visit: location is recorded, no distance limit.';
         else if(c&&c.lat){var d=Math.round(haversine(f.lat,f.lng,c.lat,c.lng)),rad=c.radius||CFG.radius||150;
           if(d-Math.min(f.acc,50)<=rad){cls+=' good';t+='<br>'+d+' m from the centre. Inside the allowed '+rad+' m.'}else{cls+=' bad';t+='<br>'+d+' m from the centre. You must be within '+rad+' m to submit.'}}
-        else t+='<br>This centre has no saved location yet (ask the BEEO or District Office). The entry will be flagged.';
+        else t+='<br>This centre has no saved location yet (the District Office sets it). The entry will be flagged.';
       }
     }
     else if(TAB==='daily'&&typeof dGeoNote==='function'){var dn=dGeoNote(f);cls+=dn.cls;t+=dn.t}
@@ -1111,7 +1111,7 @@ function snap(){
   }).catch(function(e){m.textContent=e.message||'Could not capture'});
 }
 
-// ---------- CENTRE LOCATIONS (BEEO + District) ----------
+// ---------- CENTRE LOCATIONS (District) ----------
 function viewLocs(){
   RESFN=null;
   var list=CFG.centres.map(function(c,i){return {c:c,i:i}}).filter(function(x){return !S.block||x.c.block===S.block});
@@ -1667,7 +1667,7 @@ function mReview(){
 function mSt(id,st){
   var remark='';
   if(st==='Returned'){remark=prompt('Reason for rejecting this report (the IE Official will see it):','');if(remark===null)return;if(!remark.trim()){alert('Please give a reason.');return}}
-  var done=function(){MREC.forEach(function(r){if(r.id===id){r.status=st;r.remark=remark;r.verifiedBy=S.name||roleName(S.role)}});save('cwsn_mrec',MREC);showTab('monthly')};
+  var done=function(){MREC.forEach(function(r){if(r.id===id){r.status=st;r.remark=remark;r.verifiedBy=S.name||roleName(S.role)}});save('cwsn_mrec',MREC);showTab(TAB==='breport'?'breport':'monthly')};
   if(S.url)api('mstatus',{id:id,status:st,remark:remark}).then(done).catch(function(e){flash('Could not update: '+e.message,'err')});else done();
 }
 function mDetail(id){
@@ -1833,34 +1833,101 @@ var REPLBL={Issued:'Prepared - needs signed copy',Uploaded:'Uploaded - waiting f
 function refreshReports(){return api('replist').then(function(j){REPS=j.rows;save('cwsn_reps',REPS)})}
 function ist(iso){if(!iso)return '-';var d=new Date(iso);if(isNaN(d))return '-';return d.toLocaleString('en-GB',{timeZone:'Asia/Kolkata',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' IST'}
 function repLocCell(t,lat,la,acc){if(lat===''||lat==null)return '-';return esc(ist(t))+'<br>'+mapLink(lat,la)+' +-'+acc+' m'}
-function repDefRange(){var t=today();RP.from=t.slice(0,8)+'01';RP.to=t}
+function monthRange(m){var p=m.split('-'),last=new Date(+p[0],+p[1],0).getDate(),to=m+'-'+pad(last);if(to>today())to=today();return {from:m+'-01',to:to}}
+function repSetMonth(m){RP.month=m;var r=monthRange(m);RP.from=r.from;RP.to=r.to}
+function repDefRange(){repSetMonth(curMonth())}
 function repRange(k){
-  var d=new Date();
-  if(k==='m'){RP.from=today().slice(0,8)+'01';RP.to=today()}
-  else if(k==='p'){var a=new Date(d.getFullYear(),d.getMonth()-1,1),b=new Date(d.getFullYear(),d.getMonth(),0);RP.from=a.getFullYear()+'-'+pad(a.getMonth()+1)+'-01';RP.to=b.getFullYear()+'-'+pad(b.getMonth()+1)+'-'+pad(b.getDate())}
-  else{RP.from=daysAgo(29);RP.to=today()}
+  if(k==='m')repSetMonth(curMonth());
+  else{var d=new Date(),a=new Date(d.getFullYear(),d.getMonth()-1,1);repSetMonth(a.getFullYear()+'-'+pad(a.getMonth()+1))}
   showTab(TAB);
 }
 
-// ---------- BEEO: prepare, print, upload ----------
+// ---------- monthly figures (used on the screen AND in the printed report) ----------
+function aggDaily(list){
+  var m={};
+  list.forEach(function(r){
+    var o=m[r.userId]=m[r.userId]||{id:r.userId,name:r.officialName,des:r.designation,days:{},sch:0,schs:{},home:0,kids:{},rc:0,oth:0,hrs:0,cw:0};
+    o.days[r.date]=1;o.hrs+=r.hours;o.cw+=r.cwsn;
+    if(r.type===A_SCH){o.sch++;o.schs[(r.refCode||r.refName).toLowerCase()]=1}
+    else if(r.type===A_HOME){o.home++;o.kids[String(r.child).toLowerCase()]=1}
+    else if(r.type===A_CTR)o.rc++;else o.oth++;
+  });
+  return Object.keys(m).map(function(k){return m[k]}).sort(function(a,b){return a.name<b.name?-1:1});
+}
+function aggTS(list){
+  var m={};
+  list.forEach(function(r){
+    var k=r.block+'|'+r.centre,o=m[k]=m[k]||{centre:r.centre,mode:r.mode,days:{},cw:0,ses:0,th:{},hon:0,con:0};
+    o.days[r.weekEnding]=1;o.cw+=r.cwsn;o.ses+=r.sessions;o.hon+=r.totalHonorarium;o.con+=r.contingency;if(r.therapist)o.th[r.therapist]=1;
+  });
+  return Object.keys(m).map(function(k){return m[k]}).sort(function(a,b){return a.centre<b.centre?-1:1});
+}
+function r1(x){return Math.round(x*10)/10}
+function tblDailyMonth(agg,people,pend,screen){
+  var by={};agg.forEach(function(a){by[a.id]=a});
+  var rows=screen?people:agg.map(function(a){return {id:a.id,name:a.name,designation:a.des}});
+  var T={d:0,sch:0,home:0,rc:0,oth:0,hrs:0,cw:0,pend:0};
+  var body=rows.map(function(p){
+    var a=by[p.id]||{days:{},sch:0,schs:{},home:0,kids:{},rc:0,oth:0,hrs:0,cw:0},d=Object.keys(a.days).length,pe=(pend||{})[p.id]||0;
+    T.d+=d;T.sch+=a.sch;T.home+=a.home;T.rc+=a.rc;T.oth+=a.oth;T.hrs+=a.hrs;T.cw+=a.cw;T.pend+=pe;
+    return '<tr><td>'+esc(p.name)+(p.designation?'<br><span class="note">'+esc(p.designation)+'</span>':'')+'</td><td class="r">'+d+'</td><td class="r">'+a.sch+' ('+Object.keys(a.schs).length+')</td><td class="r">'+a.home+' ('+Object.keys(a.kids).length+')</td><td class="r">'+a.rc+'</td><td class="r">'+a.oth+'</td><td class="r">'+r1(a.hrs)+'</td><td class="r">'+a.cw+'</td>'+(screen?'<td class="r">'+pe+'</td><td>'+ieMonthCell(p.id)+'</td>':'')+'</tr>';
+  });
+  body.push('<tr style="font-weight:bold"><td>TOTAL</td><td class="r">'+T.d+'</td><td class="r">'+T.sch+'</td><td class="r">'+T.home+'</td><td class="r">'+T.rc+'</td><td class="r">'+T.oth+'</td><td class="r">'+r1(T.hrs)+'</td><td class="r">'+T.cw+'</td>'+(screen?'<td class="r">'+T.pend+'</td><td></td>':'')+'</tr>');
+  var head=['IE Official','Active days','School visits (schools)','Home visits (children)','Resource Cum Day Care visits','Other work','Hours','CWSN covered'].concat(screen?['Pending approval',"IE Official's own monthly report"]:[]);
+  return tbl(head,body,[1,2,3,4,5,6,7].concat(screen?[8]:[]));
+}
+function tblTSMonth(agg,centres,pend,screen){
+  var by={};agg.forEach(function(a){by[a.centre]=a});
+  var rows=screen?centres:agg.map(function(a){return {name:a.centre,mode:a.mode}});
+  var T={d:0,cw:0,ses:0,hon:0,con:0,pend:0};
+  var body=rows.map(function(c){
+    var a=by[c.name]||{days:{},cw:0,ses:0,th:{},hon:0,con:0},d=Object.keys(a.days).length,pe=(pend||{})[c.name]||0;
+    T.d+=d;T.cw+=a.cw;T.ses+=a.ses;T.hon+=a.hon;T.con+=a.con;T.pend+=pe;
+    return '<tr><td>'+esc(c.name)+'<br><span class="note">'+esc(modeShort(c.mode))+'</span></td><td class="r">'+d+'</td><td class="r">'+a.cw+'</td><td class="r">'+a.ses+'</td><td>'+(esc(Object.keys(a.th).join(', '))||'-')+'</td><td class="r">'+a.hon+'</td><td class="r">'+a.con+'</td>'+(screen?'<td class="r">'+pe+'</td>':'')+'</tr>';
+  });
+  body.push('<tr style="font-weight:bold"><td>TOTAL</td><td class="r">'+T.d+'</td><td class="r">'+T.cw+'</td><td class="r">'+T.ses+'</td><td></td><td class="r">'+T.hon+'</td><td class="r">'+T.con+'</td>'+(screen?'<td class="r">'+T.pend+'</td>':'')+'</tr>');
+  return tbl(['Centre','Reporting days','CWSN attended','Sessions','Therapist / specialist','Honorarium (Rs.)','Contingency (Rs.)'].concat(screen?['Pending approval']:[]),body,[1,2,3,5,6].concat(screen?[7]:[]));
+}
+function ieMonthCell(uid){
+  var s=MREC.filter(function(r){return r.userId===uid&&r.month===RP.month})[0];
+  if(!s)return '<span class="note">Not submitted</span>';
+  return esc(stLbl(s.status))+(s.remark&&s.status==='Returned'?'<br><span class="note">'+esc(s.remark)+'</span>':'')+'<span class="noprint"><br><button class="btn sm" onclick="mDetail(\''+esc(s.id)+'\')">View</button> '+(s.status==='Submitted'?'<button class="btn g sm" onclick="mSt(\''+esc(s.id)+'\',\'Verified\')">Approve</button> ':'')+(s.status!=='Returned'?'<button class="btn o sm" onclick="mSt(\''+esc(s.id)+'\',\'Returned\')">Reject</button>':'')+'</span>';
+}
+var TSCOLS=[{h:'Reporting day',f:function(r){return esc(r.weekEnding)}},{h:'Centre',f:function(r){return esc(r.centre)+'<br><span class="note">'+esc(modeShort(r.mode))+'</span>'}},{h:'Reported by',f:function(r){return esc(r.submittedBy)}},{h:'Therapist / specialist',f:function(r){return esc(r.therapist||'-')}},{h:'CWSN',f:function(r){return r.cwsn}},{h:'Sessions',f:function(r){return r.sessions}},{h:'Honorarium (Rs.)',f:function(r){return r.totalHonorarium}},{h:'Contingency (Rs.)',f:function(r){return r.contingency}},{h:'Status',f:function(r){return esc(stLbl(r.status))}}];
+
+// ---------- BEEO: Report for Signature = the monthly report of the block ----------
 function viewBReport(){
-  if(!RP.from)repDefRange();
+  if(!RP.from||!RP.month)repDefRange();
   if(!S.url)return '<h2>Report for Signature</h2><div class="warn">Connect the server (DEFAULT_URL) to prepare reports.</div>';
-  RESFN=function(){return repPreview()+'<h3>My reports</h3>'+repTable(REPS)};
-  var h='<h2>Report for Signature</h2><div class="info">After you have <b>approved</b> the entries of your IE Officials, prepare the report here. <b>Print</b> it, <b>sign inside the signature box</b>, scan or photograph the signed page, and <b>upload</b> it. The District Office then verifies it. The report lists only entries you have approved. When a report is prepared, its entries are locked.</div><div id="errs"></div><div id="geo_box" class="geo"></div>';
-  h+='<div class="filters noprint"><div class="fgrid"><div><label>From</label><input type="date" value="'+esc(RP.from)+'" max="'+today()+'" onchange="RP.from=this.value;drawRes()"></div><div><label>To</label><input type="date" value="'+esc(RP.to)+'" max="'+today()+'" onchange="RP.to=this.value;drawRes()"></div></div><div style="margin-top:6px"><button class="btn sm" onclick="repRange(\'m\')">This month</button><button class="btn sm" onclick="repRange(\'p\')">Last month</button><button class="btn sm" onclick="repRange(\'30\')">Last 30 days</button></div></div>';
+  RESFN=function(){var f=repData();return repPreview(f)+'<h3>My reports (signed copies)</h3>'+repTable(REPS)+repMonthScreen(f)};
+  var h='<h2>Report for Signature</h2><div class="info">This is the <b>monthly report of your block</b>: <b>A. Daily Activities</b> and <b>B. Therapeutic Services</b>, with the <b>day-wise data below for reference</b>. When the entries are <b>approved</b>, tap <b>Prepare report for signature</b>. <b>Print</b> it, <b>sign inside the signature box</b>, scan or photograph the signed page, and <b>upload</b> it. The District Office then verifies it. Only entries you have approved are in the report, and they are locked once it is prepared.</div><div id="errs"></div><div id="geo_box" class="geo"></div>';
+  h+='<div class="filters noprint"><div class="fgrid"><div><label>Month</label><input type="month" value="'+esc(RP.month)+'" max="'+curMonth()+'" onchange="repSetMonth(this.value||curMonth());drawRes()"></div></div><div style="margin-top:6px"><button class="btn sm" onclick="repRange(\'m\')">This month</button><button class="btn sm" onclick="repRange(\'p\')">Last month</button></div></div>';
   h+='<div id="res"></div><input type="file" id="rp_file" accept="image/*" style="display:none" onchange="repPick(this)">';
   return h;
 }
-function repPreview(){
+function repData(){
   var locked={};REPS.forEach(function(r){if(r.status!=='Cancelled')r.entryIds.forEach(function(k){locked[k]=1})});
   var inR=function(d){return d>=RP.from&&d<=RP.to};
-  var dd=DREC.filter(function(r){return r.block===S.block&&r.status!=='Rejected'&&inR(r.date)}),tt=REC.filter(function(r){return r.block===S.block&&r.status!=='Rejected'&&r.weekEnding&&inR(r.weekEnding)});
-  var okD=dd.filter(function(r){return r.status==='Verified'&&!locked['D:'+r.id]}).length,okT=tt.filter(function(r){return r.status==='Verified'&&!locked['T:'+r.id]}).length;
-  var pend=dd.filter(function(r){return r.status==='Pending'}).length+tt.filter(function(r){return r.status==='Pending'}).length;
-  var inRep=dd.filter(function(r){return locked['D:'+r.id]}).length+tt.filter(function(r){return locked['T:'+r.id]}).length;
+  var dd=DREC.filter(function(r){return r.block===S.block&&r.status!=='Rejected'&&r.status!=='Returned'&&inR(r.date)}),tt=REC.filter(function(r){return r.block===S.block&&r.status!=='Rejected'&&r.status!=='Returned'&&r.weekEnding&&inR(r.weekEnding)});
+  return {locked:locked,dd:dd,tt:tt,apD:dd.filter(function(r){return r.status==='Verified'}),apT:tt.filter(function(r){return r.status==='Verified'}),pD:dd.filter(function(r){return r.status==='Pending'}),pT:tt.filter(function(r){return r.status==='Pending'})};
+}
+function repPreview(f){
+  var locked=f.locked;
+  var okD=f.apD.filter(function(r){return !locked['D:'+r.id]}).length,okT=f.apT.filter(function(r){return !locked['T:'+r.id]}).length,pend=f.pD.length+f.pT.length;
+  var inRep=f.dd.filter(function(r){return locked['D:'+r.id]}).length+f.tt.filter(function(r){return locked['T:'+r.id]}).length;
   var h='<div class="stats">'+stat('Approved - will be in the report',okD+okT,okD+' daily activities, '+okT+' Therapeutic Services')+stat('Pending approval - NOT included',pend,pend?'approve or reject them first':'',pend>0)+stat('Already in a report',inRep)+'</div>';
-  return h+'<div class="fld noprint"><button class="btn g big" id="rp_go" onclick="repIssue()"'+(okD+okT?'':' disabled')+'>Prepare report for signature</button>'+(okD+okT?'':' <span class="note">Nothing approved and free in this period.</span>')+'</div>';
+  return h+'<div class="fld noprint"><button class="btn g big" id="rp_go" onclick="repIssue()"'+(okD+okT?'':' disabled')+'>Prepare report for signature</button>'+(okD+okT?'':' <span class="note">Nothing approved and free in this month.</span>')+'</div>';
+}
+function repMonthScreen(f){
+  var pendU={},pendC={};
+  f.pD.forEach(function(r){pendU[r.userId]=(pendU[r.userId]||0)+1});f.pT.forEach(function(r){pendC[r.centre]=(pendC[r.centre]||0)+1});
+  var people=mPeople(true),centres=CFG.centres.filter(function(c){return c.block===S.block});
+  var dsort=f.dd.slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:(a.officialName<b.officialName?-1:1)}),tsort=f.tt.slice().sort(function(a,b){return a.weekEnding<b.weekEnding?-1:a.weekEnding>b.weekEnding?1:(a.centre<b.centre?-1:1)});
+  prepD(dsort);tsort.forEach(function(r){r._f=r._f||[];r._s=r._s||[]});
+  var h='<h3>A. Daily Activities - Monthly Report ('+esc(monthName(RP.month))+')</h3><p class="note">Counts the activities you have <b>approved</b>. "Pending approval" is what is still waiting for you. You also approve or reject each IE Official\'s own monthly report here.</p>'+tblDailyMonth(aggDaily(f.apD),people,pendU,true);
+  h+='<h3>B. Therapeutic Services - Monthly Report ('+esc(monthName(RP.month))+')</h3><p class="note">One line for each centre: the days the outside therapist / specialist was reported (at most 3 days a week), approved entries only.</p>'+tblTSMonth(aggTS(f.apT),centres,pendC,true);
+  h+='<h3>Day-wise data (for reference)</h3><h4>Daily Activities ('+dsort.length+')</h4>'+grid(DCOLS(['date','who','type','what','purp','cw','hrs','st']),dsort)+'<h4>Therapeutic Services ('+tsort.length+')</h4>'+grid(TSCOLS,tsort);
+  return h;
 }
 function repAct(r){
   var h='<button class="btn sm" onclick="repOpen(\''+esc(r.id)+'\')">'+(S.role==='district'?'Open report':'Open / Print')+'</button> ';
@@ -1916,16 +1983,17 @@ function qrBuild(text){
 function repDocHtml(rep,en,integrity){
   var q=qrBuild('IEM1|'+rep.id+'|'+rep.digest.slice(0,24)),bx=q.m+(q.n+6)*q.c,bw=Math.round(2.2*q.n*q.c),bh=q.n*q.c,code=rep.digest.slice(0,24).toUpperCase().replace(/(.{4})/g,'$1 ').trim(),S0=rep.summary||{};
   var h='<div id="repdoc" style="width:720px;max-width:100%;font-size:12px"><div style="display:flex;align-items:center;gap:10px"><img src="'+esc(CFG.logo||LOGO_DATA)+'" style="height:56px"><div><b style="font-size:15px">Office of the District Mission Coordinator, Samagra Shiksha - '+esc(CFG.district)+'</b><br>IE Monitoring System &middot; Xomonnoy-Dristi</div></div>';
-  h+='<h2 style="text-align:center;margin:8px 0">Approved Activity Report - '+esc(rep.block)+' Block<br><span style="font-size:14px">'+esc(rep.from)+' to '+esc(rep.to)+'</span></h2>';
+  var one=rep.from.slice(0,7)===rep.to.slice(0,7)&&rep.from.slice(8)==='01',per=one?monthName(rep.from.slice(0,7))+(rep.to.slice(8)!==pad(new Date(+rep.to.slice(0,4),+rep.to.slice(5,7),0).getDate())?' (1 to '+(+rep.to.slice(8))+')':''):rep.from+' to '+rep.to;
+  h+='<h2 style="text-align:center;margin:8px 0">'+(one?'Monthly Report':'Report')+' - '+esc(rep.block)+' Block<br><span style="font-size:14px">'+esc(per)+'</span></h2>';
   if(integrity===false)h+='<div class="err noprint"><b>Warning:</b> the entries in the system no longer match this report. Do not use this printout.</div>';
   h+='<table class="tbl" style="width:100%"><tr><td style="width:30%"><b>Report number</b></td><td>'+esc(rep.id)+'</td></tr><tr><td><b>Prepared by</b></td><td>'+esc(rep.issuedByName)+', BEEO, '+esc(rep.block)+' Block</td></tr><tr><td><b>Prepared on (time stamp)</b></td><td>'+esc(ist(rep.issuedAt))+'</td></tr><tr><td><b>Geo-tag (location)</b></td><td>'+esc(rep.issueLat)+', '+esc(rep.issueLng)+' (accuracy +-'+esc(rep.issueAcc)+' m)<br>https://maps.google.com/?q='+esc(rep.issueLat)+','+esc(rep.issueLng)+(rep.nearest?'<br>Nearest registered centre: '+esc(rep.nearest):'')+'</td></tr><tr><td><b>Verification code</b></td><td style="font-family:monospace">'+esc(code)+'</td></tr><tr><td><b>Contents</b></td><td>'+(S0.daily||0)+' daily activities and '+(S0.ts||0)+' Therapeutic Services entries, all approved by the BEEO</td></tr></table>';
   h+='<p style="margin:8px 0">I have checked the entries listed below against the photographs, locations and records, and I have approved them. This report is valid only with the BEEO\'s signature in the box and a matching QR code.</p>';
   h+='<div style="position:relative;width:'+(bx+bw+10)+'px;height:'+(q.sz+22)+'px;margin:4px 0 10px 0"><div style="position:absolute;left:0;top:0">'+q.svg+'</div><div style="position:absolute;left:'+bx+'px;top:0;font-size:11px;line-height:14px">Signature of BEEO - sign inside the box</div><div style="position:absolute;left:'+bx+'px;top:'+q.m+'px;width:'+bw+'px;height:'+bh+'px;border:2px solid #000;box-sizing:border-box"></div><div style="position:absolute;left:'+bx+'px;top:'+(q.m+bh+4)+'px;font-size:12px">'+esc(rep.issuedByName)+', BEEO, '+esc(rep.block)+' Block</div></div>';
-  h+='<h3 style="margin:8px 0 4px">Summary by IE Official</h3><table class="tbl" style="width:100%"><tr><th>IE Official</th><th class="r">Daily activities</th><th class="r">Therapeutic Services days</th></tr>'+(S0.officials||[]).map(function(o){return '<tr><td>'+esc(o.name)+'</td><td class="r">'+o.d+'</td><td class="r">'+o.t+'</td></tr>'}).join('')+'<tr style="font-weight:bold"><td>Total</td><td class="r">'+(S0.daily||0)+'</td><td class="r">'+(S0.ts||0)+'</td></tr></table>';
   var dl=(en.daily||[]).slice().sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:(a.officialName<b.officialName?-1:1)}),tl=(en.ts||[]).slice().sort(function(a,b){return a.weekEnding<b.weekEnding?-1:a.weekEnding>b.weekEnding?1:(a.centre<b.centre?-1:1)});
-  h+='<h3 style="margin:10px 0 4px">Part A - Daily Activity of IE Officials ('+dl.length+')</h3><table class="tbl" style="width:100%;font-size:11px"><tr><th>#</th><th>Date</th><th>IE Official</th><th>Activity</th><th>Details</th><th>Purpose</th><th class="r">CWSN</th><th class="r">Hrs</th><th class="r">Photos</th><th>Photo dist. (m)</th></tr>'+dl.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.officialName)+'</td><td>'+esc(ACTSHORT[r.type]||r.type)+'</td><td>'+dWhat(r)+'</td><td>'+esc(r.purpose)+'</td><td class="r">'+r.cwsn+'</td><td class="r">'+r.hours+'</td><td class="r">'+r.photoLinks.length+'</td><td>'+(r.distanceM===''?'-':r.distanceM)+'</td></tr>'}).join('')+(dl.length?'':'<tr><td colspan="10">None</td></tr>')+'</table>';
-  var hon=0,con=0,cw=0,se=0;tl.forEach(function(r){hon+=r.totalHonorarium;con+=r.contingency;cw+=r.cwsn;se+=r.sessions});
-  h+='<h3 style="margin:10px 0 4px">Part B - Therapeutic Services ('+tl.length+')</h3><table class="tbl" style="width:100%;font-size:11px"><tr><th>#</th><th>Reporting day</th><th>Centre</th><th>Reported by</th><th>Therapist / specialist</th><th class="r">CWSN</th><th class="r">Sessions</th><th class="r">Honorarium (Rs.)</th><th class="r">Contingency (Rs.)</th><th class="r">Photos</th></tr>'+tl.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(r.weekEnding)+'</td><td>'+esc(r.centre)+'<br><span class="note">'+esc(modeShort(r.mode))+'</span></td><td>'+esc(r.submittedBy)+'</td><td>'+esc(r.therapist||'-')+'</td><td class="r">'+r.cwsn+'</td><td class="r">'+r.sessions+'</td><td class="r">'+r.totalHonorarium+'</td><td class="r">'+r.contingency+'</td><td class="r">'+r.photoLinks.length+'</td></tr>'}).join('')+(tl.length?'<tr style="font-weight:bold"><td colspan="5">Total</td><td class="r">'+cw+'</td><td class="r">'+se+'</td><td class="r">'+hon+'</td><td class="r">'+con+'</td><td></td></tr>':'<tr><td colspan="10">None</td></tr>')+'</table>';
+  h+='<h3 style="margin:8px 0 4px">A. Daily Activities - Monthly Report</h3>'+tblDailyMonth(aggDaily(dl),[],{},false);
+  h+='<h4 style="margin:8px 0 4px">Day-wise data (for reference) - Daily Activities ('+dl.length+')</h4><table class="tbl" style="width:100%;font-size:11px"><tr><th>#</th><th>Date</th><th>IE Official</th><th>Activity</th><th>Details</th><th>Purpose</th><th class="r">CWSN</th><th class="r">Hrs</th><th class="r">Photos</th><th>Photo dist. (m)</th></tr>'+dl.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(r.date)+'</td><td>'+esc(r.officialName)+'</td><td>'+esc(ACTSHORT[r.type]||r.type)+'</td><td>'+dWhat(r)+'</td><td>'+esc(r.purpose)+'</td><td class="r">'+r.cwsn+'</td><td class="r">'+r.hours+'</td><td class="r">'+r.photoLinks.length+'</td><td>'+(r.distanceM===''?'-':r.distanceM)+'</td></tr>'}).join('')+(dl.length?'':'<tr><td colspan="10">None</td></tr>')+'</table>';
+  h+='<h3 style="margin:12px 0 4px">B. Therapeutic Services - Monthly Report</h3>'+tblTSMonth(aggTS(tl),[],{},false);
+  h+='<h4 style="margin:8px 0 4px">Day-wise data (for reference) - Therapeutic Services ('+tl.length+')</h4><table class="tbl" style="width:100%;font-size:11px"><tr><th>#</th><th>Reporting day</th><th>Centre</th><th>Reported by</th><th>Therapist / specialist</th><th class="r">CWSN</th><th class="r">Sessions</th><th class="r">Honorarium (Rs.)</th><th class="r">Contingency (Rs.)</th><th class="r">Photos</th></tr>'+tl.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(r.weekEnding)+'</td><td>'+esc(r.centre)+'<br><span class="note">'+esc(modeShort(r.mode))+'</span></td><td>'+esc(r.submittedBy)+'</td><td>'+esc(r.therapist||'-')+'</td><td class="r">'+r.cwsn+'</td><td class="r">'+r.sessions+'</td><td class="r">'+r.totalHonorarium+'</td><td class="r">'+r.contingency+'</td><td class="r">'+r.photoLinks.length+'</td></tr>'}).join('')+(tl.length?'':'<tr><td colspan="10">None</td></tr>')+'</table>';
   h+='<p style="margin-top:10px;font-size:11px">Verification code '+esc(code)+' &middot; Report '+esc(rep.id)+' &middot; Printed from the IE Monitoring System. The District Office checks this signed copy against the entries in the system (QR code, geo-tag, time stamp and signature).</p></div>';
   return h;
 }
