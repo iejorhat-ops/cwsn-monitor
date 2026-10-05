@@ -309,7 +309,7 @@ function syncAll(force,withSchools,quiet){
   if(!S.url||!S.token)return Promise.resolve();
   if(SYNC.p)return SYNC.p;
   if(!force&&Date.now()-SYNC.t<STALE_MS)return Promise.resolve();
-  var needSch=!!withSchools||!SCH.length||Date.now()-SYNC.sch>3600000;
+  var needSch=!!withSchools||(!SCH.length&&Date.now()-SYNC.sch>300000)||Date.now()-SYNC.sch>3600000;
   SYNC.p=api('sync',{schools:needSch},0,'',null,!!quiet).then(function(j){applySync(j);if(needSch&&j.schools)SYNC.sch=Date.now();return j},function(e){
     if(e&&e.server&&/unknown action/i.test(e.message))return legacySync();
     throw e;
@@ -956,8 +956,9 @@ function viewSetup(){
   h+='<h3>Master data (blocks, centres, IE Officials, therapists)</h3><div class="info"><b>The master data lives in the Google Sheet</b>: the tabs <b>Block, Centre, IEOfficials, therapist</b> and <b>Settings</b>. Everything here is read from them and saved back to them. You can edit those tabs directly in Google Sheets (then tap <b>Reload from the Sheet</b>), or upload <b>CWSN_MONITORING_MASTER.xlsx</b> below: it is written into the same tabs, and a login is created for every IE Official (their mobile number).</div>'+(S.url?'<div class="fld"><b>Step 1.</b> <button class="btn sm" onclick="xlTemplateMaster()">Download blank format</button> <button class="btn sm" onclick="xlDownloadMaster()">Download current data</button><div class="hint">The format has instructions on its first sheet. "Current data" is the same format filled with what is in the Sheet now: edit it and upload it again.</div></div><div class="fld"><b>Step 2.</b> Choose your file (it is checked before anything is saved):<br><input type="file" accept=".xlsx,.xls" onchange="importMaster(this)"></div><div class="fld"><button class="btn g" onclick="cfgReloadSheet()">Reload from the Sheet</button> <button class="btn" onclick="masterUsersFromSheet()">Create logins from the IEOfficials tab</button> <button class="btn" onclick="sheetTidy()">Tidy the Google Sheet</button><div class="hint">Use these after you type changes directly in the Google Sheet. The app also picks up Sheet changes by itself within about a minute. <b>Tidy the Google Sheet</b> updates old Mode letters to RCDC / HBE, adds drop-down lists, colours and orders the tabs, adds a README tab and hides the old Config tab. Nothing is deleted and it is safe to repeat.</div></div>':'<p class="note">Connect the server to import the master workbook.</p>');
   h+='<h3>Logins in bulk (BEEO and IE Officials)</h3><div class="info">Create many logins at once from an Excel file with the columns Name, Mobile, Role (IE Official or BEEO), Block and Designation. A PIN is shown once for each new login.</div>'+(S.url?'<div class="fld"><button class="btn sm" onclick="loginTemplate()">Download blank format</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls" onchange="importLogins(this)"></div>':'<p class="note">Connect the server to create logins.</p>');
   var nl=SCH.filter(function(s){return s.lat!==''&&s.lat!=null}).length;
-  h+='<h3>Schools master (for school visits)</h3><div class="info">Upload the school list with latitude and longitude. IE Officials pick the school from this list, and school-visit photos must be taken within the radius below. Columns: Block (or Blk code), UDISE Code, School Name, Village, Latitude, Longitude, CWSN Count.</div>';
-  h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(S.url?'<div class="fld"><button class="btn sm" onclick="schoolTemplate()">Download blank format</button> <button class="btn sm" onclick="schoolsCurrent()">Download current list</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
+  h+='<h3>Schools master (for school visits)</h3><div class="info">Upload the school list with latitude and longitude. IE Officials pick the school from this list, and school-visit photos must be taken within the radius below. The Schools tab of the Google Sheet has the columns Blk code, Blk Name, UDISE Code, School Name, Village / Cluster, Latitude, Longitude, CWSN Count. You can type or paste the rows in the Sheet (then tap Reload from the Sheet) or upload the Excel here.</div>';
+  var pb={},pl={};SCH.forEach(function(x){pb[x.block]=(pb[x.block]||0)+1;if(x.lat!==''&&x.lat!=null)pl[x.block]=(pl[x.block]||0)+1});
+  h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(SCH.length?'<p class="note">By block: '+Object.keys(pb).sort().map(function(b){return esc(b)+' <b>'+pb[b]+'</b> ('+(pl[b]||0)+' with location)'}).join(' &middot; ')+'. Each IE Official and BEEO downloads only the schools of their own block from the Schools tab of the Google Sheet.</p>':'')+(S.url?'<div class="fld"><button class="btn sm" onclick="schoolTemplate()">Download blank format</button> <button class="btn sm" onclick="schoolsCurrent()">Download current list</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
      fld('School photo geo-fence radius (metres)','<input type="number" id="s_srad" min="50" max="1000" value="'+(CFG.schoolRadius||200)+'">','School-visit photos must be taken within this distance of the school.')+
      '<label class="opt"><input type="checkbox" id="s_strict" '+(CFG.strictSchools?'checked':'')+'> Allow only schools from the master list (no typing a school name). Tick this once the school list is loaded.</label><br><button class="btn g" onclick="saveSetup()">Save settings</button>';
   if(!S.url){
@@ -1349,7 +1350,7 @@ function dTypeChg(){
   var t=rv('d_type'),h='';
   if(!t){$('d_body').innerHTML='';return}
   if(t===A_SCH){
-    h+=fld('School *','<input type="text" id="d_sq" placeholder="Type part of the school name or UDISE code to search" oninput="dSchFilter()"><select id="d_sch" onchange="dSchChg()" style="margin-top:6px"></select><div id="d_snew" style="display:none;margin-top:6px"><input type="text" id="d_sname" placeholder="School name"></div><div id="d_sinfo" class="hint"></div>');
+    h+=fld('School *','<input type="text" id="d_sq" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type part of the school name or UDISE code to search" oninput="dSchFilter()"><select id="d_sch" onchange="dSchChg()" style="margin-top:6px"></select><div id="d_snew" style="display:none;margin-top:6px"><input type="text" id="d_sname" placeholder="School name"></div><div id="d_sinfo" class="hint"></div>');
     h+=fld('Number of CWSN met / covered at the school *','<input type="number" id="d_cw" min="0" step="1" inputmode="numeric">');
   }else if(t===A_HOME){
     h+=fld('Child name / ID *','<input type="text" id="d_child" maxlength="80">')+fld('Village / locality *','<input type="text" id="d_place" maxlength="80">');
@@ -1367,21 +1368,33 @@ function dTypeChg(){
   if(secure())h+=fld(lbl,'<button class="btn" onclick="openCam()">Take live photo</button><div class="hint">Live camera only; gallery uploads are not allowed. '+hint+' Each photo is stamped with place and time.</div><div id="e_thumbs" class="thumbs"></div>');
   else h+=fld(lbl,'<input type="file" id="e_ph_in" accept="image/*" multiple onchange="addPhotos(this)"><div id="e_thumbs" class="thumbs"></div>');
   $('d_body').innerHTML=h;
-  if(t===A_SCH)dSchFilter();
+  if(t===A_SCH){dSchFilter();ensureSchools()}
   drawPh();geoUi();
 }
+var SCHLOAD={busy:false,t:0,err:''};
+function mySchools(){return SCH.filter(function(s){return nk(s.block)===nk(S.block)})}
 function dSchFilter(){
   var q=($('d_sq').value||'').toLowerCase(),sel=$('d_sch'),cur=sel.value;
-  var all=SCH.filter(function(s){return s.block===S.block}),list=all.filter(function(s){return !q||(s.name+' '+s.udise+' '+(s.village||'')).toLowerCase().indexOf(q)>-1}).slice(0,150);
-  sel.innerHTML='<option value="">'+(all.length?'-- Select school ('+list.length+(list.length===150?'+':'')+' shown) --':'-- School list not loaded yet --')+'</option>'+list.map(function(s){return '<option value="'+esc(s.udise)+'">'+esc(s.name)+' ('+esc(s.udise)+')</option>'}).join('')+(CFG.strictSchools?'':'<option value="__other">School not in list - type name (will be flagged)</option>');
+  var all=mySchools(),list=all.filter(function(s){return !q||(s.name+' '+s.udise+' '+(s.village||'')).toLowerCase().indexOf(q)>-1}).slice(0,150);
+  var first=all.length?'-- Select school ('+list.length+(list.length===150?'+':'')+' shown) --':(SCHLOAD.busy?'-- Loading the school list of your block... --':(SCHLOAD.err?'-- Could not load the school list (tap Reload school list) --':'-- No school found for the '+S.block+' block --'));
+  sel.innerHTML='<option value="">'+esc(first)+'</option>'+list.map(function(s){return '<option value="'+esc(s.udise)+'">'+esc(s.name)+' ('+esc(s.udise)+')</option>'}).join('')+(CFG.strictSchools?'':'<option value="__other">School not in list - type name (will be flagged)</option>');
   if(cur)sel.value=cur;
   dSchChg();
+}
+// the school list of YOUR block (only) is kept on the phone; if it is empty it is fetched now
+function ensureSchools(force){
+  if(!S.url||(S.role!=='field'&&S.role!=='block'))return;
+  if(!force&&mySchools().length)return;
+  if(SCHLOAD.busy||(!force&&Date.now()-SCHLOAD.t<20000))return;
+  SCHLOAD.busy=true;SCHLOAD.err='';if($('d_sch'))dSchFilter();
+  api('schools',{},0,'',null,true).then(function(j){SCH=j.rows;save('cwsn_sch',SCH);SCHLOAD.t=Date.now();SYNC.sch=Date.now()},function(e){SCHLOAD.err=e.message||'failed';SCHLOAD.t=Date.now()}).then(function(){SCHLOAD.busy=false;if($('d_sch'))dSchFilter()});
 }
 function dSchChg(){
   var v=$('d_sch').value;$('d_snew').style.display=v==='__other'?'block':'none';
   var s=SCH.filter(function(x){return x.udise===v})[0],i='';
   if(s)i='UDISE '+esc(s.udise)+(s.village?' &middot; '+esc(s.village):'')+(s.cwsn?' &middot; CWSN on master: '+s.cwsn:'')+' &middot; '+(s.lat!==''&&s.lat!=null?'location on master: photos must be within '+(CFG.schoolRadius||200)+' m':'<span class="bad">no location on master: photo fence not applied, entry will be flagged</span>');
   else if(v==='__other')i='<span class="bad">Not on the master list: the photo fence cannot be applied and the entry will be flagged.</span>';
+  else{var n=mySchools().length;i=n?'<b>'+n+'</b> school(s) of the '+esc(S.block)+' block are loaded from the Google Sheet. <button class="btn sm" onclick="ensureSchools(true)">Reload school list</button>':(SCHLOAD.busy?'Loading...':'The Google Sheet has no school for the '+esc(S.block)+' block (or the list is not uploaded yet). <button class="btn sm" onclick="ensureSchools(true)">Reload school list</button> You can still type the school name; the visit will be flagged.')}
   $('d_sinfo').innerHTML=i;geoUi();
 }
 function dCtrChg(){
