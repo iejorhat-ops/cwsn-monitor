@@ -112,6 +112,13 @@ body.docmode #repov{display:block}
 #busy.blk{bottom:0;pointer-events:auto;background:rgba(255,255,255,.7)}
 #busy.blk .bb{margin-top:28vh;border:2px solid #ff8000;padding:18px 14px}
 #busy .sm{display:block;font-size:13px;font-weight:normal;margin-top:4px}
+#busy .pgt{font-size:16px;font-weight:bold;text-align:center}
+#busy .pgbar{height:20px;border:1px solid #000;background:#fff;margin:6px 0}
+#busy .pgfill{height:100%;background:#008000;width:0}
+#busy .pgn{font-size:14px;font-weight:normal;text-align:center}
+#busy .pgn b{font-size:18px}
+.holdbar{height:8px;border:1px solid #000;background:#fff;margin:6px 0 2px 0}
+.holdbar div{height:100%;background:#ff8000}
 .glass{display:inline-block;font-size:22px;vertical-align:middle;animation:glassturn 1.6s steps(2,end) infinite}
 @keyframes glassturn{0%{transform:rotate(0deg)}100%{transform:rotate(180deg)}}
 @media (max-width:760px){
@@ -238,23 +245,71 @@ function ctx(){var c={now:Date.now()};if(GEO.fix&&Date.now()-GEO.fix.ts<=120000)
 var BUSYMSG={login:'Logging in...',ping:'Testing your connection...',changePin:'Saving your new PIN...',session:'Checking your login...',list:'Loading data from the server...',dlist:'Loading daily activities...',mlist:'Loading monthly reports...',schools:'Loading the school list...',tslocks:'Checking this week...',masterSave:'Writing the master data to the Google Sheet...',masterDump:'Reading the master data from the Google Sheet...',sheetTidy:'Tidying the Google Sheet...',masterUsers:'Creating logins from the Sheet...',cfgReload:'Reading the Google Sheet...',saveConfig:'Saving to the Google Sheet...',sync:'Loading data from the server...',repissue:'Preparing the report...',replist:'Loading reports...',repget:'Opening the report...',repupload:'Uploading the signed copy...',repscan:'Loading the scanned copy...',repverify:'Checking the report against the entries...',repdecide:'Saving...',repcancel:'Saving...',staff:'Loading...',users:'Loading users...',audit:'Loading the security log...',submit:'Uploading the entry and photos...',dsubmit:'Uploading the activity and photos...',msubmit:'Submitting the monthly report...',setStatus:'Saving...',dstatus:'Saving...',mstatus:'Saving...',setLoc:'Saving the location...',saveConfig:'Saving settings...',userSave:'Creating logins...',userReset:'Saving...',userStatus:'Saving...',deviceApprove:'Saving...',deviceReset:'Saving...',schoolsSave:'Saving the school list...',delete:'Deleting...',ddelete:'Deleting...',logout:'Logging out...'};
 var BUSYREAD={sync:1,replist:1,repget:1,tslocks:1,session:1,list:1,dlist:1,mlist:1,schools:1,staff:1,users:1,audit:1,submit:1,dsubmit:1,logout:1};
 var BUSYQ=[],BUSYID=0,BUSYTMR=null;
-function busyStart(msg,blk){var id=++BUSYID;BUSYQ.push({id:id,msg:msg,blk:blk,t:Date.now()});if(blk)busyDraw();else setTimeout(busyDraw,450);if(!BUSYTMR)BUSYTMR=setInterval(busyDraw,1000);return id}
+function busyStart(msg,blk,pg){var id=++BUSYID;BUSYQ.push({id:id,msg:msg,blk:blk,t:Date.now(),pg:pg||null});if(blk||pg)busyDraw();else setTimeout(busyDraw,450);if(!BUSYTMR)BUSYTMR=setInterval(busyDraw,300);return id}
 function busyEnd(id){BUSYQ=BUSYQ.filter(function(b){return b.id!==id});busyDraw();if(!BUSYQ.length&&BUSYTMR){clearInterval(BUSYTMR);BUSYTMR=null}}
+function busyItem(id){for(var i=0;i<BUSYQ.length;i++)if(BUSYQ[i].id===id)return BUSYQ[i];return null}
+function mbTxt(n){return n<1048576?Math.max(1,Math.round(n/1024))+' KB':(n/1048576).toFixed(1)+' MB'}
+// percentage of a save / upload: REAL while the bytes go up, then ESTIMATED while the server writes to the Sheet and Drive
+function pgPct(g,now){
+  if(g.stage==='done')return 100;
+  var p=0;
+  if(g.stage==='up')p=g.upPct*(g.total?g.sent/g.total:0);
+  else if(g.stage==='srv')p=g.upPct+(97-g.upPct)*(1-Math.exp(-(now-g.srvStart)/Math.max(800,g.est)));
+  g.max=Math.max(g.max||0,p);return Math.min(99,Math.floor(g.max));
+}
 function busyDraw(){
   var el=$('busy');if(!el)return;
-  var now=Date.now(),vis=BUSYQ.filter(function(b){return b.blk||now-b.t>=400});
+  var now=Date.now(),vis=BUSYQ.filter(function(b){return b.blk||b.pg||now-b.t>=400});
   if(!vis.length){el.style.display='none';el.className='';el.innerHTML='';return}
   var b=vis[vis.length-1],blk=vis.some(function(x){return x.blk}),sec=Math.round((now-b.t)/1000);
   var sl=netSlow(),sub=sec>=15?(sl?'Your internet is slow. Still working - please do not close this page.':'The server is slow today. Still working - please do not close this page.'):(sec>=4?'Please wait ('+sec+' s). Do not close this page.'+(sl?' Slow internet.':''):'');
   el.className=blk?'blk':'';el.style.display='block';
+  if(b.pg){
+    var g=b.pg,pc=pgPct(g,now),line;
+    if(g.stage==='up')line='Sending '+(g.photos?'photos and data':'data')+' - '+mbTxt(g.sent)+' of '+mbTxt(g.total)+(g.eta>3?' - about '+Math.round(g.eta)+' s left':'');
+    else if(g.stage==='srv')line=pc>=95?'Almost done - waiting for the Google Sheet to answer...':'Saving to the Google Sheet...';
+    else if(g.stage==='done')line='Saved to the Google Sheet';
+    else if(g.stage==='retry')line=g.msg;
+    else line='Starting...';
+    el.innerHTML='<div class="bb pg"><div class="pgt">'+esc(g.label)+'</div><div class="pgbar"><div class="pgfill" style="width:'+pc+'%"></div></div><div class="pgn"><b>'+pc+'%</b> &middot; '+esc(line)+'</div>'+(sub&&g.stage!=='done'?'<span class="sm">'+esc(sub)+'</span>':'')+'</div>';
+    return;
+  }
   el.innerHTML='<div class="bb"><span class="glass">&#8987;</span> '+esc(b.msg)+(sub?'<span class="sm">'+esc(sub)+'</span>':'')+'</div>';
+}
+var PROGACT={submit:1,dsubmit:1,repupload:1,masterSave:1,schoolsSave:1};
+var PGLABEL={submit:'Saving your entry to the Google Sheet',dsubmit:'Saving your entry to the Google Sheet',repupload:'Uploading the signed report',masterSave:'Saving the master data to the Google Sheet',schoolsSave:'Saving the school list to the Google Sheet'};
+var SRVEST=load('cwsn_srvest',{});
+function pgEst(action,payload){
+  var n=(payload&&payload.photos&&payload.photos.length)||(payload&&payload.image?1:0);
+  var d={submit:2500+1300*n,dsubmit:2500+1300*n,repupload:3500,masterSave:6000,schoolsSave:5000}[action]||3000,a=SRVEST[action];
+  return a?Math.round(a*0.6+d*0.4):d;
+}
+function pgNew(action,payload,len){
+  var sp=Math.max(NETQ.up||0,30000)||100000,tu=len/sp*1000,est=pgEst(action,payload);
+  return {label:PGLABEL[action]||'Saving',action:action,stage:'start',max:0,sent:0,total:len,est:est,srvStart:0,t0:0,eta:0,msg:'',
+    upPct:Math.max(10,Math.min(88,100*tu/(tu+est))),photos:!!((payload&&payload.photos&&payload.photos.length)||(payload&&payload.image))};
+}
+function pgUp(id,l,t,done){
+  var b=busyItem(id);if(!b||!b.pg)return;var g=b.pg,now=Date.now();
+  if(!g.t0)g.t0=now;
+  g.total=t||g.total;g.sent=Math.min(l,g.total);
+  var el=(now-g.t0)/1000;
+  if(el>0.8&&g.sent>0){var sp=g.sent/el,tu=g.total/sp*1000;g.eta=(g.total-g.sent)/sp;g.upPct=Math.max(10,Math.min(90,100*tu/(tu+g.est)))}   // share of the bar for the upload follows the LIVE speed
+  if(done){g.stage='srv';g.sent=g.total;g.srvStart=now;g.eta=0}else if(g.stage!=='srv')g.stage='up';
+  busyDraw();
+}
+function pgRetry(id,msg){var b=busyItem(id);if(!b||!b.pg)return;var g=b.pg;g.stage='retry';g.msg=msg;g.max=0;g.sent=0;g.t0=0;busyDraw()}
+function pgDone(id,action,j){
+  if(j&&j.srvMs){SRVEST[action]=SRVEST[action]?Math.round(SRVEST[action]*0.5+j.srvMs*0.5):j.srvMs;save('cwsn_srvest',SRVEST)}
+  var b=busyItem(id);if(!b||!b.pg){busyEnd(id);return}
+  b.pg.stage='done';busyDraw();setTimeout(function(){busyEnd(id)},900);
 }
 function htmlSnippet(tx){return String(tx).replace(/<style[\s\S]*?<\/style>|<script[\s\S]*?<\/script>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim().slice(0,150)}
 var IDEM={userReset:1,userSave:1,masterSave:1,masterUsers:1},NET={n:0,q:[]};
 function netAcquire(){return new Promise(function(res){if(NET.n<3){NET.n++;res()}else NET.q.push(res)})}
 function netRelease(){NET.n--;var f=NET.q.shift();if(f){NET.n++;f()}}
 // ---------- how good is the internet right now? (measured, remembered, and used to shrink photos and wait longer) ----------
-var APP_VER='v22',NEED_SERVER=17,SERVERVER=-1,SCHMETA=null,NEWAPP='',LASTCHK=0;
+var APP_VER='v23',NEED_SERVER=17,SERVERVER=-1,SCHMETA=null,NEWAPP='',LASTCHK=0;
 // is a newer copy of this page on the web? (a phone or browser may keep showing an old copy)
 function checkAppUpdate(){
   LASTCHK=Date.now();
@@ -290,25 +345,41 @@ function netSlow(){
 function reqTimeout(len){return Math.min(300000,Math.max(90000,60000+len/Math.max(NETQ.up||0,40000)*1000*1.5))}
 function busyMsg(id,msg){BUSYQ.forEach(function(b){if(b.id===id)b.msg=msg});busyDraw()}
 var RETRY_NET={login:1,setStatus:1,dstatus:1,mstatus:1,session:1,ping:0};
+function xhrSend(url,body,tmo,onUp){
+  return new Promise(function(res,rej){
+    var x=new XMLHttpRequest(),fail=function(m){var e=new Error(m);e.net=true;rej(e)};
+    x.open('POST',url,true);x.timeout=tmo;x.setRequestHeader('Content-Type','text/plain;charset=utf-8');
+    if(x.upload){x.upload.onprogress=function(e){if(e.lengthComputable)onUp(e.loaded,e.total,false)};x.upload.onload=function(){onUp(body.length,body.length,true)}}
+    x.onload=function(){res({status:x.status,text:x.responseText})};
+    x.onerror=function(){fail('network')};x.ontimeout=function(){fail('timeout')};x.onabort=function(){fail('aborted')};
+    x.send(body);
+  });
+}
 function api(action,payload,tryNo,rid,bid0,quiet){
   tryNo=tryNo||0;
   if(!S.url)return Promise.reject(new Error('No server'));
   if(!rid&&IDEM[action])rid=Date.now().toString(36)+Math.random().toString(36).slice(2,10);
   var body=JSON.stringify({action:action,token:S.token||'',dev:DEV,rid:rid||'',ctx:ctx(),payload:payload||{}});
+  var usePg=!quiet&&action!=='ping'&&(PROGACT[action]||body.length>60000)&&typeof XMLHttpRequest!=='undefined';
   var big=body.length>150000?' ('+(body.length/1048576).toFixed(1)+' MB)':'';
-  var bid=bid0||(quiet?0:busyStart((BUSYMSG[action]||'Working...')+big,!BUSYREAD[action])),status=0,t0=0;
+  var bid=bid0||(quiet?0:busyStart((BUSYMSG[action]||'Working...')+big,!BUSYREAD[action],usePg?pgNew(action,payload,body.length):null)),status=0,t0=0;
+  if(bid0&&usePg){var bi=busyItem(bid0);if(bi&&bi.pg){var np=pgNew(action,payload,body.length);bi.pg.stage='start';bi.pg.upPct=np.upPct;bi.pg.est=np.est;bi.pg.total=body.length;bi.pg.sent=0;bi.pg.t0=0}}
   return netAcquire().then(function(){
-    var ctrl=window.AbortController?new AbortController():null,t=setTimeout(function(){if(ctrl)ctrl.abort()},reqTimeout(body.length));t0=Date.now();
-    return fetch(S.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,signal:ctrl?ctrl.signal:undefined})
-    .then(function(r){clearTimeout(t);status=r.status;return r.text()},function(e){clearTimeout(t);e.net=true;throw e})
-    .then(function(tx){
+    var tmo=reqTimeout(body.length),send;t0=Date.now();
+    if(usePg)send=xhrSend(S.url,body,tmo,function(l,t,done){pgUp(bid,l,t,done)}).then(function(r){status=r.status;return r.text});
+    else{
+      var ctrl=window.AbortController?new AbortController():null,t=setTimeout(function(){if(ctrl)ctrl.abort()},tmo);
+      send=fetch(S.url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:body,signal:ctrl?ctrl.signal:undefined})
+      .then(function(r){clearTimeout(t);status=r.status;return r.text()},function(e){clearTimeout(t);e.net=true;throw e});
+    }
+    return send.then(function(tx){
       var j;try{j=JSON.parse(tx)}catch(x){var e=new Error('The server did not answer properly (code '+status+'). This is usually a short Google hiccup'+(htmlSnippet(tx)?' ('+htmlSnippet(tx).slice(0,70)+')':'')+'. It was tried again by itself; please try once more in a few seconds.');e.html=true;throw e}
       var pv=SERVERVER;SERVERVER=(j&&typeof j.ver==='number')?j.ver:0;if(pv!==SERVERVER&&S.role&&typeof banner==='function')setTimeout(banner,0);
       if(action!=='ping'&&j&&j.ok)netSample(body.length,Date.now()-t0,j.srvMs);
       if(!j.ok){var e2=new Error(j.error||'Server error');e2.retry=!!j.retry;e2.server=!j.retry;e2.auth=!!j.auth;if(e2.auth&&action!=='login')endSession(e2.message);throw e2}
       return j;
     });
-  }).then(function(j){netRelease();busyEnd(bid);return j},function(e){
+  }).then(function(j){netRelease();if(usePg)pgDone(bid,action,j);else busyEnd(bid);return j},function(e){
     netRelease();
     if(e&&e.net)netFail();
     var offline=e&&e.net&&navigator.onLine===false;
@@ -319,7 +390,7 @@ function api(action,payload,tryNo,rid,bid0,quiet){
       if(e&&e.net){e.message=offline?'No internet connection. Switch on mobile data or Wi-Fi and try again. Anything you have saved is safe on this phone.':'Cannot reach the server (tried '+(tryNo+1)+' time'+(tryNo?'s':'')+'). Your internet is slow, weak or switched off. Move to a place with a better signal, or change between Wi-Fi and mobile data, then try again. Anything you have saved is safe on this phone.'}
       throw e;
     }
-    if(bid&&e.net)busyMsg(bid,(BUSYMSG[action]||'Working...')+' Slow connection - trying again ('+(tryNo+2)+' of 4)...');
+    if(bid&&e.net){var rm=' Slow connection - trying again ('+(tryNo+2)+' of 4)...';if(usePg)pgRetry(bid,rm.trim());else busyMsg(bid,(BUSYMSG[action]||'Working...')+rm)}
     return new Promise(function(res){setTimeout(res,[1200,2500,4500][tryNo]||4500)}).then(function(){return api(action,payload,tryNo+1,rid,bid,quiet)});
   });
 }
@@ -578,10 +649,11 @@ function drawHdr(){
   $('foot').innerHTML='';
 }
 function logoFail(el){var d=document.createElement('div');d.className='logo';d.textContent='SS';el.parentNode.replaceChild(d,el)}
+function holdPct(r,now){return Math.max(0,Math.min(100,Math.round((now-(r.holdUntil-HOLD_MS))/HOLD_MS*100)))}
 function banner(){
   var h='',now=Date.now();
   var held=REC.concat(DREC).filter(function(r){return r._pending&&r.holdUntil&&r.holdUntil>now});
-  held.forEach(function(r){h+='<div class="warn" style="margin:0 0 4px 0"><b>Saved:</b> '+esc(r.centre?'Therapeutic Services - '+r.centre+' ('+r.weekEnding+')':(ACTSHORT[r.type]||'Activity')+' ('+(r.date||'')+')')+'. Sending in '+Math.max(1,Math.ceil((r.holdUntil-now)/1000))+' s. <button class="btn o sm" onclick="cancelPending(\''+r.id+'\')">Cancel entry</button></div>'});
+  held.forEach(function(r){h+='<div class="warn" style="margin:0 0 4px 0"><b>Saved:</b> '+esc(r.centre?'Therapeutic Services - '+r.centre+' ('+r.weekEnding+')':(ACTSHORT[r.type]||'Activity')+' ('+(r.date||'')+')')+'. Sending in '+Math.max(1,Math.ceil((r.holdUntil-now)/1000))+' s. <button class="btn o sm" onclick="cancelPending(\''+r.id+'\')">Cancel entry</button><div class="holdbar"><div style="width:'+holdPct(r,now)+'%"></div></div></div>'});
   var waiting=OUT.length+DOUT.length-held.length;
   if(waiting>0)h+='<div class="warn" style="margin:0"><b>'+waiting+' entr'+(waiting>1?'ies are':'y is')+' saved on this device and waiting to upload.</b>'+(SYNCERR?' Last try: '+esc(SYNCERR)+'. It will try again by itself.':'')+' <button class="btn g sm" onclick="syncOutbox()">Send now</button></div>';
   else if(!held.length&&!S.url&&S.role)h+='<div class="info" style="margin:0">Demo mode: data is kept only on this device and there is no security. Connect the server for real use (see Help).</div>';
