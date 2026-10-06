@@ -212,8 +212,8 @@ var GEO={fix:null,err:'',watch:null};
 function secure(){return !!S.url}
 if(S.role==='other')S.role='';
 if(S.url&&!S.token)S.role='';
-S.url=DEFAULT_URL;
-var CFG=load('cwsn_cfg',{district:'Jorhat',blocks:DEFAULT_URL?[]:DEF_BLOCKS,centres:[],budget:0,logo:''});
+S.url=DEFAULT_URL||S.url||'';
+var CFG=load('cwsn_cfg',{district:'Jorhat',blocks:S.url?[]:DEF_BLOCKS,centres:[],budget:0,logo:''});
 CFG.therapists=CFG.therapists||[];CFG.blockCodes=CFG.blockCodes||{};CFG.schoolRadius=CFG.schoolRadius||200;CFG.strictSchools=!!CFG.strictSchools;
 if(CFG.blocks&&(CFG.blocks.indexOf('Central Jorhat')>-1||CFG.blocks.indexOf('Jorhat East')>-1)&&CFG.blocks.length<=4){CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
 if(CFG.district==='Golaghat'){CFG.district='Jorhat';if(CFG.blocks.indexOf('Dergaon')>-1)CFG.blocks=DEF_BLOCKS;save('cwsn_cfg',CFG)}
@@ -254,6 +254,21 @@ var IDEM={userReset:1,userSave:1,masterSave:1,masterUsers:1},NET={n:0,q:[]};
 function netAcquire(){return new Promise(function(res){if(NET.n<3){NET.n++;res()}else NET.q.push(res)})}
 function netRelease(){NET.n--;var f=NET.q.shift();if(f){NET.n++;f()}}
 // ---------- how good is the internet right now? (measured, remembered, and used to shrink photos and wait longer) ----------
+var APP_VER='v22',NEED_SERVER=17,SERVERVER=-1,SCHMETA=null,NEWAPP='',LASTCHK=0;
+// is a newer copy of this page on the web? (a phone or browser may keep showing an old copy)
+function checkAppUpdate(){
+  LASTCHK=Date.now();
+  if(location.protocol==='file:'||!window.fetch)return;
+  fetch(location.pathname+'?chk='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():''}).then(function(t){
+    var m=/var APP_VER='([^']+)'/.exec(t||'');
+    if(m&&m[1]!==APP_VER){
+      NEWAPP=m[1];
+      if(S.role&&typeof banner==='function')banner();
+      else if($('msg'))$('msg').innerHTML='<div class="warn"><b>A newer version of the app is ready ('+esc(NEWAPP)+').</b> You are using '+esc(APP_VER)+'. <button class="btn g sm" onclick="appUpdate()">Update now</button></div>';
+    }
+  }).catch(function(){});
+}
+function appUpdate(){location.replace(location.pathname+'?r='+Date.now())}
 var NETQ=load('cwsn_netq',{up:0,down:0,rtt:0,t:0,fails:0,saver:0});
 function saveNetq(){save('cwsn_netq',NETQ)}
 function netSample(bytes,ms,srv){
@@ -288,6 +303,7 @@ function api(action,payload,tryNo,rid,bid0,quiet){
     .then(function(r){clearTimeout(t);status=r.status;return r.text()},function(e){clearTimeout(t);e.net=true;throw e})
     .then(function(tx){
       var j;try{j=JSON.parse(tx)}catch(x){var e=new Error('The server did not answer properly (code '+status+'). This is usually a short Google hiccup'+(htmlSnippet(tx)?' ('+htmlSnippet(tx).slice(0,70)+')':'')+'. It was tried again by itself; please try once more in a few seconds.');e.html=true;throw e}
+      var pv=SERVERVER;SERVERVER=(j&&typeof j.ver==='number')?j.ver:0;if(pv!==SERVERVER&&S.role&&typeof banner==='function')setTimeout(banner,0);
       if(action!=='ping'&&j&&j.ok)netSample(body.length,Date.now()-t0,j.srvMs);
       if(!j.ok){var e2=new Error(j.error||'Server error');e2.retry=!!j.retry;e2.server=!j.retry;e2.auth=!!j.auth;if(e2.auth&&action!=='login')endSession(e2.message);throw e2}
       return j;
@@ -364,7 +380,7 @@ function syncAll(force,withSchools,quiet){
   if(SYNC.p)return SYNC.p;
   if(!force&&Date.now()-SYNC.t<STALE_MS)return Promise.resolve();
   var needSch=!!withSchools||(!SCH.length&&Date.now()-SYNC.sch>300000)||Date.now()-SYNC.sch>3600000;
-  SYNC.p=api('sync',{schools:needSch},0,'',null,!!quiet).then(function(j){applySync(j);if(needSch&&j.schools)SYNC.sch=Date.now();return j},function(e){
+  SYNC.p=api('sync',{schools:needSch},0,'',null,!!quiet).then(function(j){applySync(j);if(needSch&&j.schools){SYNC.sch=Date.now();SCHMETA=j.schoolsMeta||null}return j},function(e){
     if(e&&e.server&&/unknown action/i.test(e.message))return legacySync();
     throw e;
   }).then(function(r){SYNC.p=null;return r},function(e){SYNC.p=null;throw e});
@@ -391,7 +407,9 @@ function cancelForm(kind){
 }
 function softRedraw(){if(typeof redrawAfterSync==='function')redrawAfterSync(TAB)}
 function autoTick(){
-  if(!S.url||!S.token||document.hidden)return;
+  if(document.hidden)return;
+  if(Date.now()-LASTCHK>1200000)checkAppUpdate();
+  if(!S.url||!S.token)return;
   if((OUT.length||DOUT.length)&&!SYNCING&&!DSYNC)return syncOutbox();
   if(Date.now()-SYNC.t>60000&&!SYNC.p)syncAll(false,false,true).then(function(){if(SYNC.changed)softRedraw()}).catch(function(){});
 }
@@ -567,6 +585,8 @@ function banner(){
   var waiting=OUT.length+DOUT.length-held.length;
   if(waiting>0)h+='<div class="warn" style="margin:0"><b>'+waiting+' entr'+(waiting>1?'ies are':'y is')+' saved on this device and waiting to upload.</b>'+(SYNCERR?' Last try: '+esc(SYNCERR)+'. It will try again by itself.':'')+' <button class="btn g sm" onclick="syncOutbox()">Send now</button></div>';
   else if(!held.length&&!S.url&&S.role)h+='<div class="info" style="margin:0">Demo mode: data is kept only on this device and there is no security. Connect the server for real use (see Help).</div>';
+  if(NEWAPP&&S.role)h+='<div class="warn" style="margin:4px 0 0 0"><b>A newer version of the app is ready ('+esc(NEWAPP)+').</b> You are using '+esc(APP_VER)+'. Anything you have saved stays on the phone. <button class="btn g sm" onclick="appUpdate()">Update now</button></div>';
+  if(S.role&&S.url&&S.token&&SERVERVER>=0&&SERVERVER<NEED_SERVER)h+='<div class="err" style="margin:4px 0 0 0"><b>The server program (Code.gs in Apps Script) is older than this app</b> (server v'+SERVERVER+', this app needs v'+NEED_SERVER+'). Some things will not work, for example reading the school list from the Sheet. <b>District Office:</b> paste the latest Code.gs into Apps Script, then Deploy &gt; Manage deployments &gt; Edit &gt; New version &gt; Deploy.</div>';
   var lv=netSlow();
   if(lv&&S.role&&S.url&&S.token)h+='<div class="info" style="margin:4px 0 0 0">'+(NETQ.saver===1?'<b>Small photos mode is ON.</b> Photos are saved smaller so they upload faster.':'<b>Slow internet.</b> Photos are saved smaller so they upload faster'+(NETQ.up?' (your upload is about '+(NETQ.up*8/1e6).toFixed(1)+' Mbps)':'')+'. What you save stays on this phone and is sent when the connection allows.')+' <button class="btn sm" onclick="netTest()">Test my internet</button> <label style="white-space:nowrap"><input type="checkbox" '+(NETQ.saver===1?'checked ':'')+'onchange="setSaver(this.checked)"> Always use small photos</label></div>';
   $('banner').innerHTML=h;
@@ -1014,7 +1034,7 @@ function viewSetup(){
   var nl=SCH.filter(function(s){return s.lat!==''&&s.lat!=null}).length;
   h+='<h3>Schools master (for school visits)</h3><div class="info">Upload the school list with latitude and longitude. IE Officials pick the school from this list, and school-visit photos must be taken within the radius below. The Schools tab of the Google Sheet has the columns Blk code, Blk Name, UDISE Code, School Name, Village / Cluster, Latitude, Longitude, CWSN Count. You can type or paste the rows in the Sheet (then tap Reload from the Sheet) or upload the Excel here.</div>';
   var pb={},pl={};SCH.forEach(function(x){pb[x.block]=(pb[x.block]||0)+1;if(x.lat!==''&&x.lat!=null)pl[x.block]=(pl[x.block]||0)+1});
-  h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(SCH.length?'<p class="note">By block: '+Object.keys(pb).sort().map(function(b){return esc(b)+' <b>'+pb[b]+'</b> ('+(pl[b]||0)+' with location)'}).join(' &middot; ')+'. Each IE Official and BEEO downloads only the schools of their own block from the Schools tab of the Google Sheet.</p>':'')+(S.url?'<div class="fld"><button class="btn sm" onclick="schoolTemplate()">Download blank format</button> <button class="btn sm" onclick="schoolsCurrent()">Download current list</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
+  h+='<p><b>'+SCH.length+'</b> schools loaded, <b>'+nl+'</b> with location.</p>'+(SCH.length?'<p class="note">By block: '+Object.keys(pb).sort().map(function(b){return esc(b)+' <b>'+pb[b]+'</b> ('+(pl[b]||0)+' with location)'}).join(' &middot; ')+'. Each IE Official and BEEO downloads only the schools of their own block from the Schools tab of the Google Sheet.</p>':'')+(S.url?'<div class="fld"><button class="btn sm" onclick="schoolTemplate()">Download blank format</button> <button class="btn sm" onclick="schoolsCurrent()">Download current list</button> <button class=\"btn sm\" onclick=\"schoolsCheck()\">Check the Schools tab</button></div><div class="fld">Choose your file:<br><input type="file" accept=".xlsx,.xls,.csv" onchange="importSchools(this)"></div>':'')+
      fld('School photo geo-fence radius (metres)','<input type="number" id="s_srad" min="50" max="1000" value="'+(CFG.schoolRadius||200)+'">','School-visit photos must be taken within this distance of the school.')+
      '<label class="opt"><input type="checkbox" id="s_strict" '+(CFG.strictSchools?'checked':'')+'> Allow only schools from the master list (no typing a school name). Tick this once the school list is loaded.</label><br><button class="btn g" onclick="saveSetup()">Save settings</button>';
   if(!S.url){
@@ -1443,14 +1463,14 @@ function ensureSchools(force){
   if(!force&&mySchools().length)return;
   if(SCHLOAD.busy||(!force&&Date.now()-SCHLOAD.t<20000))return;
   SCHLOAD.busy=true;SCHLOAD.err='';if($('d_sch'))dSchFilter();
-  api('schools',{},0,'',null,true).then(function(j){SCH=j.rows;save('cwsn_sch',SCH);SCHLOAD.t=Date.now();SYNC.sch=Date.now()},function(e){SCHLOAD.err=e.message||'failed';SCHLOAD.t=Date.now()}).then(function(){SCHLOAD.busy=false;if($('d_sch'))dSchFilter()});
+  api('schools',{},0,'',null,true).then(function(j){SCH=j.rows;save('cwsn_sch',SCH);SCHLOAD.t=Date.now();SYNC.sch=Date.now();SCHMETA=j.meta||null},function(e){SCHLOAD.err=e.message||'failed';SCHLOAD.t=Date.now()}).then(function(){SCHLOAD.busy=false;if($('d_sch'))dSchFilter()});
 }
 function dSchChg(){
   var v=$('d_sch').value;$('d_snew').style.display=v==='__other'?'block':'none';
   var s=SCH.filter(function(x){return x.udise===v})[0],i='';
   if(s)i='UDISE '+esc(s.udise)+(s.village?' &middot; '+esc(s.village):'')+(s.cwsn?' &middot; CWSN on master: '+s.cwsn:'')+' &middot; '+(s.lat!==''&&s.lat!=null?'location on master: photos must be within '+(CFG.schoolRadius||200)+' m':'<span class="bad">no location on master: photo fence not applied, entry will be flagged</span>');
   else if(v==='__other')i='<span class="bad">Not on the master list: the photo fence cannot be applied and the entry will be flagged.</span>';
-  else{var n=mySchools().length;i=n?'<b>'+n+'</b> school(s) of the '+esc(S.block)+' block are loaded from the Google Sheet. <button class="btn sm" onclick="ensureSchools(true)">Reload school list</button>':(SCHLOAD.busy?'Loading...':'The Google Sheet has no school for the '+esc(S.block)+' block (or the list is not uploaded yet). <button class="btn sm" onclick="ensureSchools(true)">Reload school list</button> You can still type the school name; the visit will be flagged.')}
+  else{var n=mySchools().length;i=n?'<b>'+n+'</b> school(s) of the '+esc(S.block)+' block are loaded from the Google Sheet. <button class="btn sm" onclick="ensureSchools(true)">Reload school list</button>':(SCHLOAD.busy?'Loading...':noSchoolMsg())}
   $('d_sinfo').innerHTML=i;geoUi();
 }
 function dCtrChg(){
@@ -1894,6 +1914,17 @@ function masterUsersFromSheet(){
     if(made.length||bad.length){showTab('security');flash(made.length+' new login(s) created from the IEOfficials tab.'+(bad.length?' Not created: '+bad.map(function(e){return (e.name||e.id)+' ('+e.error+')'}).join('; '):''),bad.length?'err':undefined)}
     else flash('Every active IE Official in the IEOfficials tab already has a login ('+j.count+' checked).');
   }).catch(function(e){flash(e.message,'err')});
+}
+
+// why is the school list of this block empty?
+function noSchoolMsg(){
+  var b=esc(S.block),m=SCHMETA,btn=' <button class="btn sm" onclick="ensureSchools(true)">Reload school list</button>',tail=' You can still type the school name; the visit will be flagged.';
+  if(SERVERVER>=0&&SERVERVER<NEED_SERVER)return '<span class="bad">The server program (Code.gs) is older than this app, so the school list cannot be read from your Sheet.</span> Ask the District Office to paste the latest Code.gs into Apps Script and deploy it as a New version (Deploy &gt; Manage deployments &gt; Edit &gt; New version).'+btn+tail;
+  if(!m)return 'The Google Sheet has no school for the '+b+' block (or the list is not uploaded yet).'+btn+tail;
+  if(!m.found)return '<span class="bad">The Google Sheet has no tab called Schools.</span> Ask the District Office to add it.'+btn+tail;
+  if(!m.total)return '<span class="bad">The Schools tab of the Google Sheet is empty</span> (no row has both a UDISE Code and a School Name).'+btn+tail;
+  var lab=(m.labels||[]).map(function(l){return (l.matched?'':'<span class="bad">')+esc(l.label)+' ('+l.n+')'+(l.matched?'':'</span>')}).join(', ');
+  return '<span class="bad">The Sheet has '+m.total+' schools but none for the '+b+' block.</span> Block names found in the Schools tab: '+lab+'. Names in red are not a block of this district. The District Office should correct Blk Name / Blk code in the Schools tab.'+btn+tail;
 }
 // ============ REPORT FOR SIGNATURE (BEEO) AND REPORT APPROVAL (DISTRICT) ============
 var REPS=load('cwsn_reps',[]),RP={from:'',to:''},REPUP='';
@@ -2498,11 +2529,31 @@ function netTest(){
 (function(){
   var hv=VIEWS.help;
   VIEWS.help=function(){
-    return hv()+'<h3>Slow or weak internet</h3><ul><li>The app works with a slow connection. <b>Everything you save stays on the phone</b> and is sent by itself, one entry at a time, as soon as the connection allows. Use <b>Send now</b> on the yellow bar to try at once.</li><li>When the internet is slow the app saves <b>photos smaller</b> (they still show the date, time and location) and waits longer for the server. If a try fails it tries again by itself up to 4 times.</li><li><b>Upload speed</b> matters most. Photos go up, and many mobile connections have a very slow upload. Wi-Fi at the office is usually faster. Do not close the page while it says "Please wait".</li><li>Tap <b>Test my internet</b> to see your delay, download and upload speed. You can also switch on <b>Always use small photos</b>.</li></ul><div class="fld"><button class="btn" onclick="netTest()">Test my internet</button> <label><input type="checkbox" '+(NETQ.saver===1?'checked ':'')+'onchange="setSaver(this.checked)"> Always use small photos</label></div>';
+    return hv()+'<h3>Slow or weak internet</h3><ul><li>The app works with a slow connection. <b>Everything you save stays on the phone</b> and is sent by itself, one entry at a time, as soon as the connection allows. Use <b>Send now</b> on the yellow bar to try at once.</li><li>When the internet is slow the app saves <b>photos smaller</b> (they still show the date, time and location) and waits longer for the server. If a try fails it tries again by itself up to 4 times.</li><li><b>Upload speed</b> matters most. Photos go up, and many mobile connections have a very slow upload. Wi-Fi at the office is usually faster. Do not close the page while it says "Please wait".</li><li>Tap <b>Test my internet</b> to see your delay, download and upload speed. You can also switch on <b>Always use small photos</b>.</li></ul><div class="fld"><button class="btn" onclick="netTest()">Test my internet</button> <label><input type="checkbox" '+(NETQ.saver===1?'checked ':'')+'onchange="setSaver(this.checked)"> Always use small photos</label></div><p class="note">App version '+APP_VER+' &middot; Server version '+(SERVERVER>=0?'v'+SERVERVER:'not known yet')+(SERVERVER>=0&&SERVERVER<NEED_SERVER?' (OLDER than this app: deploy the latest Code.gs)':'')+'</p>';
   };
 })();
+
+// ---------- District: what does the Schools tab of the Sheet really contain? ----------
+function schoolsCheck(){
+  api('schoolsCheck').then(function(j){
+    var r=j.report,t='SCHOOLS TAB CHECK\n\n';
+    if(!r.found)t+='There is NO tab called Schools in the Google Sheet. It has been created now with the headings. Fill it and check again.';
+    else{
+      t+='Tab: '+r.name+'\nHeading row: row '+r.headerRow+'\n\nColumns understood:\n';
+      [['code','Blk code'],['bname','Blk Name'],['udise','UDISE Code'],['name','School Name'],['village','Village / Cluster'],['lat','Latitude'],['lng','Longitude'],['cwsn','CWSN Count']].forEach(function(c){t+='  '+c[1]+'  ->  '+(r.cols[c[0]]?'column "'+r.cols[c[0]]+'"':'NOT FOUND')+'\n'});
+      t+='\nSchools read: '+r.total+(r.skipped?'  (skipped '+r.skipped+' row(s) that have no UDISE Code or no School Name)':'')+'\n\nSchools in each block of the district:\n';
+      r.blocks.forEach(function(b){t+='  '+b.block+':  '+b.n+(b.n?'  ('+b.withLoc+' with location)':'   <-- NONE')+'\n'});
+      t+='\nBlock names found in the Schools tab:\n';
+      (r.labels||[]).forEach(function(l){t+='  '+l.label+'  ('+l.n+')  '+(l.matched?'OK':'<-- NOT a block of this district: correct Blk Name / Blk code')+'\n'});
+      if(!r.total)t+='  (none)\n';
+    }
+    alert(t);
+  }).catch(function(e){flash(e.message,'err')});
+}
 // ---------- INIT ----------
 (function(){
+  if(/[?&]r=/.test(location.search))try{history.replaceState(null,'',location.pathname)}catch(e){}
+  setTimeout(checkAppUpdate,3000);
   if(S.url){
     if(S.token&&S.role){
       var warm=SYNC.t>0&&(S.role==='district'||S.block);
